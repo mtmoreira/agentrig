@@ -10,6 +10,13 @@ from agentrig.core.cancellation import (
 from agentrig.core.clock import Clock, SystemClock
 from agentrig.core.context import RunContext
 from agentrig.core.deadline import Deadline, DeadlineExceeded
+from agentrig.core.events import (
+    EVENT_SCHEMA_VERSION,
+    Event,
+    EventId,
+    EventKind,
+    JsonValue,
+)
 from agentrig.core.identity import IdGenerator, RunId, Uuid4IdGenerator
 
 __all__ = (
@@ -22,7 +29,12 @@ __all__ = (
     "ContentDigest",
     "Deadline",
     "DeadlineExceeded",
+    "EVENT_SCHEMA_VERSION",
+    "Event",
+    "EventId",
+    "EventKind",
     "IdGenerator",
+    "JsonValue",
     "RunId",
     "RunCancelled",
     "RunContext",
