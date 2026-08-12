@@ -1,0 +1,8 @@
+python_library(
+    name = "agentrig",
+    srcs = glob(["agentrig/**/*.py"]),
+    base_module = "",
+    resources = ["agentrig/py.typed"],
+    tests = ["//tests/unit:unit"],
+    visibility = ["PUBLIC"],
+)

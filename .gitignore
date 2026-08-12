@@ -1,0 +1,21 @@
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+dist/
+
+# Buck2
+.buckconfig.local
+.buckd/
+buck-out/
+
+# Editors
+.idea/
+.vscode/
+

@@ -1,0 +1,6 @@
+python_test(
+    name = "unit",
+    srcs = ["test_package.py"],
+    base_module = "tests.unit",
+    deps = ["//src:agentrig"],
+)
