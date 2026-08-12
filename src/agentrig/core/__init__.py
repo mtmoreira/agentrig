@@ -7,6 +7,7 @@ from agentrig.core.cancellation import (
     RunCancelled,
 )
 from agentrig.core.clock import Clock, SystemClock
+from agentrig.core.context import RunContext
 from agentrig.core.deadline import Deadline, DeadlineExceeded
 from agentrig.core.identity import IdGenerator, RunId, Uuid4IdGenerator
 
@@ -20,6 +21,7 @@ __all__ = (
     "IdGenerator",
     "RunId",
     "RunCancelled",
+    "RunContext",
     "SystemClock",
     "Uuid4IdGenerator",
 )
