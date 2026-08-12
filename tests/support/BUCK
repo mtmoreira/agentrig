@@ -1,0 +1,6 @@
+python_library(
+    name = "test_support",
+    srcs = glob(["*.py"]),
+    base_module = "tests.support",
+    visibility = ["//tests/..."],
+)

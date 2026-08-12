@@ -1,6 +1,9 @@
-python_test(
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+agentrig_python_test(
     name = "unit",
-    srcs = ["test_package.py"],
+    scope = "unit",
+    srcs = glob(["test_*.py"]),
     base_module = "tests.unit",
     deps = ["//src:agentrig"],
 )

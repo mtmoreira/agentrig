@@ -33,7 +33,7 @@ uv python install 3.13.14
 uv sync --locked
 uv lock --check
 uv run python -m unittest discover -s tests/unit -t .
-./buck2 test //...
+./buck2 test //... --exclude live --always-exclude
 uv build
 uv run --isolated --no-project \
   --with ./dist/agentrig-0.1.0-py3-none-any.whl \
@@ -46,8 +46,39 @@ The first two commands must report `uv 0.12.3` and a Buck2 build from
 The final command proves the built wheel imports from an isolated environment,
 not from the source tree or development virtual environment. The earlier `uv`
 test command independently checks the editable installation. Buck2 remains the
-authoritative build and test front door. Provider-backed, networked tests will
-live in explicit non-unit lanes and are not part of this initial scaffold.
+authoritative build and test front door. Provider-backed tests use the explicit
+live execution mode described below.
+
+## Test lanes
+
+Every Python test target declares exactly one scope: `unit`, `contract`,
+`integration`, or `eval`. Networked provider tests additionally carry the
+orthogonal `live` label; all other targets carry `offline`. Unit tests are always
+offline and install a process-wide guard before test-module imports. The guard
+rejects Python socket access and child-process creation.
+
+Run the complete offline suite by default:
+
+```sh
+./buck2 test //... --exclude live --always-exclude
+```
+
+Select one scope when iterating:
+
+```sh
+./buck2 test //... --include unit
+./buck2 test //... --include contract
+./buck2 test //... --include integration
+./buck2 test //... --include eval
+```
+
+Live tests are never silently enabled and must fail when provider credentials
+are absent. Opt in explicitly through Buck2's test executor:
+
+```sh
+./buck2 test //... --include live -- \
+  --env AGENTRIG_RUN_LIVE=1
+```
 
 See [the architecture](docs/architecture.md) and
 [development plan](docs/development-plan.md) for the design and incremental
