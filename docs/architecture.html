@@ -1,0 +1,2126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A visual field guide to the AgentRig foundational architecture.">
+  <title>AgentRig — Architecture Field Guide</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #10233f;
+      --ink-soft: #43536a;
+      --paper: #f4f1e9;
+      --paper-deep: #ebe5d9;
+      --surface: rgba(255, 255, 255, 0.76);
+      --surface-solid: #fffdf8;
+      --line: rgba(16, 35, 63, 0.15);
+      --line-strong: rgba(16, 35, 63, 0.28);
+      --blue: #2459d3;
+      --blue-soft: #dce6ff;
+      --teal: #168c82;
+      --teal-soft: #d8efeb;
+      --amber: #d98512;
+      --amber-soft: #f8e7c7;
+      --coral: #d7594c;
+      --coral-soft: #f7ddd8;
+      --violet: #7655c7;
+      --violet-soft: #e9e0fa;
+      --green: #327a4c;
+      --green-soft: #dcecdf;
+      --shadow: 0 18px 60px rgba(27, 38, 56, 0.10);
+      --shadow-soft: 0 10px 34px rgba(27, 38, 56, 0.07);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --serif: Iowan Old Style, Charter, "Bitstream Charter", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 36px;
+      background: var(--paper);
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 4% 2%, rgba(36, 89, 211, 0.09), transparent 26rem),
+        radial-gradient(circle at 96% 16%, rgba(22, 140, 130, 0.09), transparent 28rem),
+        var(--paper);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: inherit; }
+
+    button,
+    a { -webkit-tap-highlight-color: transparent; }
+
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid rgba(36, 89, 211, 0.45);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 1000;
+      top: 12px;
+      left: 12px;
+      transform: translateY(-180%);
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: white;
+      background: var(--ink);
+      transition: transform 160ms ease;
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .reading-progress {
+      position: fixed;
+      z-index: 900;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(16, 35, 63, 0.08);
+    }
+
+    .reading-progress > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--teal));
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      gap: 52px;
+      width: min(1540px, calc(100% - 48px));
+      margin: 0 auto;
+    }
+
+    .rail {
+      position: sticky;
+      top: 0;
+      align-self: start;
+      height: 100vh;
+      padding: 38px 0 28px;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      margin-bottom: 40px;
+      text-decoration: none;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(16, 35, 63, 0.12);
+      border-radius: 11px;
+      color: white;
+      background: var(--ink);
+      box-shadow: var(--shadow-soft);
+      font-weight: 800;
+      letter-spacing: -0.06em;
+    }
+
+    .brand-copy { line-height: 1.15; }
+    .brand-copy strong { display: block; font-size: 15px; letter-spacing: -0.02em; }
+    .brand-copy span { color: var(--ink-soft); font-size: 11px; text-transform: uppercase; letter-spacing: 0.13em; }
+
+    .rail-label {
+      margin: 0 0 12px 10px;
+      color: #6b7687;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .rail nav {
+      display: grid;
+      gap: 4px;
+    }
+
+    .rail nav a {
+      position: relative;
+      display: block;
+      padding: 9px 12px;
+      border-radius: 10px;
+      color: #596679;
+      font-size: 13px;
+      font-weight: 650;
+      text-decoration: none;
+      transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+    }
+
+    .rail nav a:hover {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.58);
+      transform: translateX(2px);
+    }
+
+    .rail nav a.active {
+      color: var(--ink);
+      background: white;
+      box-shadow: 0 5px 20px rgba(16, 35, 63, 0.07);
+    }
+
+    .rail nav a.active::before {
+      position: absolute;
+      top: 9px;
+      bottom: 9px;
+      left: 0;
+      width: 3px;
+      border-radius: 4px;
+      background: var(--blue);
+      content: "";
+    }
+
+    .rail-note {
+      margin-top: 34px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.42);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .rail-note a { color: var(--blue); font-weight: 700; }
+
+    main {
+      min-width: 0;
+      padding: 28px 0 96px;
+    }
+
+    section {
+      position: relative;
+      margin: 0 0 96px;
+    }
+
+    .hero {
+      min-height: calc(100vh - 56px);
+      display: grid;
+      align-content: center;
+      padding: 64px clamp(24px, 5vw, 72px);
+      border: 1px solid rgba(255, 255, 255, 0.58);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 253, 248, 0.70)),
+        var(--surface-solid);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::before {
+      position: absolute;
+      top: -170px;
+      right: -130px;
+      width: 520px;
+      height: 520px;
+      border: 1px solid rgba(36, 89, 211, 0.13);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 62px rgba(36, 89, 211, 0.035),
+        0 0 0 126px rgba(22, 140, 130, 0.025);
+      content: "";
+    }
+
+    .hero-grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(450px, 1.12fr);
+      gap: clamp(36px, 6vw, 88px);
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 20px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 28px;
+      height: 2px;
+      background: currentColor;
+      content: "";
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin-top: 0; }
+
+    h1 {
+      max-width: 760px;
+      margin-bottom: 24px;
+      font-size: clamp(50px, 6.6vw, 100px);
+      line-height: 0.92;
+      letter-spacing: -0.065em;
+    }
+
+    h1 .accent { color: var(--blue); }
+
+    .hero-lede {
+      max-width: 650px;
+      margin-bottom: 30px;
+      color: var(--ink-soft);
+      font-family: var(--serif);
+      font-size: clamp(20px, 2.2vw, 29px);
+      line-height: 1.37;
+      letter-spacing: -0.018em;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-bottom: 30px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink-soft);
+      background: rgba(255, 255, 255, 0.66);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .pill::before {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 0 3px rgba(22, 140, 130, 0.12);
+      content: "";
+    }
+
+    .hero-links { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .button-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .button-link.primary { color: white; border-color: var(--ink); background: var(--ink); }
+    .button-link:hover { transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+
+    .hero-map {
+      position: relative;
+      padding: 28px;
+      border: 1px solid rgba(16, 35, 63, 0.10);
+      border-radius: 24px;
+      background: rgba(244, 241, 233, 0.66);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+
+    .map-caption,
+    .diagram-caption {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+      color: var(--ink-soft);
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .map-caption span:last-child,
+    .diagram-caption span:last-child { color: #7b8593; font-weight: 500; }
+
+    .stack-map {
+      display: grid;
+      gap: 9px;
+    }
+
+    .stack-layer {
+      position: relative;
+      display: grid;
+      grid-template-columns: 116px 1fr;
+      gap: 13px;
+      align-items: stretch;
+    }
+
+    .layer-name {
+      display: grid;
+      place-content: center start;
+      padding: 11px 0;
+      color: #667285;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .layer-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 48px;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-solid);
+    }
+
+    .layer-content strong,
+    .layer-content span {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 8px;
+      border-radius: 8px;
+      font-size: 10px;
+      line-height: 1.15;
+    }
+
+    .layer-content strong { color: white; background: var(--ink); }
+    .layer-content span { color: var(--ink-soft); background: #eef0f2; }
+    .layer-content.blue span { background: var(--blue-soft); color: #254b9d; }
+    .layer-content.teal span { background: var(--teal-soft); color: #186e67; }
+    .layer-content.violet span { background: var(--violet-soft); color: #6246a7; }
+    .layer-content.amber span { background: var(--amber-soft); color: #9a5c0c; }
+
+    .map-rule {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0 0 129px;
+      color: var(--ink-soft);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .map-rule::before {
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+      content: "";
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.72fr) minmax(320px, 0.28fr);
+      gap: 40px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+
+    .section-number {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--blue);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+    }
+
+    h2 {
+      margin-bottom: 0;
+      font-size: clamp(36px, 4vw, 64px);
+      line-height: 1;
+      letter-spacing: -0.05em;
+    }
+
+    .section-intro {
+      margin-bottom: 3px;
+      color: var(--ink-soft);
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.5;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+      backdrop-filter: blur(14px);
+    }
+
+    .thesis {
+      display: grid;
+      grid-template-columns: 0.72fr 1.28fr;
+      min-height: 330px;
+      overflow: hidden;
+    }
+
+    .thesis-title {
+      display: grid;
+      align-content: space-between;
+      padding: 34px;
+      color: white;
+      background: var(--ink);
+    }
+
+    .thesis-title p {
+      margin-bottom: 0;
+      color: rgba(255, 255, 255, 0.62);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .thesis-title blockquote {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(25px, 3vw, 42px);
+      line-height: 1.12;
+      letter-spacing: -0.025em;
+    }
+
+    .thesis-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--line);
+    }
+
+    .thesis-half {
+      padding: 32px;
+      background: var(--surface-solid);
+    }
+
+    .thesis-half.wrong { background: #f9eeeb; }
+    .thesis-half.right { background: #eaf3f0; }
+
+    .micro-label {
+      display: inline-flex;
+      margin-bottom: 20px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .wrong .micro-label { color: #9d3f35; background: var(--coral-soft); }
+    .right .micro-label { color: #1e6c4a; background: var(--green-soft); }
+
+    .mini-stack {
+      display: grid;
+      gap: 9px;
+      margin: 20px 0;
+    }
+
+    .mini-stack span {
+      display: block;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: rgba(255, 255, 255, 0.7);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .mini-stack i {
+      color: var(--ink-soft);
+      font-size: 13px;
+      font-style: normal;
+      text-align: center;
+    }
+
+    .note {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 13px;
+    }
+
+    .reuse-chart {
+      display: grid;
+      grid-template-columns: 0.72fr 1.28fr;
+      gap: 38px;
+      margin-top: 28px;
+      padding: 30px;
+    }
+
+    .reuse-copy p { color: var(--ink-soft); font-size: 14px; }
+
+    .bars {
+      display: grid;
+      gap: 15px;
+      align-content: center;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 155px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .bar-row label { color: var(--ink-soft); font-size: 11px; font-weight: 750; }
+
+    .bar-track {
+      position: relative;
+      height: 24px;
+      border-radius: 7px;
+      background: rgba(16, 35, 63, 0.06);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      padding-left: 9px;
+      border-radius: inherit;
+      color: white;
+      background: var(--blue);
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .bar-fill.teal { background: var(--teal); }
+    .bar-fill.amber { background: var(--amber); }
+    .bar-fill.coral { background: var(--coral); }
+    .bar-footnote { margin: 3px 0 0 169px; color: #7a8493; font-size: 10px; }
+
+    .architecture-board {
+      padding: clamp(22px, 4vw, 42px);
+      overflow: hidden;
+    }
+
+    .dependency-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+    }
+
+    .arch-node {
+      position: relative;
+      min-height: 126px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-solid);
+    }
+
+    .arch-node::after {
+      position: absolute;
+      top: 50%;
+      right: -13px;
+      z-index: 3;
+      width: 13px;
+      height: 1px;
+      background: var(--line-strong);
+      content: "";
+    }
+
+    .arch-node:last-child::after,
+    .arch-node.no-arrow::after { display: none; }
+
+    .arch-node small {
+      display: block;
+      margin-bottom: 11px;
+      color: #7b8593;
+      font-family: var(--mono);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .arch-node h3 { font-size: 17px; }
+    .arch-node p { margin: 0; color: var(--ink-soft); font-size: 11px; line-height: 1.5; }
+    .arch-node.workflow { grid-column: span 4; border-top: 4px solid var(--blue); }
+    .arch-node.contracts { grid-column: span 4; border-top: 4px solid var(--teal); }
+    .arch-node.integrations { grid-column: span 4; border-top: 4px solid var(--amber); }
+
+    .core-foundation {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 20px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 20px 24px;
+      border-radius: 14px;
+      color: white;
+      background: var(--ink);
+    }
+
+    .core-foundation h3 { margin: 0; }
+    .core-tokens { display: flex; flex-wrap: wrap; gap: 7px; }
+    .core-tokens span {
+      padding: 6px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.76);
+      background: rgba(255, 255, 255, 0.06);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .sidecars {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .sidecar {
+      padding: 17px 20px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, 0.38);
+    }
+
+    .sidecar strong { display: block; margin-bottom: 3px; font-size: 12px; }
+    .sidecar span { color: var(--ink-soft); font-size: 10px; }
+
+    .rule-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .rule-chip {
+      padding: 13px;
+      border-radius: 12px;
+      color: var(--ink-soft);
+      background: rgba(16, 35, 63, 0.045);
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .rule-chip strong { display: block; color: var(--ink); font-size: 11px; }
+
+    .roles-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.33fr) minmax(0, 0.67fr);
+      gap: 18px;
+    }
+
+    .role-tabs {
+      padding: 15px;
+    }
+
+    .role-tabs p {
+      margin: 5px 6px 14px;
+      color: var(--ink-soft);
+      font-size: 12px;
+    }
+
+    .role-tab {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 37px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin: 5px 0;
+      padding: 11px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      color: var(--ink-soft);
+      background: transparent;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border 160ms ease, background 160ms ease, color 160ms ease;
+    }
+
+    .role-tab:hover { background: rgba(16, 35, 63, 0.04); }
+    .role-tab.active { color: var(--ink); border-color: var(--line); background: white; box-shadow: var(--shadow-soft); }
+    .role-icon {
+      display: grid;
+      place-items: center;
+      width: 37px;
+      height: 37px;
+      border-radius: 10px;
+      color: white;
+      background: var(--ink);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .role-tab strong { display: block; font-size: 12px; }
+    .role-tab small { display: block; color: #7c8694; font-size: 9px; }
+    .role-tab > span:last-child { color: #99a0aa; }
+
+    .role-stage {
+      position: relative;
+      min-height: 472px;
+      padding: clamp(22px, 4vw, 42px);
+      overflow: hidden;
+    }
+
+    .role-stage::before {
+      position: absolute;
+      inset: 0;
+      opacity: 0.28;
+      background-image:
+        linear-gradient(rgba(16, 35, 63, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 35, 63, 0.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+      content: "";
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    .role-scene { position: relative; z-index: 1; }
+    .role-kicker { color: var(--blue); font-family: var(--mono); font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    .role-scene h3 { margin: 8px 0 8px; font-size: clamp(25px, 3vw, 38px); }
+    .role-scene > p { max-width: 650px; color: var(--ink-soft); font-family: var(--serif); font-size: 16px; }
+
+    .role-flow {
+      display: grid;
+      grid-template-columns: 1fr 32px 1fr 32px 1fr;
+      gap: 7px;
+      align-items: stretch;
+      margin: 30px 0 22px;
+    }
+
+    .role-box {
+      display: grid;
+      align-content: center;
+      min-height: 138px;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 253, 248, 0.93);
+    }
+
+    .role-box.runtime { border-top: 4px solid var(--amber); }
+    .role-box.agent { border-top: 4px solid var(--violet); }
+    .role-box.capability { border-top: 4px solid var(--teal); }
+    .role-box small { color: #7a8492; font-family: var(--mono); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+    .role-box strong { display: block; margin: 7px 0; font-size: 14px; }
+    .role-box span { color: var(--ink-soft); font-size: 10px; line-height: 1.45; }
+    .role-arrow { display: grid; place-items: center; color: #87909d; font-size: 19px; }
+
+    .direct-path {
+      display: grid;
+      grid-template-columns: 105px 1fr;
+      gap: 12px;
+      align-items: center;
+      padding: 13px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.54);
+    }
+
+    .direct-path strong { color: var(--teal); font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
+    .direct-path span { color: var(--ink-soft); font-size: 10px; }
+
+    .matrix-wrap {
+      margin-top: 20px;
+      padding: 22px;
+      overflow-x: auto;
+    }
+
+    .matrix {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: separate;
+      border-spacing: 5px;
+      font-size: 10px;
+    }
+
+    .matrix th {
+      padding: 8px;
+      color: #687486;
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    .matrix th:first-child { text-align: left; }
+    .matrix td { padding: 9px; border-radius: 8px; text-align: center; }
+    .matrix td:first-child { color: var(--ink); background: transparent; font-weight: 750; text-align: left; }
+    .matrix .native { color: #17645d; background: var(--teal-soft); }
+    .matrix .agent-backed { color: #6042a5; background: var(--violet-soft); }
+    .matrix .direct { color: #89520b; background: var(--amber-soft); }
+    .matrix .none { color: #a1a6ad; background: rgba(16, 35, 63, 0.035); }
+
+    .matrix-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 6px 0; color: var(--ink-soft); font-size: 9px; }
+    .matrix-legend span::before { display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 3px; content: ""; }
+    .matrix-legend .l-native::before { background: var(--teal); }
+    .matrix-legend .l-agent::before { background: var(--violet); }
+    .matrix-legend .l-direct::before { background: var(--amber); }
+
+    .composition-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .code-card {
+      padding: 26px;
+      color: #e8edf6;
+      background: #101c30;
+    }
+
+    .code-card header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      color: #9aabc3;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .window-dots { display: flex; gap: 5px; }
+    .window-dots i { width: 7px; height: 7px; border-radius: 50%; background: #526078; }
+    .window-dots i:first-child { background: #cf6056; }
+    .window-dots i:nth-child(2) { background: #d49b3a; }
+    .window-dots i:nth-child(3) { background: #4b9a6d; }
+
+    pre {
+      margin: 0;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.72;
+      tab-size: 2;
+    }
+
+    .kw { color: #a792ff; }
+    .fn { color: #7fc8ff; }
+    .str { color: #a6dbad; }
+    .arg { color: #f5c879; }
+    .cm { color: #667892; }
+
+    .anatomy-card { padding: 26px; }
+    .anatomy-card > p { color: var(--ink-soft); font-size: 13px; }
+
+    .anatomy-list { display: grid; gap: 9px; margin-top: 20px; }
+    .anatomy-item {
+      display: grid;
+      grid-template-columns: 30px 125px 1fr;
+      gap: 11px;
+      align-items: start;
+      padding: 11px;
+      border-radius: 10px;
+      background: rgba(16, 35, 63, 0.038);
+    }
+    .anatomy-item b { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: white; background: var(--blue); font-family: var(--mono); font-size: 9px; }
+    .anatomy-item strong { font-size: 11px; }
+    .anatomy-item span { color: var(--ink-soft); font-size: 10px; line-height: 1.45; }
+
+    .decision-board {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr 48px 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-top: 18px;
+      padding: 25px;
+    }
+
+    .decision-node {
+      min-height: 150px;
+      padding: 19px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-solid);
+    }
+
+    .decision-node.question { border-top: 4px solid var(--blue); }
+    .decision-node.compose { border-top: 4px solid var(--teal); }
+    .decision-node.extend { border-top: 4px solid var(--amber); }
+    .decision-node small { display: block; margin-bottom: 9px; color: #788391; font-family: var(--mono); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+    .decision-node p { margin: 0; color: var(--ink-soft); font-size: 10px; }
+    .decision-arrow { display: grid; gap: 3px; place-items: center; color: #788391; font-family: var(--mono); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+    .decision-arrow b { color: var(--ink); font-size: 19px; }
+
+    .operation-card { padding: clamp(22px, 4vw, 42px); }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .timeline::before {
+      position: absolute;
+      top: 21px;
+      left: 3%;
+      right: 3%;
+      height: 2px;
+      background: linear-gradient(90deg, var(--blue), var(--teal), var(--amber));
+      content: "";
+    }
+
+    .phase {
+      position: relative;
+      z-index: 1;
+      padding-top: 48px;
+    }
+
+    .phase::before {
+      position: absolute;
+      top: 12px;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      border: 5px solid var(--surface-solid);
+      border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 0 1px var(--line);
+      content: "";
+    }
+
+    .phase:nth-child(3)::before,
+    .phase:nth-child(4)::before { background: var(--teal); }
+    .phase:nth-child(5)::before { background: var(--amber); }
+    .phase small { display: block; color: #7b8593; font-family: var(--mono); font-size: 8px; font-weight: 800; }
+    .phase strong { display: block; margin: 4px 0 6px; font-size: 12px; }
+    .phase span { display: block; max-width: 165px; color: var(--ink-soft); font-size: 9px; line-height: 1.45; }
+
+    .retry-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .compare-box { padding: 18px; border-radius: 13px; }
+    .compare-box.retry { color: #684715; background: var(--amber-soft); }
+    .compare-box.repair { color: #513b89; background: var(--violet-soft); }
+    .compare-box strong { display: block; margin-bottom: 4px; font-size: 11px; }
+    .compare-box span { display: block; font-size: 10px; line-height: 1.45; }
+
+    .grading-layout {
+      display: grid;
+      grid-template-columns: 1.35fr 0.65fr;
+      gap: 18px;
+    }
+
+    .grade-flow { padding: 30px; }
+    .grade-chain { display: grid; gap: 12px; }
+
+    .grade-subject {
+      padding: 18px;
+      border-radius: 13px;
+      color: white;
+      background: var(--ink);
+      text-align: center;
+    }
+    .grade-subject small { color: rgba(255, 255, 255, 0.65); font-family: var(--mono); font-size: 8px; text-transform: uppercase; }
+    .grade-subject strong { display: block; margin-top: 4px; }
+
+    .grade-arrow { color: #8b94a0; font-size: 17px; text-align: center; }
+    .grader-bank { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .grader {
+      padding: 13px 8px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface-solid);
+      text-align: center;
+    }
+    .grader b { display: block; font-size: 10px; }
+    .grader span { color: var(--ink-soft); font-size: 8px; }
+
+    .grade-records { display: flex; flex-wrap: wrap; justify-content: center; gap: 7px; }
+    .grade-records span { padding: 7px 9px; border-radius: 8px; font-family: var(--mono); font-size: 8px; font-weight: 800; }
+    .grade-records .hard { color: #943f35; background: var(--coral-soft); }
+    .grade-records .soft { color: #17675f; background: var(--teal-soft); }
+    .grade-records .evidence { color: #6546aa; background: var(--violet-soft); }
+
+    .policy-box { padding: 17px; border: 2px solid var(--blue); border-radius: 13px; background: var(--blue-soft); text-align: center; }
+    .policy-box small { color: #45609e; font-family: var(--mono); font-size: 8px; text-transform: uppercase; }
+    .policy-box strong { display: block; color: #254b9d; font-size: 13px; }
+
+    .decision-outcomes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+    .decision-outcomes span { padding: 8px 4px; border-radius: 7px; background: rgba(16, 35, 63, 0.055); font-size: 8px; font-weight: 800; text-align: center; }
+
+    .grade-principles { display: grid; gap: 12px; }
+    .principle-card { padding: 20px; }
+    .principle-card b { display: grid; place-items: center; width: 29px; height: 29px; margin-bottom: 16px; border-radius: 9px; color: white; background: var(--blue); font-family: var(--mono); font-size: 10px; }
+    .principle-card p { margin: 0; color: var(--ink-soft); font-size: 11px; }
+
+    .observability-grid {
+      display: grid;
+      grid-template-columns: 1.08fr 0.92fr;
+      gap: 18px;
+    }
+
+    .trace-card { padding: 28px; }
+    .trace-tree { display: grid; gap: 8px; margin-top: 18px; }
+    .trace-row { position: relative; display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 9px; background: rgba(16, 35, 63, 0.04); }
+    .trace-row.child { margin-left: 30px; }
+    .trace-row.grandchild { margin-left: 60px; }
+    .trace-row.child::before,
+    .trace-row.grandchild::before { position: absolute; top: -8px; bottom: 50%; left: -17px; width: 12px; border-bottom: 1px solid var(--line-strong); border-left: 1px solid var(--line-strong); content: ""; }
+    .trace-row code { font-family: var(--mono); font-size: 8px; font-weight: 800; }
+    .trace-row span { color: var(--ink-soft); font-size: 9px; }
+    .trace-row em { padding: 4px 6px; border-radius: 6px; color: var(--green); background: var(--green-soft); font-family: var(--mono); font-size: 7px; font-style: normal; font-weight: 800; text-transform: uppercase; }
+    .trace-row em.warn { color: #87500b; background: var(--amber-soft); }
+
+    .privacy-card { padding: 28px; color: white; background: var(--ink); }
+    .privacy-card p { color: rgba(255, 255, 255, 0.64); font-size: 12px; }
+    .privacy-list { display: grid; gap: 9px; margin-top: 20px; }
+    .privacy-item { display: grid; grid-template-columns: 26px 1fr; gap: 9px; align-items: center; padding: 10px; border-radius: 9px; background: rgba(255, 255, 255, 0.06); }
+    .privacy-item b { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 7px; color: var(--ink); background: #dbe9ff; font-family: var(--mono); font-size: 8px; }
+    .privacy-item span { color: rgba(255, 255, 255, 0.78); font-size: 9px; }
+
+    .eval-board { padding: clamp(22px, 4vw, 42px); }
+
+    .eval-cycle {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 7px;
+      align-items: stretch;
+      margin-top: 24px;
+    }
+    .eval-stage { position: relative; min-height: 125px; padding: 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-solid); }
+    .eval-stage:not(:last-child)::after { position: absolute; top: 50%; right: -9px; z-index: 2; width: 10px; height: 10px; border-top: 2px solid #8e97a3; border-right: 2px solid #8e97a3; background: var(--surface-solid); transform: translateY(-50%) rotate(45deg); content: ""; }
+    .eval-stage b { display: grid; place-items: center; width: 25px; height: 25px; margin-bottom: 13px; border-radius: 8px; color: white; background: var(--teal); font-family: var(--mono); font-size: 8px; }
+    .eval-stage strong { display: block; margin-bottom: 5px; font-size: 10px; }
+    .eval-stage span { display: block; color: var(--ink-soft); font-size: 8px; line-height: 1.45; }
+
+    .eval-split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
+    .eval-bucket { padding: 20px; border-radius: 13px; }
+    .eval-bucket.framework { background: var(--blue-soft); }
+    .eval-bucket.project { background: var(--teal-soft); }
+    .eval-bucket code { display: block; margin-bottom: 6px; color: var(--ink); font-family: var(--mono); font-size: 10px; font-weight: 800; }
+    .eval-bucket p { margin: 0; color: var(--ink-soft); font-size: 10px; }
+
+    .boundary-board {
+      display: grid;
+      grid-template-columns: 1fr 120px 1fr;
+      gap: 18px;
+      padding: clamp(22px, 4vw, 42px);
+      align-items: stretch;
+    }
+
+    .boundary-side { padding: 27px; border-radius: 17px; }
+    .boundary-side.rig { color: white; background: var(--ink); }
+    .boundary-side.app { border: 1px solid var(--line); background: var(--surface-solid); }
+    .boundary-side .micro-label { color: inherit; background: rgba(255, 255, 255, 0.11); }
+    .boundary-side.app .micro-label { color: #17675f; background: var(--teal-soft); }
+    .boundary-side p { color: rgba(255, 255, 255, 0.62); font-size: 11px; }
+    .boundary-side.app p { color: var(--ink-soft); }
+
+    .ownership-list { display: grid; gap: 8px; margin-top: 18px; }
+    .ownership-list span { padding: 10px; border-radius: 9px; font-size: 9px; }
+    .rig .ownership-list span { color: rgba(255, 255, 255, 0.78); background: rgba(255, 255, 255, 0.06); }
+    .app .ownership-list span { color: var(--ink-soft); background: rgba(16, 35, 63, 0.045); }
+
+    .boundary-bridge { display: grid; align-content: center; gap: 10px; }
+    .bridge-token { position: relative; padding: 8px 4px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); background: var(--paper); font-family: var(--mono); font-size: 8px; font-weight: 800; text-align: center; }
+    .bridge-token::before,
+    .bridge-token::after { position: absolute; top: 50%; width: 19px; height: 1px; background: var(--line-strong); content: ""; }
+    .bridge-token::before { left: -19px; }
+    .bridge-token::after { right: -19px; }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .roadmap-stage {
+      position: relative;
+      min-height: 320px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-solid);
+    }
+    .roadmap-stage::before { position: absolute; top: 0; left: 20px; right: 20px; height: 4px; border-radius: 0 0 5px 5px; background: var(--blue); content: ""; }
+    .roadmap-stage:nth-child(2)::before { background: var(--teal); }
+    .roadmap-stage:nth-child(3)::before { background: var(--violet); }
+    .roadmap-stage:nth-child(4)::before { background: var(--amber); }
+    .roadmap-stage:nth-child(5)::before { background: var(--coral); }
+    .roadmap-stage small { display: block; margin: 8px 0 24px; color: #7c8694; font-family: var(--mono); font-size: 8px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+    .roadmap-stage h3 { font-size: 15px; }
+    .roadmap-stage > p { min-height: 52px; color: var(--ink-soft); font-size: 10px; }
+    .milestones { display: grid; gap: 7px; margin-top: 18px; }
+    .milestone { padding: 9px; border-radius: 8px; background: rgba(16, 35, 63, 0.045); }
+    .milestone b { display: block; color: var(--ink); font-family: var(--mono); font-size: 8px; }
+    .milestone span { display: block; color: var(--ink-soft); font-size: 8px; }
+
+    .build-note {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 24px;
+      align-items: center;
+      margin-top: 20px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.52);
+    }
+    .build-note strong { font-size: 17px; }
+    .build-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .build-piece { padding: 12px; border-radius: 10px; background: var(--surface-solid); }
+    .build-piece b { display: block; margin-bottom: 3px; font-size: 10px; }
+    .build-piece span { color: var(--ink-soft); font-size: 8px; }
+
+    .close {
+      position: relative;
+      padding: clamp(34px, 6vw, 72px);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      color: white;
+      background: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    .close::after {
+      position: absolute;
+      right: -110px;
+      bottom: -230px;
+      width: 440px;
+      height: 440px;
+      border: 70px solid rgba(255, 255, 255, 0.04);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .close blockquote {
+      position: relative;
+      z-index: 1;
+      max-width: 940px;
+      margin: 0 0 28px;
+      font-family: var(--serif);
+      font-size: clamp(30px, 4.3vw, 60px);
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+    }
+
+    .close p { position: relative; z-index: 1; max-width: 760px; margin-bottom: 28px; color: rgba(255, 255, 255, 0.64); }
+    .close .button-link { position: relative; z-index: 1; color: var(--ink); border-color: white; background: white; }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px 4px 0;
+      color: #77818e;
+      font-size: 10px;
+    }
+
+    footer a { color: var(--blue); font-weight: 700; }
+
+    .mobile-header { display: none; }
+
+    @media (max-width: 1120px) {
+      .shell { grid-template-columns: 1fr; width: min(100% - 32px, 1100px); }
+      .rail { display: none; }
+      .mobile-header {
+        position: sticky;
+        z-index: 100;
+        top: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: min(100% - 32px, 1100px);
+        margin: 8px auto 0;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: rgba(244, 241, 233, 0.88);
+        backdrop-filter: blur(16px);
+      }
+      .mobile-header .brand { margin: 0; }
+      .mobile-header a:last-child { color: var(--blue); font-size: 11px; font-weight: 800; text-decoration: none; }
+      main { padding-top: 14px; }
+      .hero { min-height: auto; }
+      .hero-grid { grid-template-columns: 1fr; }
+      .hero-map { max-width: 760px; }
+      .roadmap { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 820px) {
+      section { margin-bottom: 72px; }
+      .hero { padding: 42px 24px; }
+      .section-head { grid-template-columns: 1fr; gap: 14px; }
+      .thesis { grid-template-columns: 1fr; }
+      .thesis-body { grid-template-columns: 1fr 1fr; }
+      .reuse-chart,
+      .roles-layout,
+      .composition-grid,
+      .grading-layout,
+      .observability-grid { grid-template-columns: 1fr; }
+      .dependency-grid { display: grid; grid-template-columns: 1fr; }
+      .arch-node.workflow,
+      .arch-node.contracts,
+      .arch-node.integrations,
+      .core-foundation,
+      .sidecars { grid-column: 1; }
+      .arch-node::after { display: none; }
+      .core-foundation { grid-template-columns: 1fr; }
+      .rule-strip { grid-template-columns: 1fr 1fr; }
+      .timeline { grid-template-columns: 1fr 1fr; }
+      .timeline::before { display: none; }
+      .phase { padding: 13px 13px 13px 44px; border-radius: 10px; background: rgba(16, 35, 63, 0.04); }
+      .phase::before { top: 15px; left: 13px; }
+      .eval-cycle { grid-template-columns: repeat(3, 1fr); }
+      .boundary-board { grid-template-columns: 1fr; }
+      .boundary-bridge { grid-template-columns: repeat(3, 1fr); }
+      .bridge-token::before,
+      .bridge-token::after { display: none; }
+      .roadmap { grid-template-columns: 1fr 1fr; }
+      .build-note { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .shell,
+      .mobile-header { width: min(100% - 20px, 1100px); }
+      .brand-copy span { display: none; }
+      h1 { font-size: 53px; }
+      .hero-lede { font-size: 19px; }
+      .stack-layer { grid-template-columns: 1fr; gap: 2px; }
+      .layer-name { padding: 4px 0; }
+      .map-rule { margin-left: 0; }
+      .thesis-body { grid-template-columns: 1fr; }
+      .reuse-chart { padding: 22px; }
+      .bar-row { grid-template-columns: 1fr; gap: 4px; }
+      .bar-footnote { margin-left: 0; }
+      .role-flow { grid-template-columns: 1fr; }
+      .role-arrow { transform: rotate(90deg); }
+      .decision-board { grid-template-columns: 1fr; }
+      .decision-arrow b { transform: rotate(90deg); }
+      .timeline,
+      .retry-compare,
+      .grader-bank,
+      .decision-outcomes,
+      .eval-cycle,
+      .eval-split,
+      .roadmap,
+      .build-track { grid-template-columns: 1fr; }
+      .anatomy-item { grid-template-columns: 30px 1fr; }
+      .anatomy-item span { grid-column: 2; }
+      .trace-row { grid-template-columns: 82px 1fr; }
+      .trace-row em { grid-column: 2; justify-self: start; }
+      .trace-row.grandchild { margin-left: 30px; }
+      .boundary-bridge { grid-template-columns: 1fr; }
+      footer { flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 14mm; }
+      body { background: white; font-size: 11px; }
+      .reading-progress,
+      .rail,
+      .mobile-header,
+      .hero-links,
+      .role-tabs { display: none !important; }
+      .shell { display: block; width: 100%; }
+      main { padding: 0; }
+      section { break-inside: avoid; margin-bottom: 30px; }
+      .hero { min-height: auto; box-shadow: none; }
+      .roles-layout { grid-template-columns: 1fr; }
+      .role-stage { min-height: auto; box-shadow: none; }
+      .card { box-shadow: none; backdrop-filter: none; }
+      .roadmap { grid-template-columns: repeat(5, 1fr); }
+      a { text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to architecture</a>
+  <div class="reading-progress" aria-hidden="true"><span id="progress-bar"></span></div>
+
+  <header class="mobile-header">
+    <a class="brand" href="#top" aria-label="AgentRig architecture home">
+      <span class="brand-mark">AR</span>
+      <span class="brand-copy"><strong>AgentRig</strong><span>Architecture field guide</span></span>
+    </a>
+    <a href="architecture.md">Specification ↗</a>
+  </header>
+
+  <div class="shell">
+    <aside class="rail" aria-label="Architecture navigation">
+      <a class="brand" href="#top">
+        <span class="brand-mark">AR</span>
+        <span class="brand-copy"><strong>AgentRig</strong><span>Architecture field guide</span></span>
+      </a>
+      <p class="rail-label">Contents</p>
+      <nav>
+        <a href="#thesis">01 — The thesis</a>
+        <a href="#system">02 — System map</a>
+        <a href="#roles">03 — Runtime × capability</a>
+        <a href="#composition">04 — Composition model</a>
+        <a href="#operation">05 — Theory of operation</a>
+        <a href="#grading">06 — Grading</a>
+        <a href="#observability">07 — Observability</a>
+        <a href="#evals">08 — Evals</a>
+        <a href="#boundary">09 — Application boundary</a>
+        <a href="#roadmap">10 — Minimum roadmap</a>
+      </nav>
+      <div class="rail-note">
+        This field guide explains the design. The normative source remains
+        <a href="architecture.md">architecture.md</a> and the implementation sequence is in
+        <a href="development-plan.md">development-plan.md</a>.
+      </div>
+    </aside>
+
+    <main id="content">
+      <section class="hero" id="top" data-section>
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">Foundational architecture · 2026</p>
+            <h1>Rig the work.<br><span class="accent">Keep the parts.</span></h1>
+            <p class="hero-lede">
+              A typed Python SDK for composing autonomous agents, direct AI services,
+              retrieval, tools, and deterministic code into observable, gradable workflows.
+            </p>
+            <div class="hero-meta" aria-label="Architecture attributes">
+              <span class="pill">Python first</span>
+              <span class="pill">Capability driven</span>
+              <span class="pill">Composition default</span>
+              <span class="pill">Buck2 front door</span>
+            </div>
+            <div class="hero-links">
+              <a class="button-link primary" href="#system">Explore the system <span>↓</span></a>
+              <a class="button-link" href="architecture.md">Read the specification <span>↗</span></a>
+            </div>
+          </div>
+
+          <div class="hero-map" aria-label="AgentRig architecture stack">
+            <div class="map-caption"><span>System stack</span><span>consumer → dependency</span></div>
+            <div class="stack-map">
+              <div class="stack-layer">
+                <div class="layer-name">Application</div>
+                <div class="layer-content violet"><strong>Your application</strong><span>Domain workflows</span><span>Domain graders</span></div>
+              </div>
+              <div class="stack-layer">
+                <div class="layer-name">Composition</div>
+                <div class="layer-content blue"><span>Workflow</span><span>Configured agents</span><span>Grade policy</span></div>
+              </div>
+              <div class="stack-layer">
+                <div class="layer-name">Contracts</div>
+                <div class="layer-content teal"><span>Coding</span><span>Images</span><span>Search</span><span>Generation</span><span>Tools</span></div>
+              </div>
+              <div class="stack-layer">
+                <div class="layer-name">Bindings</div>
+                <div class="layer-content amber"><span>Codex</span><span>Claude</span><span>Gemini</span><span>Stores</span><span>Processes</span></div>
+              </div>
+              <div class="stack-layer">
+                <div class="layer-name">Foundation</div>
+                <div class="layer-content"><strong>Core</strong><span>Runs</span><span>Events</span><span>Artifacts</span><span>Errors</span><span>Cancellation</span></div>
+              </div>
+            </div>
+            <div class="map-rule">Provider names stay at the edge.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="thesis" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">01 / THE THESIS</span>
+            <h2>Reuse the execution system—not a taxonomy of wrappers.</h2>
+          </div>
+          <p class="section-intro">
+            AgentRig standardizes how heterogeneous work is composed, observed, graded,
+            and controlled. It preserves the semantics of the things doing that work.
+          </p>
+        </header>
+
+        <div class="thesis card">
+          <div class="thesis-title">
+            <p>The central design statement</p>
+            <blockquote>Workflows depend on typed capabilities. Integrations bind runtimes and providers to those capabilities.</blockquote>
+          </div>
+          <div class="thesis-body">
+            <div class="thesis-half wrong">
+              <span class="micro-label">Avoid</span>
+              <h3>Wrappers around wrappers</h3>
+              <div class="mini-stack" aria-label="Over-layered design">
+                <span>Vendor SDK</span><i>↓</i>
+                <span>Service wrapper</span><i>↓</i>
+                <span>Platform wrapper</span><i>↓</i>
+                <span>Universal agent</span>
+              </div>
+              <p class="note">This hides meaningful differences and creates boilerplate before reuse exists.</p>
+            </div>
+            <div class="thesis-half right">
+              <span class="micro-label">Build</span>
+              <h3>Narrow contracts, shared execution</h3>
+              <div class="mini-stack" aria-label="AgentRig design">
+                <span>Typed capability</span><i>↕</i>
+                <span>Direct or agent-backed integration</span><i>+</i>
+                <span>Workflow · events · grades · evals</span>
+              </div>
+              <p class="note">The reusable infrastructure surrounds execution without flattening every system into one API.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="reuse-chart card">
+          <div class="reuse-copy">
+            <span class="micro-label" style="color:#254b9d;background:var(--blue-soft)">Design emphasis</span>
+            <h3>Where reuse is expected to compound</h3>
+            <p>
+              The highest-leverage reuse is operational: context, lifecycle, artifacts,
+              grading, and evaluation. Vendor wrappers matter, but they are not the center
+              of gravity.
+            </p>
+          </div>
+          <div>
+            <div class="bars" role="img" aria-label="Qualitative design emphasis across AgentRig concerns">
+              <div class="bar-row"><label>Execution &amp; lifecycle</label><div class="bar-track"><div class="bar-fill" style="width:100%">foundational</div></div></div>
+              <div class="bar-row"><label>Grading &amp; evals</label><div class="bar-track"><div class="bar-fill teal" style="width:92%">foundational</div></div></div>
+              <div class="bar-row"><label>Workflow composition</label><div class="bar-track"><div class="bar-fill" style="width:88%">core value</div></div></div>
+              <div class="bar-row"><label>Capability contracts</label><div class="bar-track"><div class="bar-fill amber" style="width:70%">selective</div></div></div>
+              <div class="bar-row"><label>Vendor wrappers</label><div class="bar-track"><div class="bar-fill coral" style="width:42%">evidence-led</div></div></div>
+            </div>
+            <p class="bar-footnote">Qualitative architecture priority—not measured usage data.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="system" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">02 / SYSTEM MAP</span>
+            <h2>Four cooperating areas. One strict dependency direction.</h2>
+          </div>
+          <p class="section-intro">
+            Core is the floor. Contracts describe portable needs. Workflows compose them.
+            Integrations translate external reality.
+          </p>
+        </header>
+
+        <div class="architecture-board card">
+          <div class="diagram-caption"><span>Package responsibility map</span><span>Provider SDKs never enter core</span></div>
+          <div class="dependency-grid">
+            <article class="arch-node workflow">
+              <small>Composition</small>
+              <h3>Workflow + agents</h3>
+              <p>Sequences, branches, bounded loops, approvals, configured agents, and workflow-as-agent.</p>
+            </article>
+            <article class="arch-node contracts">
+              <small>Portable contracts</small>
+              <h3>Capabilities + graders</h3>
+              <p>Coding, text, structured output, images, search, retrieval, tools, and evidence-producing graders.</p>
+            </article>
+            <article class="arch-node integrations no-arrow">
+              <small>External bindings</small>
+              <h3>Integrations</h3>
+              <p>Codex, Claude, Gemini, image services, vector stores, processes, and telemetry exporters.</p>
+            </article>
+
+            <div class="core-foundation">
+              <h3>Core execution foundation</h3>
+              <div class="core-tokens">
+                <span>RunContext</span><span>events</span><span>artifacts</span><span>outcomes</span>
+                <span>errors</span><span>cancellation</span><span>deadlines</span><span>grading records</span>
+                <span>side effects</span><span>redaction</span>
+              </div>
+            </div>
+
+            <div class="sidecars">
+              <div class="sidecar"><strong>Eval infrastructure</strong><span>Runs public AgentRig targets over versioned cases; production packages never import it.</span></div>
+              <div class="sidecar"><strong>Testing infrastructure</strong><span>Scripted fakes and contract suites prove orchestration before live providers are introduced.</span></div>
+            </div>
+          </div>
+
+          <div class="rule-strip" aria-label="Dependency rules">
+            <div class="rule-chip"><strong>Core</strong> imports nothing above it</div>
+            <div class="rule-chip"><strong>Contracts</strong> know no vendor names</div>
+            <div class="rule-chip"><strong>Workflow</strong> receives dependencies</div>
+            <div class="rule-chip"><strong>Apps</strong> are the composition root</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="roles" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">03 / RUNTIME × CAPABILITY</span>
+            <h2>Codex and Claude are runtimes—not permanent job titles.</h2>
+          </div>
+          <p class="section-intro">
+            The same autonomous runtime can back many configured agents. The contract at
+            the workflow boundary says what role that instance is playing.
+          </p>
+        </header>
+
+        <div class="roles-layout">
+          <div class="role-tabs card" role="tablist" aria-label="Agent role examples">
+            <p>Select a role to inspect the binding pattern.</p>
+            <button class="role-tab active" type="button" role="tab" aria-selected="true" data-role="coding">
+              <span class="role-icon">&lt;/&gt;</span><span><strong>Coding</strong><small>Workspace + validation</small></span><span>→</span>
+            </button>
+            <button class="role-tab" type="button" role="tab" aria-selected="false" data-role="search">
+              <span class="role-icon">⌕</span><span><strong>Research</strong><small>Tools + citations</small></span><span>→</span>
+            </button>
+            <button class="role-tab" type="button" role="tab" aria-selected="false" data-role="images">
+              <span class="role-icon">◇</span><span><strong>Images</strong><small>References + artifacts</small></span><span>→</span>
+            </button>
+            <button class="role-tab" type="button" role="tab" aria-selected="false" data-role="structured">
+              <span class="role-icon">{ }</span><span><strong>Structured</strong><small>Schema-bound proposal</small></span><span>→</span>
+            </button>
+          </div>
+
+          <div class="role-stage card" aria-live="polite">
+            <div class="role-scene">
+              <span class="role-kicker" id="role-kicker">Example · coding capability</span>
+              <h3 id="role-title">A configured coding agent</h3>
+              <p id="role-copy">The runtime receives workspace access, implementation instructions, tools, an output contract, and explicit side-effect policy.</p>
+              <div class="role-flow">
+                <div class="role-box runtime">
+                  <small>Autonomous runtime</small>
+                  <strong id="runtime-name">CodexRuntime or ClaudeRuntime</strong>
+                  <span>Sessions · streamed events · cancellation · provider semantics</span>
+                </div>
+                <div class="role-arrow" aria-hidden="true">→</div>
+                <div class="role-box agent">
+                  <small>Configured agent</small>
+                  <strong id="agent-name">Repository implementer</strong>
+                  <span id="agent-config">Instructions · coding tools · workspace permission · CodingResult schema</span>
+                </div>
+                <div class="role-arrow" aria-hidden="true">→</div>
+                <div class="role-box capability">
+                  <small>Workflow contract</small>
+                  <strong id="capability-name">CodingAgent</strong>
+                  <span id="capability-output">Changed files · validations · artifacts · blocked state</span>
+                </div>
+              </div>
+              <div class="direct-path">
+                <strong>Direct alternative</strong>
+                <span id="direct-copy">There is no equivalent direct model call for autonomous repository work; select another CodingAgent implementation.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="matrix-wrap card">
+          <div class="diagram-caption"><span>Illustrative binding matrix</span><span>One vendor may reach a contract by different paths</span></div>
+          <table class="matrix" aria-label="Illustrative provider to capability binding matrix">
+            <thead><tr><th>Integration surface</th><th>Agent runtime</th><th>Text / structured</th><th>Coding</th><th>Search</th><th>Images</th><th>Retrieval</th></tr></thead>
+            <tbody>
+              <tr><td>Codex runtime</td><td class="native">Native</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td></tr>
+              <tr><td>Claude runtime</td><td class="native">Native</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td><td class="agent-backed">Agent-backed</td></tr>
+              <tr><td>Model API</td><td class="none">—</td><td class="direct">Direct</td><td class="none">—</td><td class="direct">Tool/API</td><td class="direct">Tool/API</td><td class="none">—</td></tr>
+              <tr><td>Image API</td><td class="none">—</td><td class="none">—</td><td class="none">—</td><td class="none">—</td><td class="direct">Direct</td><td class="none">—</td></tr>
+              <tr><td>Vector store</td><td class="none">—</td><td class="none">—</td><td class="none">—</td><td class="none">—</td><td class="none">—</td><td class="direct">Direct</td></tr>
+            </tbody>
+          </table>
+          <div class="matrix-legend"><span class="l-native">Native runtime surface</span><span class="l-agent">Configured agent adapted to capability</span><span class="l-direct">Direct capability integration</span></div>
+        </div>
+      </section>
+
+      <section id="composition" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">04 / COMPOSITION MODEL</span>
+            <h2>Workflows are values assembled in Python.</h2>
+          </div>
+          <p class="section-intro">
+            Configuration changes are composition. New portable behavior implements a
+            protocol. Subclassing is the narrow exception.
+          </p>
+        </header>
+
+        <div class="composition-grid">
+          <div class="code-card card">
+            <header><span>Graded implementation workflow</span><span class="window-dots"><i></i><i></i><i></i></span></header>
+            <pre><span class="cm"># Ordinary Python is the workflow language.</span>
+workflow = <span class="fn">Sequence</span>(
+  <span class="fn">FunctionStep</span>(select_task),
+  <span class="fn">GradeStep</span>(
+    <span class="arg">graders</span>=scope_graders,
+    <span class="arg">policy</span>=scope_policy,
+  ),
+  <span class="fn">AgentStep</span>(implementer),
+  <span class="fn">ProcessStep</span>(validations),
+  <span class="fn">AgentStep</span>(reviewer),
+  <span class="fn">RepairLoop</span>(
+    <span class="arg">agent</span>=implementer,
+    <span class="arg">graders</span>=quality_graders,
+    <span class="arg">max_attempts</span>=<span class="str">2</span>,
+  ),
+)
+
+outcome = <span class="kw">await</span> workflow.<span class="fn">run</span>(
+  task,
+  context=run_context,
+)</pre>
+          </div>
+
+          <div class="anatomy-card card">
+            <span class="micro-label" style="color:#6246a7;background:var(--violet-soft)">Anatomy</span>
+            <h3>Five separable decisions</h3>
+            <p>No workflow subclass is necessary. Each policy and implementation can change independently.</p>
+            <div class="anatomy-list">
+              <div class="anatomy-item"><b>01</b><strong>Control flow</strong><span>Sequence, branch, parallel work, bounded loops.</span></div>
+              <div class="anatomy-item"><b>02</b><strong>Who does work</strong><span>Function, configured agent, or narrow capability.</span></div>
+              <div class="anatomy-item"><b>03</b><strong>What is allowed</strong><span>Tools, permissions, budgets, effect profile.</span></div>
+              <div class="anatomy-item"><b>04</b><strong>What is acceptable</strong><span>Graders produce evidence; grade policy decides.</span></div>
+              <div class="anatomy-item"><b>05</b><strong>How it is seen</strong><span>Events, artifacts, usage, trace hierarchy.</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="decision-board card" aria-label="Compose versus extend decision guide">
+          <div class="decision-node question">
+            <small>Ask first</small>
+            <h3>Are you changing configuration or control flow?</h3>
+            <p>Provider, prompt, tools, graders, budgets, routing, branch, sequence, or output adapter.</p>
+          </div>
+          <div class="decision-arrow"><span>Yes</span><b>→</b></div>
+          <div class="decision-node compose">
+            <small>Default</small>
+            <h3>Compose objects</h3>
+            <p>Inject the implementation. Assemble steps. Adapt an agent to a capability. Keep policy explicit.</p>
+          </div>
+          <div class="decision-arrow"><span>No</span><b>→</b></div>
+          <div class="decision-node extend">
+            <small>Only if needed</small>
+            <h3>Implement a protocol</h3>
+            <p>Add a provider, runtime, capability, grader, or reusable step. Subclass only for shared invariant lifecycle mechanics.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="operation" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">05 / THEORY OF OPERATION</span>
+            <h2>A run is a correlated tree of typed decisions.</h2>
+          </div>
+          <p class="section-intro">
+            Every step receives context, performs bounded work, produces observable
+            evidence, and returns an explicit outcome.
+          </p>
+        </header>
+
+        <div class="operation-card card">
+          <div class="diagram-caption"><span>Run lifecycle</span><span>Repeat inside child contexts as needed</span></div>
+          <div class="timeline">
+            <div class="phase"><small>01</small><strong>Compose</strong><span>Application wires integrations, agents, graders, and policies.</span></div>
+            <div class="phase"><small>02</small><strong>Contextualize</strong><span>Create root context, then derive a child context per step.</span></div>
+            <div class="phase"><small>03</small><strong>Execute</strong><span>Invoke function, capability, agent, or approved process.</span></div>
+            <div class="phase"><small>04</small><strong>Observe</strong><span>Translate events, usage, errors, and artifact lineage.</span></div>
+            <div class="phase"><small>05</small><strong>Grade</strong><span>Evaluate evidence and apply deterministic grade policy.</span></div>
+            <div class="phase"><small>06</small><strong>Decide</strong><span>Continue, warn, repair, request approval, or block.</span></div>
+            <div class="phase"><small>07</small><strong>Repair</strong><span>Create a targeted request; preserve passing constraints.</span></div>
+            <div class="phase"><small>08</small><strong>Conclude</strong><span>Return typed outcome, artifacts, grades, and trace reference.</span></div>
+            <div class="phase"><small>09</small><strong>Evaluate</strong><span>Repeat over versioned cases when running an eval suite.</span></div>
+            <div class="phase"><small>10</small><strong>Compare</strong><span>Aggregate, baseline, and make a deterministic promotion decision.</span></div>
+          </div>
+
+          <div class="retry-compare">
+            <div class="compare-box retry"><strong>Retry ≠ repair</strong><span>Retry repeats the same operation after a classified transient technical failure. It must respect side effects.</span></div>
+            <div class="compare-box repair"><strong>Repair changes the request</strong><span>Repair uses grader evidence to produce a new, targeted attempt after a valid but unacceptable result.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="grading" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">06 / GRADING</span>
+            <h2>Graders measure. Policy governs.</h2>
+          </div>
+          <p class="section-intro">
+            Renaming “gate” to “grader” is useful only if evaluation remains separate
+            from authorization and control flow.
+          </p>
+        </header>
+
+        <div class="grading-layout">
+          <div class="grade-flow card">
+            <div class="diagram-caption"><span>Grade decision pipeline</span><span>Evidence survives every decision</span></div>
+            <div class="grade-chain">
+              <div class="grade-subject"><small>Subject</small><strong>Output + artifacts + trace</strong></div>
+              <div class="grade-arrow">↓</div>
+              <div class="grader-bank">
+                <div class="grader"><b>Deterministic</b><span>schema · tests · invariants</span></div>
+                <div class="grader"><b>Agentic</b><span>semantic review · critique</span></div>
+                <div class="grader"><b>Human</b><span>approval · judgment</span></div>
+              </div>
+              <div class="grade-arrow">↓</div>
+              <div class="grade-records"><span class="hard">hard failure</span><span class="soft">soft score 0.84</span><span class="evidence">evidence refs</span></div>
+              <div class="grade-arrow">↓</div>
+              <div class="policy-box"><small>Deterministic reducer</small><strong>GradePolicy</strong></div>
+              <div class="grade-arrow">↓</div>
+              <div class="decision-outcomes"><span>Continue</span><span>Warn</span><span>Repair</span><span>Approve</span><span>Block</span></div>
+            </div>
+          </div>
+
+          <div class="grade-principles">
+            <article class="principle-card card"><b>01</b><h3>No score laundering</h3><p>A hard fidelity failure cannot be averaged away by an aesthetic score.</p></article>
+            <article class="principle-card card"><b>02</b><h3>No hidden authority</h3><p>An LLM judge can report a grade. It cannot grant permission or silently authorize a side effect.</p></article>
+            <article class="principle-card card"><b>03</b><h3>One grader, two contexts</h3><p>The same grader may guide one production run and score a versioned eval dataset.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="observability" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">07 / OBSERVABILITY</span>
+            <h2>Core owns the trace contract—not the telemetry vendor.</h2>
+          </div>
+          <p class="section-intro">
+            A stable run tree makes workflows diagnosable while redaction and references
+            keep private content out of telemetry by default.
+          </p>
+        </header>
+
+        <div class="observability-grid">
+          <div class="trace-card card">
+            <div class="diagram-caption"><span>Correlated execution tree</span><span>run → step → provider → artifact → grade</span></div>
+            <div class="trace-tree">
+              <div class="trace-row"><code>run:9f2</code><span>Graded implementation workflow</span><em>complete</em></div>
+              <div class="trace-row child"><code>step:plan</code><span>Select bounded task</span><em>complete</em></div>
+              <div class="trace-row child"><code>step:build</code><span>Configured coding agent</span><em>complete</em></div>
+              <div class="trace-row grandchild"><code>call:codex</code><span>Provider session · 18.2s · usage attached</span><em>complete</em></div>
+              <div class="trace-row grandchild"><code>artifact:diff</code><span>Workspace-relative change set · hash attached</span><em>complete</em></div>
+              <div class="trace-row child"><code>step:grade</code><span>Tests + scope + review</span><em class="warn">repair</em></div>
+              <div class="trace-row child"><code>step:repair</code><span>Targeted second attempt</span><em>complete</em></div>
+            </div>
+          </div>
+
+          <div class="privacy-card card">
+            <span class="micro-label" style="color:white;background:rgba(255,255,255,.1)">Safe by default</span>
+            <h3>Events describe execution without becoming a data leak.</h3>
+            <p>Concrete exporters—console, JSONL, OpenTelemetry, or vendor sinks—consume the same core event contract.</p>
+            <div class="privacy-list">
+              <div class="privacy-item"><b>R</b><span>Record stable IDs, timings, status, and sanitized metadata.</span></div>
+              <div class="privacy-item"><b>↗</b><span>Reference large or private artifacts instead of copying them into events.</span></div>
+              <div class="privacy-item"><b>×</b><span>Never log credentials, raw user media, or complete provider responses by default.</span></div>
+              <div class="privacy-item"><b>V</b><span>Version event payloads and grader records for later interpretation.</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="evals" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">08 / EVALS</span>
+            <h2>Quality infrastructure is a first-class package.</h2>
+          </div>
+          <p class="section-intro">
+            Tests establish deterministic correctness. Evals measure how well agents,
+            workflows, and providers perform on representative work.
+          </p>
+        </header>
+
+        <div class="eval-board card">
+          <div class="diagram-caption"><span>Evaluation loop</span><span>Version everything that affects promotion</span></div>
+          <div class="eval-cycle">
+            <div class="eval-stage"><b>01</b><strong>Dataset</strong><span>Immutable selection of versioned cases.</span></div>
+            <div class="eval-stage"><b>02</b><strong>Target</strong><span>Agent, workflow, capability, or integration.</span></div>
+            <div class="eval-stage"><b>03</b><strong>Runs</strong><span>Isolated contexts capture outputs and traces.</span></div>
+            <div class="eval-stage"><b>04</b><strong>Graders</strong><span>Hard checks, semantic review, human labels.</span></div>
+            <div class="eval-stage"><b>05</b><strong>Report</strong><span>Per-case grades, usage, latency, failures.</span></div>
+            <div class="eval-stage"><b>06</b><strong>Promotion</strong><span>Deterministic baseline and threshold policy.</span></div>
+          </div>
+          <div class="eval-split">
+            <div class="eval-bucket framework"><code>src/agentrig/evals/</code><p>Reusable SDK infrastructure: case, runner, aggregation, report, baseline, and promotion contracts.</p></div>
+            <div class="eval-bucket project"><code>evals/</code><p>AgentRig's datasets, suites, local graders, approved baselines, and generated reports.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="boundary" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">09 / APPLICATION BOUNDARY</span>
+            <h2>AgentRig enables your application. It does not absorb it.</h2>
+          </div>
+          <p class="section-intro">
+            This boundary keeps AgentRig reusable while domain meaning, invariants,
+            and product behavior remain authoritative in the consuming application.
+          </p>
+        </header>
+
+        <div class="boundary-board card">
+          <div class="boundary-side rig">
+            <span class="micro-label">AgentRig owns</span>
+            <h3>Generic execution mechanics</h3>
+            <p>Reusable infrastructure with no knowledge of stories, characters, pages, or canonical world state.</p>
+            <div class="ownership-list">
+              <span>Run context, lifecycle, cancellation, and errors</span>
+              <span>Workflow steps, configured agents, tools, and capabilities</span>
+              <span>Artifact references, events, graders, policies, and evals</span>
+              <span>Provider and runtime integrations</span>
+            </div>
+          </div>
+
+          <div class="boundary-bridge" aria-label="Contracts connecting AgentRig and a consuming application">
+            <div class="bridge-token">Protocols</div>
+            <div class="bridge-token">Typed data</div>
+            <div class="bridge-token">Events</div>
+            <div class="bridge-token">Artifacts</div>
+            <div class="bridge-token">Grades</div>
+          </div>
+
+          <div class="boundary-side app">
+            <span class="micro-label">Applications own</span>
+            <h3>Domain truth and product behavior</h3>
+            <p>The consuming application decides what facts mean, which proposals commit, and what constitutes a correct result.</p>
+            <div class="ownership-list">
+              <span>Domain entities, facts, events, state, and provenance</span>
+              <span>Commit boundaries and deterministic domain invariants</span>
+              <span>Product-specific schemas, policies, and quality definitions</span>
+              <span>Product-specific agents, graders, renderers, and eval data</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap" data-section>
+        <header class="section-head">
+          <div>
+            <span class="section-number">10 / MINIMUM ROADMAP</span>
+            <h2>Build evidence in five waves.</h2>
+          </div>
+          <p class="section-intro">
+            Each wave is independently reviewable. No provider abstraction is promoted
+            before a fake, contract, and concrete use case justify it.
+          </p>
+        </header>
+
+        <div class="roadmap">
+          <article class="roadmap-stage">
+            <small>Wave 01 · establish</small><h3>Repository + core</h3>
+            <p>Prove the package, build, test, and execution foundations.</p>
+            <div class="milestones">
+              <div class="milestone"><b>M0</b><span>Buck2 + Python package</span></div>
+              <div class="milestone"><b>M1</b><span>Context + observability</span></div>
+              <div class="milestone"><b>M2</b><span>Graders + policy</span></div>
+            </div>
+          </article>
+          <article class="roadmap-stage">
+            <small>Wave 02 · compose</small><h3>Workflow runtime</h3>
+            <p>Make typed control flow, agents, and bounded repairs real.</p>
+            <div class="milestones">
+              <div class="milestone"><b>M3</b><span>Typed steps + sequence</span></div>
+              <div class="milestone"><b>M4</b><span>Agents + scripted runtime</span></div>
+              <div class="milestone"><b>M5</b><span>Grades + approval + repair</span></div>
+            </div>
+          </article>
+          <article class="roadmap-stage">
+            <small>Wave 03 · measure</small><h3>Evals + contracts</h3>
+            <p>Define repeatable quality and the narrow capability surfaces applications need.</p>
+            <div class="milestones">
+              <div class="milestone"><b>M6</b><span>Eval harness + baselines</span></div>
+              <div class="milestone"><b>M7</b><span>Capability protocols + fakes</span></div>
+            </div>
+          </article>
+          <article class="roadmap-stage">
+            <small>Wave 04 · connect</small><h3>Real integrations</h3>
+            <p>Choose providers through focused spikes, then prove live behavior.</p>
+            <div class="milestones">
+              <div class="milestone"><b>M8</b><span>First autonomous runtime</span></div>
+              <div class="milestone"><b>M9</b><span>Direct generation, image, search</span></div>
+            </div>
+          </article>
+          <article class="roadmap-stage">
+            <small>Wave 05 · demonstrate</small><h3>Vertical examples</h3>
+            <p>Show the entire theory working through small, domain-neutral examples.</p>
+            <div class="milestones">
+              <div class="milestone"><b>M10-A</b><span>Graded coding workflow</span></div>
+              <div class="milestone"><b>M10-B</b><span>Product-pipeline skeleton</span></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="build-note">
+          <strong>Buck2 is the front door.<br>Python packaging stays standard.</strong>
+          <div class="build-track">
+            <div class="build-piece"><b>Buck2</b><span>Authoritative local/CI build and test graph.</span></div>
+            <div class="build-piece"><b>pyproject.toml</b><span>Authoritative wheel and Python package metadata.</span></div>
+            <div class="build-piece"><b>Lockfile bridge</b><span>Reproducible third-party wheels mapped into Buck2.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="close">
+        <blockquote>AgentRig should feel less like a universal AI framework—and more like a precise workbench for building the agent you actually need.</blockquote>
+        <p>
+          Keep capability contracts narrow. Keep control flow explicit. Keep provider
+          details at the edge. Preserve evidence from first invocation through final eval.
+        </p>
+        <a class="button-link" href="development-plan.md">Open the development plan <span>↗</span></a>
+      </section>
+
+      <footer>
+        <span>AgentRig architecture field guide · companion artifact · 2026-08-12</span>
+        <span><a href="architecture.md">Normative architecture</a> · <a href="development-plan.md">Development plan</a></span>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const roleContent = {
+        coding: {
+          kicker: "Example · coding capability",
+          title: "A configured coding agent",
+          copy: "The runtime receives workspace access, implementation instructions, tools, an output contract, and explicit side-effect policy.",
+          runtime: "CodexRuntime or ClaudeRuntime",
+          agent: "Repository implementer",
+          config: "Instructions · coding tools · workspace permission · CodingResult schema",
+          capability: "CodingAgent",
+          output: "Changed files · validations · artifacts · blocked state",
+          direct: "There is no equivalent direct model call for autonomous repository work; select another CodingAgent implementation."
+        },
+        search: {
+          kicker: "Example · search capability",
+          title: "A configured research agent",
+          copy: "The runtime receives bounded search tools, citation requirements, query budgets, and an evidence-preserving output schema.",
+          runtime: "CodexRuntime or ClaudeRuntime",
+          agent: "Context researcher",
+          config: "Research instructions · search tools · citation policy · ResearchReport schema",
+          capability: "SearchProvider adapter",
+          output: "Results · source URIs · retrieval metadata · warnings",
+          direct: "A provider-native SearchProvider can replace the agent-backed adapter when autonomous planning adds no value."
+        },
+        images: {
+          kicker: "Example · image capability",
+          title: "A configured visual agent",
+          copy: "The runtime can direct image tools, inspect generated artifacts, preserve references, and repair outputs before returning a typed result.",
+          runtime: "CodexRuntime or ClaudeRuntime",
+          agent: "Visual generation agent",
+          config: "Visual brief · image tools · reference permissions · artifact schema",
+          capability: "ImageGenerator adapter",
+          output: "Image artifacts · lineage · dimensions · generation metadata",
+          direct: "A provider-native ImageGenerator is preferred when one bounded API call is sufficient."
+        },
+        structured: {
+          kicker: "Example · structured generation",
+          title: "A configured proposal agent",
+          copy: "The runtime combines instructions, tools, and a strict schema to produce a proposal without directly mutating application state.",
+          runtime: "CodexRuntime or ClaudeRuntime",
+          agent: "Typed proposal agent",
+          config: "Prompt version · tools · strict output schema · inference budget",
+          capability: "StructuredGenerator adapter",
+          output: "Validated payload · assumptions · warnings · usage",
+          direct: "A direct StructuredGenerator is simpler when the task does not need an autonomous tool loop."
+        }
+      };
+
+      const roleFields = {
+        kicker: document.getElementById("role-kicker"),
+        title: document.getElementById("role-title"),
+        copy: document.getElementById("role-copy"),
+        runtime: document.getElementById("runtime-name"),
+        agent: document.getElementById("agent-name"),
+        config: document.getElementById("agent-config"),
+        capability: document.getElementById("capability-name"),
+        output: document.getElementById("capability-output"),
+        direct: document.getElementById("direct-copy")
+      };
+
+      document.querySelectorAll(".role-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const selected = roleContent[tab.dataset.role];
+          if (!selected) return;
+          document.querySelectorAll(".role-tab").forEach((candidate) => {
+            const active = candidate === tab;
+            candidate.classList.toggle("active", active);
+            candidate.setAttribute("aria-selected", String(active));
+          });
+          Object.entries(roleFields).forEach(([key, element]) => {
+            element.textContent = selected[key];
+          });
+        });
+      });
+
+      const progress = document.getElementById("progress-bar");
+      const updateProgress = () => {
+        const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = scrollable > 0 ? window.scrollY / scrollable : 0;
+        progress.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+      };
+      window.addEventListener("scroll", updateProgress, { passive: true });
+      updateProgress();
+
+      const navLinks = [...document.querySelectorAll(".rail nav a")];
+      const sections = [...document.querySelectorAll("[data-section], main > section[id]")];
+      if ("IntersectionObserver" in window) {
+        const observer = new IntersectionObserver((entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+          if (!visible) return;
+          navLinks.forEach((link) => {
+            link.classList.toggle("active", link.getAttribute("href") === `#${visible.target.id}`);
+          });
+        }, { rootMargin: "-18% 0px -62% 0px", threshold: [0, 0.15, 0.45] });
+        sections.forEach((section) => observer.observe(section));
+      }
+    })();
+  </script>
+</body>
+</html>
