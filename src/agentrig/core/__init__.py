@@ -18,6 +18,13 @@ from agentrig.core.events import (
     JsonValue,
 )
 from agentrig.core.identity import IdGenerator, RunId, Uuid4IdGenerator
+from agentrig.core.redaction import (
+    DEFAULT_REDACTION_POLICY,
+    REDACTED_VALUE,
+    NoOpRedactionPolicy,
+    RedactionPolicy,
+    SafeRedactionPolicy,
+)
 
 __all__ = (
     "ArtifactId",
@@ -29,15 +36,20 @@ __all__ = (
     "ContentDigest",
     "Deadline",
     "DeadlineExceeded",
+    "DEFAULT_REDACTION_POLICY",
     "EVENT_SCHEMA_VERSION",
     "Event",
     "EventId",
     "EventKind",
     "IdGenerator",
     "JsonValue",
+    "NoOpRedactionPolicy",
+    "REDACTED_VALUE",
+    "RedactionPolicy",
     "RunId",
     "RunCancelled",
     "RunContext",
+    "SafeRedactionPolicy",
     "SystemClock",
     "Uuid4IdGenerator",
 )
