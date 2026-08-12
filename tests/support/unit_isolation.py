@@ -15,6 +15,18 @@ _PROCESS_EVENTS = frozenset(
     },
 )
 
+_NETWORK_EVENTS = frozenset(
+    {
+        "socket.bind",
+        "socket.connect",
+        "socket.getaddrinfo",
+        "socket.gethostbyaddr",
+        "socket.gethostbyname",
+        "socket.gethostbyname_ex",
+        "socket.sendto",
+    },
+)
+
 _guard_installed = False
 
 
@@ -23,7 +35,7 @@ class UnitIsolationViolation(RuntimeError):
 
 
 def _enforce_unit_isolation(event: str, _arguments: Sequence[Any]) -> None:
-    if event.startswith("socket.") or event in _PROCESS_EVENTS:
+    if event in _NETWORK_EVENTS or event in _PROCESS_EVENTS:
         raise UnitIsolationViolation(
             f"unit tests must not perform external access (audit event: {event})",
         )

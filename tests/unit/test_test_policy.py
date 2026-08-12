@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import socket
 import subprocess
 import unittest
@@ -19,9 +20,10 @@ class UnitIsolationTest(unittest.TestCase):
         install_unit_isolation_guard()
         install_unit_isolation_guard()
 
-    def test_socket_access_fails(self) -> None:
-        with self.assertRaisesRegex(UnitIsolationViolation, "socket.__new__"):
-            socket.socket()
+    def test_socket_connect_fails(self) -> None:
+        with socket.socket() as client:
+            with self.assertRaisesRegex(UnitIsolationViolation, "socket.connect"):
+                client.connect(("127.0.0.1", 9))
 
     def test_name_resolution_fails(self) -> None:
         with self.assertRaisesRegex(UnitIsolationViolation, "socket.getaddrinfo"):
@@ -30,6 +32,13 @@ class UnitIsolationTest(unittest.TestCase):
     def test_child_process_access_fails(self) -> None:
         with self.assertRaisesRegex(UnitIsolationViolation, "subprocess.Popen"):
             subprocess.run(["unreachable"], check=False)
+
+    def test_asyncio_event_loop_remains_available(self) -> None:
+        async def complete() -> str:
+            await asyncio.sleep(0)
+            return "complete"
+
+        self.assertEqual(asyncio.run(complete()), "complete")
 
 
 class LiveTestPolicyTest(unittest.TestCase):

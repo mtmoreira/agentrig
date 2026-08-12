@@ -55,7 +55,8 @@ Every Python test target declares exactly one scope: `unit`, `contract`,
 `integration`, or `eval`. Networked provider tests additionally carry the
 orthogonal `live` label; all other targets carry `offline`. Unit tests are always
 offline and install a process-wide guard before test-module imports. The guard
-rejects Python socket access and child-process creation.
+rejects external Python socket operations and child-process creation while
+allowing local `asyncio` wakeup sockets.
 
 Run the complete offline suite by default:
 
