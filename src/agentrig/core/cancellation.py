@@ -125,6 +125,7 @@ class CancellationSource:
     def __init__(self, parent: CancellationToken | None = None) -> None:
         self._state = _CancellationState()
         self._token = CancellationToken(self._state)
+        self._parent_lock = Lock()
         self._parent_subscription: Unsubscribe | None = None
 
         if parent is not None:
@@ -151,8 +152,13 @@ class CancellationSource:
         """Create a source cancelled by this source, but not vice versa."""
         return CancellationSource(parent=self.token)
 
+    def close(self) -> None:
+        """Release parent propagation after this execution scope finishes."""
+        self._detach_from_parent()
+
     def _detach_from_parent(self) -> None:
-        unsubscribe = self._parent_subscription
-        self._parent_subscription = None
+        with self._parent_lock:
+            unsubscribe = self._parent_subscription
+            self._parent_subscription = None
         if unsubscribe is not None:
             unsubscribe()

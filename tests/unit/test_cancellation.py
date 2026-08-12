@@ -46,6 +46,16 @@ class CancellationSourceTest(unittest.IsolatedAsyncioTestCase):
         parent.cancel("parent stopped later")
         self.assertEqual(child.token.cancellation, Cancellation("child stopped"))
 
+    def test_closed_child_detaches_from_parent_without_cancelling(self) -> None:
+        parent = CancellationSource()
+        child = parent.create_child()
+
+        child.close()
+        child.close()
+        parent.cancel("parent stopped after child completed")
+
+        self.assertFalse(child.token.is_cancelled)
+
     def test_raise_if_cancelled_preserves_reason(self) -> None:
         source = CancellationSource()
         source.cancel("approval denied")
