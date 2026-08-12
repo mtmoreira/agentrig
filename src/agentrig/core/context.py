@@ -4,33 +4,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from types import MappingProxyType
 
+from agentrig.core._validation import freeze_string_map
 from agentrig.core.cancellation import CancellationToken
 from agentrig.core.clock import Clock
 from agentrig.core.deadline import Deadline
 from agentrig.core.identity import IdGenerator, RunId
-
-
-def _freeze_string_map(
-    field_name: str,
-    values: Mapping[str, str],
-) -> Mapping[str, str]:
-    copied: dict[str, str] = {}
-    for key, value in values.items():
-        if not isinstance(key, str) or not key or key != key.strip():
-            raise ValueError(
-                f"{field_name} keys must be non-empty strings without "
-                "surrounding whitespace"
-            )
-        if not isinstance(value, str) or not value or value != value.strip():
-            raise ValueError(
-                f"{field_name} values must be non-empty strings without "
-                "surrounding whitespace"
-            )
-        copied[key] = value
-    return MappingProxyType(copied)
-
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RunContext:
@@ -49,12 +28,12 @@ class RunContext:
         object.__setattr__(
             self,
             "labels",
-            _freeze_string_map("labels", self.labels),
+            freeze_string_map("labels", self.labels),
         )
         object.__setattr__(
             self,
             "correlation",
-            _freeze_string_map("correlation", self.correlation),
+            freeze_string_map("correlation", self.correlation),
         )
 
     @classmethod

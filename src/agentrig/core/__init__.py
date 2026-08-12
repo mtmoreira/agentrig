@@ -1,5 +1,6 @@
 """Provider-independent execution primitives."""
 
+from agentrig.core.artifacts import ArtifactId, ArtifactRef, ContentDigest
 from agentrig.core.cancellation import (
     Cancellation,
     CancellationSource,
@@ -12,10 +13,13 @@ from agentrig.core.deadline import Deadline, DeadlineExceeded
 from agentrig.core.identity import IdGenerator, RunId, Uuid4IdGenerator
 
 __all__ = (
+    "ArtifactId",
+    "ArtifactRef",
     "Cancellation",
     "CancellationSource",
     "CancellationToken",
     "Clock",
+    "ContentDigest",
     "Deadline",
     "DeadlineExceeded",
     "IdGenerator",
