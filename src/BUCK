@@ -3,6 +3,7 @@ python_library(
     srcs = glob(["agentrig/**/*.py"]),
     base_module = "",
     resources = ["agentrig/py.typed"],
+    deps = ["//src/agentrig/core:core"],
     tests = ["//tests/unit:unit"],
     visibility = ["PUBLIC"],
 )

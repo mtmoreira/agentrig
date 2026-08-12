@@ -1,0 +1,6 @@
+python_library(
+    name = "core",
+    srcs = glob(["*.py"]),
+    base_module = "agentrig.core",
+    visibility = ["PUBLIC"],
+)
