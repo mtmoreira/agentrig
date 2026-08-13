@@ -1,0 +1,24 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "fixtures",
+    srcs = glob(
+        ["**/*.py"],
+        exclude = ["suites/test_*.py"],
+    ),
+    base_module = "evals",
+    deps = ["//src:agentrig"],
+    visibility = ["PUBLIC"],
+)
+
+agentrig_python_test(
+    name = "scripted_agent_eval",
+    scope = "eval",
+    srcs = ["suites/test_scripted_agent_eval.py"],
+    base_module = "evals",
+    deps = [
+        ":fixtures",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)

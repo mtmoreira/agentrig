@@ -35,9 +35,15 @@ from agentrig.evals.runner import (
     EvalSubject,
     EvalSummary,
 )
-from agentrig.evals.target import EvalTarget, EvalTargetDescriptor, EvalTargetKind
+from agentrig.evals.target import (
+    AgentEvalTarget,
+    EvalTarget,
+    EvalTargetDescriptor,
+    EvalTargetKind,
+)
 
 __all__ = (
+    "AgentEvalTarget",
     "DeterministicPromotionPolicy",
     "EVAL_BASELINE_SCHEMA_VERSION",
     "EvalCase",

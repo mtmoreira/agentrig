@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from agentrig.agents import Agent
 from agentrig.core import (
     ExecutionOutcome,
     Grade,
@@ -12,6 +13,7 @@ from agentrig.core import (
     RunContext,
 )
 from agentrig.evals import (
+    AgentEvalTarget,
     DeterministicPromotionPolicy,
     EvalBaseline,
     EvalCase,
@@ -63,6 +65,10 @@ target: EvalTarget[str, int] = LengthTarget(
         kind=EvalTargetKind.CAPABILITY,
     )
 )
+
+
+def agent_target(agent: Agent[str, int]) -> EvalTarget[str, int]:
+    return AgentEvalTarget(agent)
 
 
 @dataclass(frozen=True)

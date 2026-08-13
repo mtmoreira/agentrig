@@ -32,6 +32,7 @@ python_version = "3.12"
 strict = true
 mypy_path = "src"
 files = [
+  "evals",
   "src/agentrig",
   "tools/typecheck.py",
   "tests/typing/valid_agent_step.py",

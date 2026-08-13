@@ -1,10 +1,25 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 from dataclasses import dataclass
 
-from agentrig.core import ExecutionOutcome, RunContext
+from agentrig.agents import AgentContract, AgentLimits, AgentResult
+from agentrig.core import (
+    ArtifactId,
+    ArtifactRef,
+    CancellationSource,
+    EffectProfile,
+    ExecutionOutcome,
+    Failure,
+    FailureKind,
+    RunContext,
+    RunId,
+    SystemClock,
+    Uuid4IdGenerator,
+)
 from agentrig.evals import (
+    AgentEvalTarget,
     EvalCase,
     EvalDataset,
     EvalTarget,
@@ -190,6 +205,127 @@ class EvalTargetTest(unittest.TestCase):
                 version="1",
                 kind="agent",  # type: ignore[arg-type]
             )
+
+
+def create_agent_contract() -> AgentContract[str, str]:
+    return AgentContract(
+        agent_id="echo-agent",
+        version="2",
+        purpose="Echo one string for evaluation",
+        input_schema="example.text.v1",
+        output_schema="example.text.v1",
+        prompt_version="prompt-2",
+        effect_profile=EffectProfile.READ_ONLY,
+        limits=AgentLimits(max_turns=1, max_tool_calls=0),
+        stopping_policy="output_schema_satisfied",
+    )
+
+
+def create_context() -> RunContext:
+    return RunContext.create_root(
+        clock=SystemClock(),
+        id_generator=Uuid4IdGenerator(RunId),
+        cancellation=CancellationSource().token,
+    )
+
+
+@dataclass(frozen=True)
+class ResultAgent:
+    contract: AgentContract[str, str]
+    result: AgentResult[str]
+
+    async def run(self, input: str, context: RunContext) -> AgentResult[str]:
+        del input, context
+        return self.result
+
+
+class AgentEvalTargetTest(unittest.TestCase):
+    def test_derives_identity_and_preserves_success_or_failure(self) -> None:
+        artifact = ArtifactRef(
+            artifact_id=ArtifactId("artifact-1"),
+            kind="report",
+            media_type="text/plain",
+            producer_run_id=RunId("producer-run"),
+            workspace_path="outputs/report.txt",
+        )
+        success = AgentEvalTarget(
+            ResultAgent(
+                contract=create_agent_contract(),
+                result=AgentResult.succeeded(
+                    "complete",
+                    artifacts=(artifact,),
+                ),
+            )
+        )
+
+        outcome = asyncio.run(success.run("draft", create_context()))
+
+        self.assertEqual(outcome.unwrap(), "complete")
+        self.assertEqual(success.descriptor.target_id, "echo-agent")
+        self.assertEqual(success.descriptor.version, "2")
+        self.assertEqual(success.descriptor.kind, EvalTargetKind.AGENT)
+        self.assertEqual(outcome.artifacts, (artifact,))
+        self.assertIsInstance(success, EvalTarget)
+
+        failure = Failure(
+            kind=FailureKind.WORKFLOW_BLOCKED,
+            message="provider credentials are unavailable",
+            code="provider.credentials_unavailable",
+        )
+        blocked = AgentEvalTarget(
+            ResultAgent(
+                contract=create_agent_contract(),
+                result=AgentResult.from_failure(
+                    failure,
+                    artifacts=(artifact,),
+                ),
+            )
+        )
+
+        blocked_outcome = asyncio.run(
+            blocked.run("draft", create_context())
+        )
+
+        self.assertIs(blocked_outcome.failure, failure)
+        self.assertEqual(blocked_outcome.artifacts, (artifact,))
+
+    def test_rejects_invalid_agent_contract_context_and_result(self) -> None:
+        with self.assertRaises(TypeError):
+            AgentEvalTarget("invalid")  # type: ignore[arg-type]
+
+        @dataclass(frozen=True)
+        class InvalidContractAgent:
+            contract: object = "invalid"
+
+            async def run(self, input: str, context: RunContext) -> object:
+                del input, context
+                return AgentResult.succeeded("unreachable")
+
+        with self.assertRaises(TypeError):
+            AgentEvalTarget(InvalidContractAgent())  # type: ignore[arg-type]
+
+        valid = AgentEvalTarget(
+            ResultAgent(
+                contract=create_agent_contract(),
+                result=AgentResult.succeeded("complete"),
+            )
+        )
+        with self.assertRaises(TypeError):
+            asyncio.run(valid.run("draft", "invalid"))  # type: ignore[arg-type]
+
+        @dataclass(frozen=True)
+        class InvalidResultAgent:
+            contract: AgentContract[str, str]
+
+            async def run(self, input: str, context: RunContext) -> object:
+                del input, context
+                return "invalid"
+
+        invalid_result = AgentEvalTarget(
+            InvalidResultAgent(create_agent_contract())  # type: ignore[arg-type]
+        )
+        with self.assertRaises(TypeError):
+            asyncio.run(invalid_result.run("draft", create_context()))
 
 
 if __name__ == "__main__":

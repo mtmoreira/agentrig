@@ -2,6 +2,9 @@ python_library(
     name = "evals",
     srcs = glob(["*.py"]),
     base_module = "agentrig.evals",
-    deps = ["//src/agentrig/core:core"],
+    deps = [
+        "//src/agentrig/agents:agents",
+        "//src/agentrig/core:core",
+    ],
     visibility = ["PUBLIC"],
 )
