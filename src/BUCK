@@ -6,6 +6,7 @@ python_library(
     deps = [
         "//src/agentrig/agents:agents",
         "//src/agentrig/core:core",
+        "//src/agentrig/evals:evals",
         "//src/agentrig/testing:testing",
         "//src/agentrig/workflow:workflow",
     ],
