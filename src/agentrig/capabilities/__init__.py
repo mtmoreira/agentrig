@@ -18,6 +18,12 @@ from agentrig.capabilities.text_generation import (
     TextMessage,
     TextMessageRole,
 )
+from agentrig.capabilities.structured_generation import (
+    StructuredGenerationRequest,
+    StructuredGenerationResult,
+    StructuredGenerator,
+    StructuredOutputSchema,
+)
 
 __all__ = (
     "CapabilityDescriptor",
@@ -28,6 +34,10 @@ __all__ = (
     "DataRetention",
     "GenerationUsage",
     "ModelMetadata",
+    "StructuredGenerationRequest",
+    "StructuredGenerationResult",
+    "StructuredGenerator",
+    "StructuredOutputSchema",
     "TextGenerationFinishReason",
     "TextGenerationRequest",
     "TextGenerationResult",
