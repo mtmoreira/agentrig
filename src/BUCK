@@ -4,6 +4,7 @@ python_library(
     base_module = "",
     resources = ["agentrig/py.typed"],
     deps = [
+        "//src/agentrig/agents:agents",
         "//src/agentrig/core:core",
         "//src/agentrig/testing:testing",
         "//src/agentrig/workflow:workflow",

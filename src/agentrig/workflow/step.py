@@ -3,28 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
 from typing import Protocol, TypeVar, runtime_checkable
 
 from agentrig.core._validation import require_trimmed_string
 from agentrig.core.context import RunContext
+from agentrig.core.effects import EffectProfile as EffectProfile
 
 InputT = TypeVar("InputT", contravariant=True)
 OutputT = TypeVar("OutputT", covariant=True)
-
-
-class EffectProfile(StrEnum):
-    """Stable side-effect classification used by execution policy."""
-
-    READ_ONLY = "read_only"
-    IDEMPOTENT = "idempotent"
-    COMPENSATABLE = "compensatable"
-    NON_REPEATABLE = "non_repeatable"
-
-    @property
-    def allows_automatic_retry(self) -> bool:
-        """Whether repeating after a transient failure is safe by declaration."""
-        return self in (EffectProfile.READ_ONLY, EffectProfile.IDEMPOTENT)
 
 
 @dataclass(frozen=True, order=True, slots=True, kw_only=True)

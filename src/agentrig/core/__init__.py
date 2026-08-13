@@ -10,6 +10,7 @@ from agentrig.core.cancellation import (
 from agentrig.core.clock import Clock, SystemClock
 from agentrig.core.context import RunContext
 from agentrig.core.deadline import Deadline, DeadlineExceeded
+from agentrig.core.effects import EffectProfile
 from agentrig.core.events import (
     EVENT_SCHEMA_VERSION,
     Event,
@@ -76,6 +77,7 @@ __all__ = (
     "Deadline",
     "DeadlineExceeded",
     "DEFAULT_REDACTION_POLICY",
+    "EffectProfile",
     "EVENT_SCHEMA_VERSION",
     "Event",
     "EventId",
