@@ -37,6 +37,7 @@ files = [
   "tests/typing/valid_agent_step.py",
   "tests/typing/valid_approval_step.py",
   "tests/typing/valid_grade_step.py",
+  "tests/typing/valid_repair_loop.py",
   "tests/typing/valid_sequence.py",
   "tests/typing/valid_workflow_agent.py",
 ]
