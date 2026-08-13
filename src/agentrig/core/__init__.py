@@ -17,6 +17,12 @@ from agentrig.core.events import (
     EventKind,
     JsonValue,
 )
+from agentrig.core.errors import (
+    AgentRigError,
+    Failure,
+    FailureKind,
+    normalize_exception,
+)
 from agentrig.core.identity import IdGenerator, RunId, Uuid4IdGenerator
 from agentrig.core.observability import (
     NOOP_EVENT_SINK,
@@ -35,6 +41,7 @@ from agentrig.core.redaction import (
 )
 
 __all__ = (
+    "AgentRigError",
     "ArtifactId",
     "ArtifactRef",
     "Cancellation",
@@ -51,6 +58,8 @@ __all__ = (
     "EventId",
     "EventKind",
     "EventSink",
+    "Failure",
+    "FailureKind",
     "IdGenerator",
     "JsonValue",
     "InMemoryEventSink",
@@ -66,4 +75,5 @@ __all__ = (
     "SafeRedactionPolicy",
     "SystemClock",
     "Uuid4IdGenerator",
+    "normalize_exception",
 )
