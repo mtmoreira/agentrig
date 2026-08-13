@@ -44,6 +44,7 @@ class CapabilityLimit(StrEnum):
     """Portable bounded quantities that requirements can compare."""
 
     MAX_INPUT_ARTIFACTS = "max_input_artifacts"
+    MAX_CHANGED_FILES = "max_changed_files"
     MAX_OUTPUT_TOKENS = "max_output_tokens"
     MAX_REFERENCE_IMAGES = "max_reference_images"
     MAX_RESULTS = "max_results"

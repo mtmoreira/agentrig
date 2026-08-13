@@ -150,6 +150,7 @@ class CapabilityDescriptorTest(unittest.TestCase):
             tuple(item.value for item in CapabilityLimit),
             (
                 "max_input_artifacts",
+                "max_changed_files",
                 "max_output_tokens",
                 "max_reference_images",
                 "max_results",

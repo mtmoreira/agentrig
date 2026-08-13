@@ -35,6 +35,7 @@ files = [
   "evals",
   "src/agentrig",
   "tools/typecheck.py",
+  "tests/typing/valid_coding_capability.py",
   "tests/typing/valid_agent_step.py",
   "tests/typing/valid_approval_step.py",
   "tests/typing/valid_eval_contracts.py",

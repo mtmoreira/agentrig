@@ -8,6 +8,17 @@ from agentrig.capabilities.base import (
     CapabilityRequirements,
     DataRetention,
 )
+from agentrig.capabilities.coding import (
+    ChangedFileEvidence,
+    CodingAgent,
+    CodingChangeKind,
+    CodingResult,
+    CodingStatus,
+    CodingTask,
+    CodingValidationStatus,
+    ValidationEvidence,
+    WorkspaceAuthorization,
+)
 from agentrig.capabilities.text_generation import (
     GenerationUsage,
     ModelMetadata,
@@ -31,6 +42,13 @@ __all__ = (
     "CapabilityKind",
     "CapabilityLimit",
     "CapabilityRequirements",
+    "ChangedFileEvidence",
+    "CodingAgent",
+    "CodingChangeKind",
+    "CodingResult",
+    "CodingStatus",
+    "CodingTask",
+    "CodingValidationStatus",
     "DataRetention",
     "GenerationUsage",
     "ModelMetadata",
@@ -44,4 +62,6 @@ __all__ = (
     "TextGenerator",
     "TextMessage",
     "TextMessageRole",
+    "ValidationEvidence",
+    "WorkspaceAuthorization",
 )
