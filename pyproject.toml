@@ -34,6 +34,7 @@ mypy_path = "src"
 files = [
   "src/agentrig",
   "tools/typecheck.py",
+  "tests/typing/valid_agent_step.py",
   "tests/typing/valid_sequence.py",
 ]
 show_error_codes = true
