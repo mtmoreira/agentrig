@@ -3,28 +3,22 @@
 from __future__ import annotations
 
 import json
-import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
-from types import MappingProxyType
-from typing import TypeAlias, cast
+from typing import cast
 
+from agentrig.core._json import (
+    JsonValue as JsonValue,
+    freeze_json_object,
+    thaw_json_value,
+)
 from agentrig.core._validation import freeze_string_map, require_trimmed_string
 from agentrig.core.context import RunContext
 from agentrig.core.identity import RunId
 
 EVENT_SCHEMA_VERSION = 1
-
-JsonScalar: TypeAlias = None | bool | int | float | str
-JsonValue: TypeAlias = (
-    JsonScalar
-    | Mapping[str, "JsonValue"]
-    | list["JsonValue"]
-    | tuple["JsonValue", ...]
-)
-
 
 class EventKind(StrEnum):
     """Stable vocabulary for execution lifecycle and observability."""
@@ -115,7 +109,7 @@ class Event:
         object.__setattr__(
             self,
             "attributes",
-            _freeze_json_object(self.attributes),
+            freeze_json_object("attributes", self.attributes),
         )
 
     @classmethod
@@ -152,7 +146,7 @@ class Event:
                 else None
             ),
             "correlation": dict(self.correlation),
-            "attributes": _thaw_json_value(self.attributes),
+            "attributes": thaw_json_value(self.attributes),
         }
 
     def to_json(self) -> str:
@@ -236,89 +230,6 @@ class Event:
         if not isinstance(decoded, dict):
             raise ValueError("serialized event must contain a JSON object")
         return cls.from_data(decoded)
-
-
-def _freeze_json_object(
-    value: Mapping[str, JsonValue],
-) -> Mapping[str, JsonValue]:
-    frozen = _freeze_json_value(value, path="attributes", active_ids=set())
-    return cast(Mapping[str, JsonValue], frozen)
-
-
-def _freeze_json_value(
-    value: JsonValue,
-    *,
-    path: str,
-    active_ids: set[int],
-) -> JsonValue:
-    if value is None or isinstance(value, (bool, int, str)):
-        return value
-    if isinstance(value, float):
-        if not math.isfinite(value):
-            raise ValueError(f"{path} must not contain non-finite numbers")
-        return value
-    if isinstance(value, Mapping):
-        return _freeze_json_mapping(value, path=path, active_ids=active_ids)
-    if isinstance(value, (list, tuple)):
-        return _freeze_json_sequence(value, path=path, active_ids=active_ids)
-    raise ValueError(f"{path} contains a non-JSON value: {type(value).__name__}")
-
-
-def _freeze_json_mapping(
-    value: Mapping[str, JsonValue],
-    *,
-    path: str,
-    active_ids: set[int],
-) -> Mapping[str, JsonValue]:
-    identity = id(value)
-    if identity in active_ids:
-        raise ValueError(f"{path} contains a reference cycle")
-    active_ids.add(identity)
-    try:
-        frozen: dict[str, JsonValue] = {}
-        for key, child in value.items():
-            validated_key = require_trimmed_string(f"{path} key", key)
-            frozen[validated_key] = _freeze_json_value(
-                child,
-                path=f"{path}.{validated_key}",
-                active_ids=active_ids,
-            )
-        return MappingProxyType(frozen)
-    finally:
-        active_ids.remove(identity)
-
-
-def _freeze_json_sequence(
-    value: list[JsonValue] | tuple[JsonValue, ...],
-    *,
-    path: str,
-    active_ids: set[int],
-) -> tuple[JsonValue, ...]:
-    identity = id(value)
-    if identity in active_ids:
-        raise ValueError(f"{path} contains a reference cycle")
-    active_ids.add(identity)
-    try:
-        return tuple(
-            _freeze_json_value(
-                child,
-                path=f"{path}[{index}]",
-                active_ids=active_ids,
-            )
-            for index, child in enumerate(value)
-        )
-    finally:
-        active_ids.remove(identity)
-
-
-def _thaw_json_value(value: JsonValue) -> JsonValue:
-    if isinstance(value, Mapping):
-        return {key: _thaw_json_value(child) for key, child in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_thaw_json_value(child) for child in value]
-    return value
-
-
 def _require_object(field_name: str, value: object) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise ValueError(f"{field_name} must be a JSON object")
