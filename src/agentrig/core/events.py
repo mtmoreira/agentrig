@@ -37,6 +37,7 @@ class EventKind(StrEnum):
     TOOL_CALL_COMPLETED = "tool_call.completed"
     ARTIFACT_PRODUCED = "artifact.produced"
     GRADE_PRODUCED = "grade.produced"
+    GRADE_POLICY_DECIDED = "grade_policy.decided"
     RETRY_SCHEDULED = "retry.scheduled"
     APPROVAL_REQUESTED = "approval.requested"
     APPROVAL_RESOLVED = "approval.resolved"

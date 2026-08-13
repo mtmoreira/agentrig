@@ -70,6 +70,7 @@ class EventKindTest(unittest.TestCase):
                 "approval.resolved",
                 "artifact.produced",
                 "grade.produced",
+                "grade_policy.decided",
                 "progress.reported",
                 "provider_call.completed",
                 "provider_call.started",

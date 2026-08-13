@@ -35,6 +35,7 @@ files = [
   "src/agentrig",
   "tools/typecheck.py",
   "tests/typing/valid_agent_step.py",
+  "tests/typing/valid_grade_step.py",
   "tests/typing/valid_sequence.py",
   "tests/typing/valid_workflow_agent.py",
 ]
