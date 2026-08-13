@@ -45,6 +45,15 @@ from agentrig.core.observability import (
     RedactingEventSink,
 )
 from agentrig.core.outcomes import ExecutionOutcome, ExecutionStatus
+from agentrig.core.policy import (
+    CompositeGradePolicy,
+    GradeDecision,
+    GradePolicy,
+    GradePolicyDescriptor,
+    GradeReference,
+    GradeThreshold,
+    ThresholdGradePolicy,
+)
 from agentrig.core.redaction import (
     DEFAULT_REDACTION_POLICY,
     REDACTED_VALUE,
@@ -62,6 +71,7 @@ __all__ = (
     "CancellationToken",
     "Clock",
     "CompositeEventSink",
+    "CompositeGradePolicy",
     "ContentDigest",
     "Deadline",
     "DeadlineExceeded",
@@ -78,8 +88,13 @@ __all__ = (
     "GRADE_SCHEMA_VERSION",
     "Grade",
     "GradeClassification",
+    "GradeDecision",
     "GradeEvidence",
+    "GradePolicy",
+    "GradePolicyDescriptor",
+    "GradeReference",
     "GradeStatus",
+    "GradeThreshold",
     "Grader",
     "GraderDescriptor",
     "GraderUsage",
@@ -99,6 +114,7 @@ __all__ = (
     "SafeRedactionPolicy",
     "ScoreRange",
     "SystemClock",
+    "ThresholdGradePolicy",
     "Uuid4IdGenerator",
     "normalize_exception",
 )
