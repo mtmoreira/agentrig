@@ -23,6 +23,18 @@ from agentrig.core.errors import (
     FailureKind,
     normalize_exception,
 )
+from agentrig.core.grading import (
+    GRADE_SCHEMA_VERSION,
+    Grade,
+    GradeClassification,
+    GradeEvidence,
+    GradeStatus,
+    Grader,
+    GraderDescriptor,
+    GraderUsage,
+    GradingContext,
+    ScoreRange,
+)
 from agentrig.core.identity import IdGenerator, RunId, Uuid4IdGenerator
 from agentrig.core.observability import (
     NOOP_EVENT_SINK,
@@ -63,6 +75,15 @@ __all__ = (
     "ExecutionStatus",
     "Failure",
     "FailureKind",
+    "GRADE_SCHEMA_VERSION",
+    "Grade",
+    "GradeClassification",
+    "GradeEvidence",
+    "GradeStatus",
+    "Grader",
+    "GraderDescriptor",
+    "GraderUsage",
+    "GradingContext",
     "IdGenerator",
     "JsonValue",
     "InMemoryEventSink",
@@ -76,6 +97,7 @@ __all__ = (
     "RunCancelled",
     "RunContext",
     "SafeRedactionPolicy",
+    "ScoreRange",
     "SystemClock",
     "Uuid4IdGenerator",
     "normalize_exception",
