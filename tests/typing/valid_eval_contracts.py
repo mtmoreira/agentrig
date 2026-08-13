@@ -12,8 +12,11 @@ from agentrig.core import (
     RunContext,
 )
 from agentrig.evals import (
+    DeterministicPromotionPolicy,
+    EvalBaseline,
     EvalCase,
     EvalDataset,
+    EvalComparison,
     EvalRunner,
     EvalReport,
     EvalReportRetention,
@@ -22,6 +25,10 @@ from agentrig.evals import (
     EvalTarget,
     EvalTargetDescriptor,
     EvalTargetKind,
+    PromotionDecision,
+    PromotionPolicy,
+    PromotionPolicyDescriptor,
+    compare_to_baseline,
 )
 
 
@@ -99,3 +106,19 @@ def build_report(run: EvalRunResult[int]) -> EvalReport:
         run,
         retention=EvalReportRetention(outputs=True),
     )
+
+
+promotion_policy: PromotionPolicy = DeterministicPromotionPolicy(
+    descriptor=PromotionPolicyDescriptor(
+        policy_id="length.promotion",
+        version="1",
+    )
+)
+
+
+def decide_promotion(
+    baseline: EvalBaseline,
+    report: EvalReport,
+) -> PromotionDecision:
+    comparison: EvalComparison = compare_to_baseline(baseline, report)
+    return promotion_policy.decide(comparison)
