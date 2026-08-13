@@ -1,0 +1,7 @@
+python_library(
+    name = "testing",
+    srcs = glob(["*.py"]),
+    base_module = "agentrig.testing",
+    deps = ["//src/agentrig/core:core"],
+    visibility = ["PUBLIC"],
+)
