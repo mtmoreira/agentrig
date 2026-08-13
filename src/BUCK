@@ -5,6 +5,7 @@ python_library(
     resources = ["agentrig/py.typed"],
     deps = [
         "//src/agentrig/agents:agents",
+        "//src/agentrig/capabilities:capabilities",
         "//src/agentrig/core:core",
         "//src/agentrig/evals:evals",
         "//src/agentrig/testing:testing",

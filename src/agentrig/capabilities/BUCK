@@ -1,0 +1,7 @@
+python_library(
+    name = "capabilities",
+    srcs = glob(["*.py"]),
+    base_module = "agentrig.capabilities",
+    deps = ["//src/agentrig/core:core"],
+    visibility = ["PUBLIC"],
+)
