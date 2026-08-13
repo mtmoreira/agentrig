@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from typing import Any, Generic, TypeVar, cast, overload
 
 from agentrig.core.context import RunContext
+from agentrig.core.outcomes import ExecutionOutcome
+from agentrig.workflow.execution import execute_step
 from agentrig.workflow.step import Step, StepDescriptor
 
 InputT = TypeVar("InputT")
@@ -101,18 +103,26 @@ class Sequence(Generic[InputT, OutputT]):
         return cast(Sequence[InputT, NextOutputT], sequence)
 
     async def run(self, input: InputT, context: RunContext) -> OutputT:
-        """Execute in order, propagating constraints and stopping on failure."""
+        """Execute and unwrap the final outcome for step-like composition."""
+        return (await self.execute(input, context)).unwrap()
+
+    async def execute(
+        self,
+        input: InputT,
+        context: RunContext,
+    ) -> ExecutionOutcome[OutputT]:
+        """Execute in order and return the first failure or final output."""
         if not isinstance(context, RunContext):
             raise TypeError("sequence context must be a RunContext")
 
         current: Any = input
         for step in self._steps:
-            context.cancellation.raise_if_cancelled()
-            if context.deadline is not None:
-                context.deadline.raise_if_expired(context.clock)
             step_context = context.derive_child()
-            current = await step.run(current, step_context)
-        return cast(OutputT, current)
+            outcome = await execute_step(step, current, step_context)
+            if not outcome.is_success:
+                return cast(ExecutionOutcome[OutputT], outcome)
+            current = outcome.unwrap()
+        return ExecutionOutcome.succeeded(cast(OutputT, current))
 
 
 def _require_step(step: object) -> None:

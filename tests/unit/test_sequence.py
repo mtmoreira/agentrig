@@ -9,10 +9,8 @@ from agentrig.core import (
     AgentRigError,
     CancellationSource,
     Deadline,
-    DeadlineExceeded,
     Failure,
     FailureKind,
-    RunCancelled,
     RunContext,
     RunId,
 )
@@ -192,22 +190,27 @@ class SequenceTest(unittest.TestCase):
             ),
         )
 
-        with self.assertRaises(RunCancelled):
+        with self.assertRaises(AgentRigError) as cancelled:
             asyncio.run(sequence.run("draft", create_context(source)))
 
+        self.assertEqual(cancelled.exception.failure.kind, FailureKind.CANCELLED)
         self.assertEqual(calls, ["cancel"])
 
         expired = Deadline(
             expires_at=datetime(2026, 8, 13, 17, 0, tzinfo=UTC),
             monotonic_deadline=100.0,
         )
-        with self.assertRaises(DeadlineExceeded):
+        with self.assertRaises(AgentRigError) as deadline_exceeded:
             asyncio.run(
                 Sequence(sequence.steps[1]).run(
                     "draft",
                     create_context(deadline=expired),
                 )
             )
+        self.assertEqual(
+            deadline_exceeded.exception.failure.kind,
+            FailureKind.DEADLINE_EXCEEDED,
+        )
         self.assertEqual(calls, ["cancel"])
 
     def test_rejects_empty_invalid_steps_and_invalid_context(self) -> None:

@@ -4,12 +4,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from agentrig.core._validation import freeze_string_map
 from agentrig.core.cancellation import CancellationToken
 from agentrig.core.clock import Clock
 from agentrig.core.deadline import Deadline
 from agentrig.core.identity import IdGenerator, RunId
+
+if TYPE_CHECKING:
+    from agentrig.core.events import EventId
+    from agentrig.core.observability import EventSink
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class RunContext:
@@ -20,6 +26,10 @@ class RunContext:
     clock: Clock
     id_generator: IdGenerator[RunId]
     cancellation: CancellationToken
+    event_sink: EventSink = field(default_factory=lambda: _default_event_sink())
+    event_id_generator: IdGenerator[EventId] = field(
+        default_factory=lambda: _default_event_id_generator()
+    )
     deadline: Deadline | None = None
     labels: Mapping[str, str] = field(default_factory=dict)
     correlation: Mapping[str, str] = field(default_factory=dict)
@@ -43,6 +53,8 @@ class RunContext:
         clock: Clock,
         id_generator: IdGenerator[RunId],
         cancellation: CancellationToken,
+        event_sink: EventSink | None = None,
+        event_id_generator: IdGenerator[EventId] | None = None,
         deadline: Deadline | None = None,
         labels: Mapping[str, str] | None = None,
         correlation: Mapping[str, str] | None = None,
@@ -54,6 +66,14 @@ class RunContext:
             clock=clock,
             id_generator=id_generator,
             cancellation=cancellation,
+            event_sink=(
+                event_sink if event_sink is not None else _default_event_sink()
+            ),
+            event_id_generator=(
+                event_id_generator
+                if event_id_generator is not None
+                else _default_event_id_generator()
+            ),
             deadline=deadline,
             labels=labels if labels is not None else {},
             correlation=correlation if correlation is not None else {},
@@ -100,7 +120,22 @@ class RunContext:
             cancellation=(
                 cancellation if cancellation is not None else self.cancellation
             ),
+            event_sink=self.event_sink,
+            event_id_generator=self.event_id_generator,
             deadline=child_deadline,
             labels=child_labels,
             correlation=child_correlation,
         )
+
+
+def _default_event_sink() -> EventSink:
+    from agentrig.core.observability import NOOP_EVENT_SINK
+
+    return NOOP_EVENT_SINK
+
+
+def _default_event_id_generator() -> IdGenerator[EventId]:
+    from agentrig.core.events import EventId
+    from agentrig.core.identity import Uuid4IdGenerator
+
+    return Uuid4IdGenerator(EventId)

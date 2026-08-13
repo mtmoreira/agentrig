@@ -1,5 +1,6 @@
 """Typed workflow composition and execution contracts."""
 
+from agentrig.workflow.execution import execute_step
 from agentrig.workflow.functions import FunctionStep
 from agentrig.workflow.sequence import Sequence
 from agentrig.workflow.step import EffectProfile, Step, StepDescriptor
@@ -10,4 +11,5 @@ __all__ = (
     "Sequence",
     "Step",
     "StepDescriptor",
+    "execute_step",
 )
