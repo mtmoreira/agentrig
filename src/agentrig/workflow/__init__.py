@@ -1,6 +1,7 @@
 """Typed workflow composition and execution contracts."""
 
-from agentrig.workflow.agents import AgentStep
+from agentrig.workflow.agents import AgentStep, WorkflowAgent
+from agentrig.workflow.base import Workflow
 from agentrig.workflow.execution import execute_step
 from agentrig.workflow.functions import FunctionStep
 from agentrig.workflow.retry import RetryPolicy, execute_step_with_retry
@@ -15,6 +16,8 @@ __all__ = (
     "Sequence",
     "Step",
     "StepDescriptor",
+    "Workflow",
+    "WorkflowAgent",
     "execute_step",
     "execute_step_with_retry",
 )
