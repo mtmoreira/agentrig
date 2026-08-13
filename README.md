@@ -32,6 +32,7 @@ uv --version
 uv python install 3.13.14
 uv sync --locked
 uv lock --check
+uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 uv build

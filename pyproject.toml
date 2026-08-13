@@ -22,3 +22,19 @@ classifiers = [
 required-version = "==0.12.3"
 exclude-newer = "2026-08-12T00:00:00Z"
 
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+files = [
+  "src/agentrig",
+  "tools/typecheck.py",
+  "tests/typing/valid_sequence.py",
+]
+show_error_codes = true
+pretty = true
