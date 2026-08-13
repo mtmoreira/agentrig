@@ -1,0 +1,7 @@
+python_library(
+    name = "workflow",
+    srcs = glob(["*.py"]),
+    base_module = "agentrig.workflow",
+    deps = ["//src/agentrig/core:core"],
+    visibility = ["PUBLIC"],
+)

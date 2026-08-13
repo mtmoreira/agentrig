@@ -6,6 +6,7 @@ python_library(
     deps = [
         "//src/agentrig/core:core",
         "//src/agentrig/testing:testing",
+        "//src/agentrig/workflow:workflow",
     ],
     tests = ["//tests/unit:unit"],
     visibility = ["PUBLIC"],
