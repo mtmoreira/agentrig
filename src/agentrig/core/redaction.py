@@ -48,7 +48,18 @@ _SENSITIVE_KEYS = frozenset(
 )
 
 
-class RedactionPolicy(Protocol):
+class JsonRedactionPolicy(Protocol):
+    """Transform a JSON object before it crosses a persistence boundary."""
+
+    def redact_json_object(
+        self,
+        value: Mapping[str, JsonValue],
+    ) -> Mapping[str, JsonValue]:
+        """Return a safe object without mutating the input."""
+        ...
+
+
+class RedactionPolicy(JsonRedactionPolicy, Protocol):
     """Transform an event before it crosses an observability boundary."""
 
     def redact(self, event: Event) -> Event:
@@ -62,6 +73,12 @@ class NoOpRedactionPolicy:
 
     def redact(self, event: Event) -> Event:
         return event
+
+    def redact_json_object(
+        self,
+        value: Mapping[str, JsonValue],
+    ) -> Mapping[str, JsonValue]:
+        return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,16 +107,11 @@ class SafeRedactionPolicy:
         )
 
     def redact(self, event: Event) -> Event:
-        sensitive_keys = _SENSITIVE_KEYS | self.additional_sensitive_keys
-        correlation = _redact_mapping(
+        correlation = self.redact_json_object(
             event.correlation,
-            sensitive_keys=sensitive_keys,
-            replacement=self.replacement,
         )
-        attributes = _redact_mapping(
+        attributes = self.redact_json_object(
             event.attributes,
-            sensitive_keys=sensitive_keys,
-            replacement=self.replacement,
         )
         return Event(
             event_id=event.event_id,
@@ -110,6 +122,17 @@ class SafeRedactionPolicy:
             correlation=cast(Mapping[str, str], correlation),
             attributes=attributes,
             schema_version=event.schema_version,
+        )
+
+    def redact_json_object(
+        self,
+        value: Mapping[str, JsonValue],
+    ) -> Mapping[str, JsonValue]:
+        sensitive_keys = _SENSITIVE_KEYS | self.additional_sensitive_keys
+        return _redact_mapping(
+            value,
+            sensitive_keys=sensitive_keys,
+            replacement=self.replacement,
         )
 
 

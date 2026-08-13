@@ -13,6 +13,7 @@ from agentrig.core import (
     RunId,
     SafeRedactionPolicy,
 )
+from agentrig.core.events import JsonValue
 
 
 def create_event(
@@ -110,7 +111,7 @@ class SafeRedactionPolicyTest(unittest.TestCase):
         self.assertEqual(redacted.attributes, event.attributes)
 
     def test_returns_new_event_without_mutating_envelope_or_input(self) -> None:
-        attributes = {"password": "private"}
+        attributes: dict[str, object] = {"password": "private"}
         event = create_event(attributes=attributes)
 
         redacted = SafeRedactionPolicy().redact(event)
@@ -122,6 +123,32 @@ class SafeRedactionPolicyTest(unittest.TestCase):
         self.assertEqual(redacted.run_id, event.run_id)
         self.assertEqual(event.attributes["password"], "private")
         self.assertEqual(attributes["password"], "private")
+
+    def test_redacts_standalone_json_objects_without_mutating_input(self) -> None:
+        value: dict[str, JsonValue] = {
+            "environment": {
+                "api_key": "private",
+                "endpoint": "https://user:password@example.com/path",
+            },
+            "status": "complete",
+        }
+
+        redacted = SafeRedactionPolicy().redact_json_object(value)
+
+        self.assertEqual(
+            redacted,
+            {
+                "environment": {
+                    "api_key": REDACTED_VALUE,
+                    "endpoint": REDACTED_VALUE,
+                },
+                "status": "complete",
+            },
+        )
+        environment = value["environment"]
+        if not isinstance(environment, dict):
+            raise AssertionError("environment was not a JSON object")
+        self.assertEqual(environment["api_key"], "private")
 
     def test_additional_keys_and_replacement_are_configurable(self) -> None:
         policy = SafeRedactionPolicy(

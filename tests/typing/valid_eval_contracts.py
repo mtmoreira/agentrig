@@ -15,6 +15,9 @@ from agentrig.evals import (
     EvalCase,
     EvalDataset,
     EvalRunner,
+    EvalReport,
+    EvalReportRetention,
+    EvalRunResult,
     EvalSubject,
     EvalTarget,
     EvalTargetDescriptor,
@@ -89,3 +92,10 @@ runner: EvalRunner[str, int] = EvalRunner(
         ),
     ),
 )
+
+
+def build_report(run: EvalRunResult[int]) -> EvalReport:
+    return EvalReport.from_run(
+        run,
+        retention=EvalReportRetention(outputs=True),
+    )

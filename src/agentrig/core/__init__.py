@@ -57,6 +57,7 @@ from agentrig.core.policy import (
 )
 from agentrig.core.redaction import (
     DEFAULT_REDACTION_POLICY,
+    JsonRedactionPolicy,
     REDACTED_VALUE,
     NoOpRedactionPolicy,
     RedactionPolicy,
@@ -103,6 +104,7 @@ __all__ = (
     "GradingContext",
     "IdGenerator",
     "JsonValue",
+    "JsonRedactionPolicy",
     "InMemoryEventSink",
     "NOOP_EVENT_SINK",
     "NoOpEventSink",
