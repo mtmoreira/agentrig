@@ -32,6 +32,7 @@ from agentrig.core.observability import (
     NoOpEventSink,
     RedactingEventSink,
 )
+from agentrig.core.outcomes import ExecutionOutcome, ExecutionStatus
 from agentrig.core.redaction import (
     DEFAULT_REDACTION_POLICY,
     REDACTED_VALUE,
@@ -58,6 +59,8 @@ __all__ = (
     "EventId",
     "EventKind",
     "EventSink",
+    "ExecutionOutcome",
+    "ExecutionStatus",
     "Failure",
     "FailureKind",
     "IdGenerator",
