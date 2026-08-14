@@ -25,6 +25,9 @@ live entry points and test targets instead of changing the deterministic path.
 - [`capabilities/sourced_digest`](capabilities/sourced_digest/README.md)
   composes bounded search with strict structured generation, checks portable
   capability requirements before each call, and rejects invented citations.
+- [`evals/regression_gate`](evals/regression_gate/README.md)
+  runs a versioned dataset, creates a default-private durable report, compares
+  it with an approved baseline, and produces a release decision.
 - [`fundamentals/typed_sequence`](fundamentals/typed_sequence/README.md)
   composes typed function and injected steps, retries only a repeatable
   transient failure, and exposes child-run lifecycle events.

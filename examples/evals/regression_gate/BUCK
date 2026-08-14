@@ -1,0 +1,34 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "regression_gate",
+    srcs = [
+        "__init__.py",
+        "scripted.py",
+        "suite.py",
+    ],
+    base_module = "examples.evals.regression_gate",
+    deps = [
+        "//examples:package",
+        "//src:agentrig",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.evals.regression_gate.scripted",
+    deps = [":regression_gate"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.evals.regression_gate",
+    deps = [
+        ":regression_gate",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)

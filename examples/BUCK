@@ -4,6 +4,7 @@ python_library(
         "__init__.py",
         "agents/__init__.py",
         "capabilities/__init__.py",
+        "evals/__init__.py",
         "fundamentals/__init__.py",
         "workflows/__init__.py",
     ],
