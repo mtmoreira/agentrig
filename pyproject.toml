@@ -27,6 +27,9 @@ codex = [
 required-version = "==0.12.3"
 exclude-newer = "2026-08-12T00:00:00Z"
 
+[tool.uv.build-backend]
+wheel-exclude = ["**/AGENTS.md"]
+
 [dependency-groups]
 dev = [
     "mypy>=2.3.0",
