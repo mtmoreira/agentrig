@@ -33,6 +33,7 @@ uv python install 3.13.14
 uv sync --locked --extra codex
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
+uv run python tools/validate_agent_context.py
 uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
@@ -55,6 +56,45 @@ Optional production extras are resolved once in `uv.lock`. The checked-in Buck2
 bridge under `third_party/python` selects the matching hashed wheel for each
 supported host; regenerate it with
 `uv run python tools/generate_buck_python_deps.py` after changing an extra.
+
+## AI agent context
+
+The repository includes versioned guidance for AI coding agents. It is part of
+the source checkout and is intentionally excluded from the AgentRig wheel.
+
+- [`AGENTS.md`](AGENTS.md) defines repository-wide architecture, safety, build,
+  validation, and delivery agreements. Scoped files under `src/agentrig/`,
+  `tests/`, `examples/`, and `evals/` add instructions for those trees.
+- [`$compose-agentrig-workflows`](.agents/skills/compose-agentrig-workflows/SKILL.md)
+  guides application work that consumes existing AgentRig contracts. Use it to
+  select abstractions, compose typed workflows, add scripted tests and evals,
+  or create a bounded live Codex composition.
+- [`$extend-agentrig`](.agents/skills/extend-agentrig/SKILL.md) guides framework
+  work inside this repository. Use it when changing contracts, workflow
+  primitives, capabilities, eval infrastructure, provider integrations, build
+  targets, or package behavior.
+
+Invoke the appropriate skill explicitly when assigning a task, for example:
+
+```text
+Use $compose-agentrig-workflows to design and test a typed StoryWorld scene-planning workflow.
+Use $extend-agentrig to add a provider-neutral capability with its scripted fake and contract suite.
+```
+
+Agents should read the nearest applicable `AGENTS.md` before acting. Each skill
+then loads only the focused references needed for the task. Validate names,
+metadata, references, cited repository paths, text hygiene, and packaging policy
+with:
+
+```sh
+uv run python tools/validate_agent_context.py
+```
+
+When using the composition skill from a downstream project, keep an AgentRig
+source checkout available so the agent can inspect the version-matched public
+exports, tests, and examples referenced by the skill. The consuming project's
+domain types, state transitions, persistence, and business rules remain owned
+by that project.
 
 ## Test lanes
 
