@@ -22,6 +22,9 @@ live entry points and test targets instead of changing the deterministic path.
 - [`agents/configured_workflow`](agents/configured_workflow/README.md)
   binds typed codecs and an agent contract to a runtime, adapts that agent into
   a workflow, and exposes the composed workflow through a new agent contract.
+- [`capabilities/sourced_digest`](capabilities/sourced_digest/README.md)
+  composes bounded search with strict structured generation, checks portable
+  capability requirements before each call, and rejects invented citations.
 - [`fundamentals/typed_sequence`](fundamentals/typed_sequence/README.md)
   composes typed function and injected steps, retries only a repeatable
   transient failure, and exposes child-run lifecycle events.
