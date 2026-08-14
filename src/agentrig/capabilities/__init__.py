@@ -27,6 +27,14 @@ from agentrig.capabilities.image_generation import (
     ImageSize,
     ImageSpecification,
 )
+from agentrig.capabilities.search import (
+    SearchCitation,
+    SearchHit,
+    SearchProvider,
+    SearchRequest,
+    SearchResult,
+    SearchRetrievalMetadata,
+)
 from agentrig.capabilities.text_generation import (
     GenerationUsage,
     ModelMetadata,
@@ -66,6 +74,12 @@ __all__ = (
     "ImageSize",
     "ImageSpecification",
     "ModelMetadata",
+    "SearchCitation",
+    "SearchHit",
+    "SearchProvider",
+    "SearchRequest",
+    "SearchResult",
+    "SearchRetrievalMetadata",
     "StructuredGenerationRequest",
     "StructuredGenerationResult",
     "StructuredGenerator",
