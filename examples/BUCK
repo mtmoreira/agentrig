@@ -1,0 +1,9 @@
+python_library(
+    name = "package",
+    srcs = [
+        "__init__.py",
+        "workflows/__init__.py",
+    ],
+    base_module = "examples",
+    visibility = ["PUBLIC"],
+)
