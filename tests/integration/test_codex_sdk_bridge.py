@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+import gc
 import unittest
+import warnings
 from collections.abc import Callable
 from pathlib import Path
 from types import SimpleNamespace
@@ -363,7 +365,17 @@ class CodexSdkBridgeTest(unittest.TestCase):
             finally:
                 await client.close()
 
-        asyncio.run(exercise())
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", ResourceWarning)
+            asyncio.run(exercise())
+            gc.collect()
+
+        resource_warnings = [
+            warning
+            for warning in caught
+            if issubclass(warning.category, ResourceWarning)
+        ]
+        self.assertEqual(resource_warnings, [])
 
 
 if __name__ == "__main__":

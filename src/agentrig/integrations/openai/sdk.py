@@ -105,6 +105,21 @@ class CodexSdkClientFactory:
         return _SdkClient(self._builder)
 
 
+class _ClosingRawCodexClient(RawCodexClient):
+    """Close process pipes left open by the pinned SDK client."""
+
+    def close(self) -> None:
+        proc = self._proc
+        try:
+            super().close()
+        finally:
+            if proc is None:
+                return
+            for pipe in (proc.stdin, proc.stdout, proc.stderr):
+                if pipe is not None and not pipe.closed:
+                    pipe.close()
+
+
 class _SdkClient:
     def __init__(self, builder: RawClientBuilder) -> None:
         self._approvals: Queue[CodexApprovalRequested] = Queue()
@@ -446,7 +461,10 @@ def _default_raw_client_builder(
     config: CodexConfig,
     approval_handler: Callable[[str, JsonObject | None], JsonObject],
 ) -> _RawClient:
-    return RawCodexClient(config=config, approval_handler=approval_handler)
+    return _ClosingRawCodexClient(
+        config=config,
+        approval_handler=approval_handler,
+    )
 
 
 def _thread_config(request: CodexThreadRequest) -> dict[str, Any]:
