@@ -13,7 +13,9 @@ from agentrig.capabilities import (
 )
 from agentrig.integrations.openai import (
     CODEX_AGENT_RUNTIME_CAPABILITY,
+    CODEX_SHELL_TOOL,
     CODEX_SDK_VERSION,
+    CODEX_WEB_SEARCH_TOOL,
     CodexApprovalMode,
     CodexApprovalRequested,
     CodexClient,
@@ -231,6 +233,7 @@ class CodexRequestTest(unittest.TestCase):
         self.assertTrue(thread.ephemeral)
         self.assertEqual(thread.service_name, "agentrig")
         self.assertIs(thread.approval_mode, CodexApprovalMode.DENY_ALL)
+        self.assertEqual(thread.allowed_tools, ())
         self.assertIs(turn.sandbox.mode, CodexSandboxMode.READ_ONLY)
         self.assertEqual(turn.output_schema["required"], ("answer",))
         with self.assertRaises(TypeError):
@@ -250,6 +253,30 @@ class CodexRequestTest(unittest.TestCase):
                 instructions="Run",
                 sandbox=read_only_sandbox(),
                 approval_mode="never",  # type: ignore[arg-type]
+            )
+        with self.assertRaises(ValueError):
+            CodexThreadRequest(
+                model="gpt-codex",
+                instructions="Run",
+                sandbox=read_only_sandbox(),
+                approval_mode=CodexApprovalMode.DENY_ALL,
+                allowed_tools=("unsupported",),
+            )
+        with self.assertRaises(ValueError):
+            CodexThreadRequest(
+                model="gpt-codex",
+                instructions="Run",
+                sandbox=read_only_sandbox(),
+                approval_mode=CodexApprovalMode.DENY_ALL,
+                allowed_tools=(CODEX_SHELL_TOOL, CODEX_SHELL_TOOL),
+            )
+        with self.assertRaises(ValueError):
+            CodexThreadRequest(
+                model="gpt-codex",
+                instructions="Run",
+                sandbox=read_only_sandbox(),
+                approval_mode=CodexApprovalMode.DENY_ALL,
+                allowed_tools=(CODEX_WEB_SEARCH_TOOL,),
             )
         with self.assertRaises(ValueError):
             CodexTurnRequest(

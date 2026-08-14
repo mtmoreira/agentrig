@@ -2,7 +2,10 @@
 
 from agentrig.integrations.openai.codex import (
     CODEX_AGENT_RUNTIME_CAPABILITY,
+    CODEX_SHELL_TOOL,
     CODEX_SDK_VERSION,
+    CODEX_SUPPORTED_TOOLS,
+    CODEX_WEB_SEARCH_TOOL,
     CodexApprovalMode,
     CodexApprovalRequested,
     CodexClient,
@@ -23,10 +26,15 @@ from agentrig.integrations.openai.codex import (
     CodexTurnStatus,
     CodexUsageReported,
 )
+from agentrig.integrations.openai.runtime import CodexAgentRuntime
 
 __all__ = (
     "CODEX_AGENT_RUNTIME_CAPABILITY",
+    "CODEX_SHELL_TOOL",
     "CODEX_SDK_VERSION",
+    "CODEX_SUPPORTED_TOOLS",
+    "CODEX_WEB_SEARCH_TOOL",
+    "CodexAgentRuntime",
     "CodexApprovalMode",
     "CodexApprovalRequested",
     "CodexClient",

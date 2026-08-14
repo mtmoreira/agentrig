@@ -5,7 +5,11 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
+from agentrig.agents import AgentContract, AgentLimits, AgentRuntime
+from agentrig.core import EffectProfile
 from agentrig.integrations.openai import (
+    CODEX_AGENT_RUNTIME_CAPABILITY,
+    CodexAgentRuntime,
     CodexApprovalMode,
     CodexClient,
     CodexClientFactory,
@@ -91,3 +95,23 @@ turn_request = CodexTurnRequest(
 )
 factory: CodexClientFactory = FakeClientFactory()
 client: CodexClient = factory.create()
+
+contract = AgentContract[str, dict[str, str]](
+    agent_id="codex-runtime",
+    version="1",
+    purpose="Return one structured result",
+    input_schema="example.input.v1",
+    output_schema="example.output.v1",
+    prompt_version="prompt-1",
+    effect_profile=EffectProfile.READ_ONLY,
+    limits=AgentLimits(max_turns=1, max_tool_calls=0),
+    stopping_policy="structured_output",
+    allowed_capabilities=(CODEX_AGENT_RUNTIME_CAPABILITY.capability_id,),
+    permissions={"workspace": "read_only", "network": "denied"},
+)
+runtime: AgentRuntime = CodexAgentRuntime(
+    client_factory=factory,
+    model="gpt-codex",
+    sandbox=sandbox,
+    output_schemas={"example.output.v1": {"type": "object"}},
+)

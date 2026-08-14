@@ -10,3 +10,14 @@ agentrig_python_test(
     base_module = "tests.integration",
     deps = ["//third_party/python:extra-codex"],
 )
+
+agentrig_python_test(
+    name = "codex_sdk_bridge",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_codex_sdk_bridge.py",
+    ],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations/openai:codex_sdk"],
+)

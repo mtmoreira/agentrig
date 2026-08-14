@@ -18,6 +18,14 @@ from agentrig.core._json import JsonValue, freeze_json_object, freeze_json_value
 from agentrig.core._validation import require_trimmed_string
 
 CODEX_SDK_VERSION = "0.144.4"
+CODEX_SHELL_TOOL = "codex.shell"
+CODEX_WEB_SEARCH_TOOL = "codex.web_search"
+CODEX_SUPPORTED_TOOLS = frozenset(
+    {
+        CODEX_SHELL_TOOL,
+        CODEX_WEB_SEARCH_TOOL,
+    }
+)
 
 CODEX_AGENT_RUNTIME_CAPABILITY = CapabilityDescriptor(
     capability_id="openai.codex.agent_runtime",
@@ -94,6 +102,7 @@ class CodexThreadRequest:
     instructions: str
     sandbox: CodexSandboxPolicy
     approval_mode: CodexApprovalMode
+    allowed_tools: tuple[str, ...] = ()
     ephemeral: bool = True
     service_name: str = "agentrig"
 
@@ -106,9 +115,21 @@ class CodexThreadRequest:
             raise TypeError(
                 "Codex thread approval_mode must be a CodexApprovalMode"
             )
+        tools = tuple(self.allowed_tools)
+        if len(tools) != len(set(tools)):
+            raise ValueError("Codex allowed tools must not contain duplicates")
+        unsupported = set(tools) - CODEX_SUPPORTED_TOOLS
+        if unsupported:
+            raise ValueError("Codex allowed tools contain unsupported values")
+        if (
+            CODEX_WEB_SEARCH_TOOL in tools
+            and not self.sandbox.network_access
+        ):
+            raise ValueError("Codex web search requires network access")
         if not isinstance(self.ephemeral, bool):
             raise TypeError("Codex thread ephemeral must be a bool")
         require_trimmed_string("Codex service name", self.service_name)
+        object.__setattr__(self, "allowed_tools", tools)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

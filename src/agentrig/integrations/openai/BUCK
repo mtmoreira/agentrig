@@ -1,10 +1,27 @@
 python_library(
     name = "openai",
-    srcs = glob(["*.py"]),
+    srcs = [
+        "__init__.py",
+        "codex.py",
+        "runtime.py",
+    ],
     base_module = "agentrig.integrations.openai",
     deps = [
+        "//src/agentrig/agents:agents",
         "//src/agentrig/capabilities:capabilities",
         "//src/agentrig/core:core",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_library(
+    name = "codex_sdk",
+    srcs = ["sdk.py"],
+    base_module = "agentrig.integrations.openai",
+    deps = [
+        ":openai",
+        "//src/agentrig/core:core",
+        "//third_party/python:extra-codex",
     ],
     visibility = ["PUBLIC"],
 )
