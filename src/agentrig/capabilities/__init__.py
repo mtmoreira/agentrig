@@ -61,6 +61,13 @@ from agentrig.capabilities.structured_generation import (
     StructuredGenerator,
     StructuredOutputSchema,
 )
+from agentrig.capabilities.tool import (
+    Tool,
+    ToolContract,
+    ToolInvocation,
+    ToolResult,
+    ToolSchema,
+)
 
 __all__ = (
     "CapabilityDescriptor",
@@ -108,6 +115,11 @@ __all__ = (
     "TextGenerator",
     "TextMessage",
     "TextMessageRole",
+    "Tool",
+    "ToolContract",
+    "ToolInvocation",
+    "ToolResult",
+    "ToolSchema",
     "ValidationEvidence",
     "WorkspaceAuthorization",
 )

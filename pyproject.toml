@@ -47,6 +47,7 @@ files = [
   "tests/typing/valid_sequence.py",
   "tests/typing/valid_structured_generation.py",
   "tests/typing/valid_text_generation.py",
+  "tests/typing/valid_tool_capability.py",
   "tests/typing/valid_workflow_agent.py",
 ]
 show_error_codes = true
