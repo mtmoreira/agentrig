@@ -1,0 +1,6 @@
+python_library(
+    name = "integrations",
+    srcs = ["__init__.py"],
+    base_module = "agentrig.integrations",
+    visibility = ["PUBLIC"],
+)

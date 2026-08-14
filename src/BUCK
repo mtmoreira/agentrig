@@ -8,6 +8,8 @@ python_library(
         "//src/agentrig/capabilities:capabilities",
         "//src/agentrig/core:core",
         "//src/agentrig/evals:evals",
+        "//src/agentrig/integrations:integrations",
+        "//src/agentrig/integrations/openai:openai",
         "//src/agentrig/testing:testing",
         "//src/agentrig/workflow:workflow",
     ],

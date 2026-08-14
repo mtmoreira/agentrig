@@ -42,6 +42,7 @@ files = [
   "tools/generate_buck_python_deps.py",
   "tools/typecheck.py",
   "tests/typing/valid_coding_capability.py",
+  "tests/typing/valid_codex_integration.py",
   "tests/typing/valid_image_generation.py",
   "tests/typing/valid_agent_step.py",
   "tests/typing/valid_approval_step.py",

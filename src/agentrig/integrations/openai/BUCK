@@ -1,0 +1,10 @@
+python_library(
+    name = "openai",
+    srcs = glob(["*.py"]),
+    base_module = "agentrig.integrations.openai",
+    deps = [
+        "//src/agentrig/capabilities:capabilities",
+        "//src/agentrig/core:core",
+    ],
+    visibility = ["PUBLIC"],
+)
