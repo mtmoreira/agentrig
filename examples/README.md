@@ -28,6 +28,9 @@ live entry points and test targets instead of changing the deterministic path.
 - [`capabilities/sourced_digest`](capabilities/sourced_digest/README.md)
   composes bounded search with strict structured generation, checks portable
   capability requirements before each call, and rejects invented citations.
+- [`capabilities/bounded_coding`](capabilities/bounded_coding/README.md)
+  adapts one autonomous runtime to the portable coding contract, enforces a
+  one-file workspace bound, and offers an ephemeral workspace-write Codex run.
 - [`evals/regression_gate`](evals/regression_gate/README.md)
   runs a versioned dataset, creates a default-private durable report, compares
   it with an approved baseline, and produces a release decision.
