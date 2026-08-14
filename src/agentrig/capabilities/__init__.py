@@ -19,6 +19,14 @@ from agentrig.capabilities.coding import (
     ValidationEvidence,
     WorkspaceAuthorization,
 )
+from agentrig.capabilities.image_generation import (
+    ImageGenerationRequest,
+    ImageGenerationResult,
+    ImageGenerator,
+    ImageRegion,
+    ImageSize,
+    ImageSpecification,
+)
 from agentrig.capabilities.text_generation import (
     GenerationUsage,
     ModelMetadata,
@@ -51,6 +59,12 @@ __all__ = (
     "CodingValidationStatus",
     "DataRetention",
     "GenerationUsage",
+    "ImageGenerationRequest",
+    "ImageGenerationResult",
+    "ImageGenerator",
+    "ImageRegion",
+    "ImageSize",
+    "ImageSpecification",
     "ModelMetadata",
     "StructuredGenerationRequest",
     "StructuredGenerationResult",
