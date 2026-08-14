@@ -19,7 +19,13 @@ from agentrig.capabilities import (
 )
 from agentrig.core._json import JsonValue, freeze_json_value
 from agentrig.core.context import RunContext
-from agentrig.core.errors import AgentRigError, Failure, FailureKind
+from agentrig.core.errors import AgentRigError, Failure
+from agentrig.testing._scripted_capabilities import (
+    check_constraints,
+    exhaustion_failure,
+    require_context,
+    require_descriptor_kind,
+)
 from agentrig.testing._scripted_outcomes import ScriptedOutcomes
 
 OutputT = TypeVar("OutputT")
@@ -46,7 +52,7 @@ class ScriptedTextGenerator:
         outcomes: Iterable[ScriptedTextGenerationOutcome],
         repeat_last: bool = False,
     ) -> None:
-        _require_descriptor_kind(
+        require_descriptor_kind(
             descriptor,
             CapabilityKind.TEXT_GENERATION,
             "scripted text generator",
@@ -95,9 +101,9 @@ class ScriptedTextGenerator:
             raise TypeError(
                 "scripted text request must be a TextGenerationRequest"
             )
-        _require_context(context, "scripted text generator")
+        require_context(context, "scripted text generator")
         request.require_supported_by(self.descriptor)
-        _check_constraints(context)
+        check_constraints(context)
 
         outcome = self._script.record_and_take(
             lambda index: ScriptedTextGeneratorCall(
@@ -108,7 +114,7 @@ class ScriptedTextGenerator:
         )
         if outcome is None:
             raise AgentRigError(
-                _exhaustion_failure(
+                exhaustion_failure(
                     self.descriptor,
                     code="scripted_text_generator.exhausted",
                     message="scripted text generator has no remaining outcomes",
@@ -176,7 +182,7 @@ class ScriptedStructuredGenerator(Generic[OutputT]):
         outcomes: Iterable[ScriptedStructuredGenerationOutcome],
         repeat_last: bool = False,
     ) -> None:
-        _require_descriptor_kind(
+        require_descriptor_kind(
             descriptor,
             CapabilityKind.STRUCTURED_GENERATION,
             "scripted structured generator",
@@ -229,9 +235,9 @@ class ScriptedStructuredGenerator(Generic[OutputT]):
                 "scripted structured request must be a "
                 "StructuredGenerationRequest"
             )
-        _require_context(context, "scripted structured generator")
+        require_context(context, "scripted structured generator")
         request.require_supported_by(self.descriptor)
-        _check_constraints(context)
+        check_constraints(context)
 
         outcome = self._script.record_and_take(
             lambda index: ScriptedStructuredGeneratorCall(
@@ -242,7 +248,7 @@ class ScriptedStructuredGenerator(Generic[OutputT]):
         )
         if outcome is None:
             raise AgentRigError(
-                _exhaustion_failure(
+                exhaustion_failure(
                     self.descriptor,
                     code="scripted_structured_generator.exhausted",
                     message=(
@@ -259,42 +265,3 @@ class ScriptedStructuredGenerator(Generic[OutputT]):
             model=outcome.model,
             finish_reason=outcome.finish_reason,
         )
-
-
-def _require_descriptor_kind(
-    descriptor: CapabilityDescriptor,
-    kind: CapabilityKind,
-    label: str,
-) -> None:
-    if not isinstance(descriptor, CapabilityDescriptor):
-        raise TypeError(f"{label} descriptor must be a CapabilityDescriptor")
-    if descriptor.kind is not kind:
-        raise ValueError(f"{label} descriptor must use the {kind.value} kind")
-
-
-def _require_context(context: RunContext, label: str) -> None:
-    if not isinstance(context, RunContext):
-        raise TypeError(f"{label} context must be a RunContext")
-
-
-def _check_constraints(context: RunContext) -> None:
-    context.cancellation.raise_if_cancelled()
-    if context.deadline is not None:
-        context.deadline.raise_if_expired(context.clock)
-
-
-def _exhaustion_failure(
-    descriptor: CapabilityDescriptor,
-    *,
-    code: str,
-    message: str,
-) -> Failure:
-    return Failure(
-        kind=FailureKind.UNEXPECTED,
-        message=message,
-        code=code,
-        metadata={
-            "capability_id": descriptor.capability_id,
-            "capability_version": descriptor.version,
-        },
-    )

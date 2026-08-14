@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Generic, TypeVar
 
 from agentrig.capabilities import (
-    CapabilityDescriptor,
     CapabilityKind,
-    CapabilityRequirements,
     StructuredGenerationRequest,
     StructuredGenerationResult,
     StructuredGenerator,
@@ -17,11 +14,15 @@ from agentrig.capabilities import (
     TextGenerationResult,
     TextGenerator,
 )
-from agentrig.core.cancellation import RunCancelled
 from agentrig.core.context import RunContext
+from agentrig.testing._capability_contracts import (
+    InvocationCount,
+    validate_contract_suite,
+    verify_cancellation_does_not_invoke,
+    verify_preflight_does_not_invoke,
+)
 
 OutputT = TypeVar("OutputT")
-InvocationCount = Callable[[], int]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -52,7 +53,8 @@ class TextGeneratorContractSuite:
                 "text contract unsupported_request must be a "
                 "TextGenerationRequest"
             )
-        _validate_suite(
+        validate_contract_suite(
+            label="generation",
             descriptor=self.generator.descriptor,
             expected_kind=CapabilityKind.TEXT_GENERATION,
             supported_requirements=self.supported_request.requirements,
@@ -73,14 +75,16 @@ class TextGeneratorContractSuite:
                 "text generator returned a non-TextGenerationResult value"
             )
 
-        await _verify_preflight_does_not_invoke(
+        await verify_preflight_does_not_invoke(
+            label="generation",
             operation=lambda: self.generator.generate(
                 self.unsupported_request,
                 self.context,
             ),
             invocation_count=self.invocation_count,
         )
-        await _verify_cancellation_does_not_invoke(
+        await verify_cancellation_does_not_invoke(
+            label="generation",
             operation=lambda: self.generator.generate(
                 self.supported_request,
                 self.cancelled_context,
@@ -124,7 +128,8 @@ class StructuredGeneratorContractSuite(Generic[OutputT]):
                 "structured contract unsupported_request must be a "
                 "StructuredGenerationRequest"
             )
-        _validate_suite(
+        validate_contract_suite(
+            label="generation",
             descriptor=self.generator.descriptor,
             expected_kind=CapabilityKind.STRUCTURED_GENERATION,
             supported_requirements=self.supported_request.requirements,
@@ -149,14 +154,16 @@ class StructuredGeneratorContractSuite(Generic[OutputT]):
                 "structured generator result does not use the requested schema"
             )
 
-        await _verify_preflight_does_not_invoke(
+        await verify_preflight_does_not_invoke(
+            label="generation",
             operation=lambda: self.generator.generate(
                 self.unsupported_request,
                 self.context,
             ),
             invocation_count=self.invocation_count,
         )
-        await _verify_cancellation_does_not_invoke(
+        await verify_cancellation_does_not_invoke(
+            label="generation",
             operation=lambda: self.generator.generate(
                 self.supported_request,
                 self.cancelled_context,
@@ -164,94 +171,3 @@ class StructuredGeneratorContractSuite(Generic[OutputT]):
             invocation_count=self.invocation_count,
         )
         return result
-
-
-def _validate_suite(
-    *,
-    descriptor: CapabilityDescriptor,
-    expected_kind: CapabilityKind,
-    supported_requirements: CapabilityRequirements,
-    unsupported_requirements: CapabilityRequirements,
-    context: RunContext,
-    cancelled_context: RunContext,
-    invocation_count: InvocationCount,
-) -> None:
-    if not isinstance(descriptor, CapabilityDescriptor):
-        raise TypeError(
-            "generation contract descriptor must be a CapabilityDescriptor"
-        )
-    if descriptor.kind is not expected_kind:
-        raise ValueError(
-            "generation contract descriptor has the wrong capability kind"
-        )
-    if not isinstance(context, RunContext):
-        raise TypeError("generation contract context must be a RunContext")
-    if not isinstance(cancelled_context, RunContext):
-        raise TypeError(
-            "generation contract cancelled_context must be a RunContext"
-        )
-    if not cancelled_context.cancellation.is_cancelled:
-        raise ValueError(
-            "generation contract cancelled_context must already be cancelled"
-        )
-    if not callable(invocation_count):
-        raise TypeError("generation contract invocation_count must be callable")
-    if supported_requirements.unmet_by(descriptor):
-        raise ValueError(
-            "generation contract supported_request is not supported"
-        )
-    if not unsupported_requirements.unmet_by(descriptor):
-        raise ValueError(
-            "generation contract unsupported_request must be unsupported"
-        )
-    _read_invocation_count(invocation_count)
-
-
-async def _verify_preflight_does_not_invoke(
-    *,
-    operation: Callable[[], Awaitable[object]],
-    invocation_count: InvocationCount,
-) -> None:
-    before = _read_invocation_count(invocation_count)
-    try:
-        await operation()
-    except ValueError:
-        pass
-    else:
-        raise AssertionError(
-            "unsupported generation request did not fail during preflight"
-        )
-    after = _read_invocation_count(invocation_count)
-    if after != before:
-        raise AssertionError(
-            "unsupported generation request invoked the implementation"
-        )
-
-
-async def _verify_cancellation_does_not_invoke(
-    *,
-    operation: Callable[[], Awaitable[object]],
-    invocation_count: InvocationCount,
-) -> None:
-    before = _read_invocation_count(invocation_count)
-    try:
-        await operation()
-    except RunCancelled:
-        pass
-    else:
-        raise AssertionError(
-            "cancelled generation request did not raise RunCancelled"
-        )
-    after = _read_invocation_count(invocation_count)
-    if after != before:
-        raise AssertionError("cancelled generation request invoked implementation")
-
-
-def _read_invocation_count(invocation_count: InvocationCount) -> int:
-    count = invocation_count()
-    if isinstance(count, bool) or not isinstance(count, int) or count < 0:
-        raise TypeError(
-            "generation contract invocation_count must return a "
-            "non-negative integer"
-        )
-    return count
