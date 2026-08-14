@@ -19,6 +19,9 @@ live entry points and test targets instead of changing the deterministic path.
 
 ## Available examples
 
+- [`fundamentals/typed_sequence`](fundamentals/typed_sequence/README.md)
+  composes typed function and injected steps, retries only a repeatable
+  transient failure, and exposes child-run lifecycle events.
 - [`workflows/review_repair_approve`](workflows/review_repair_approve/README.md)
   grades a draft, repairs it within a bound, requests approval, and publishes
   only after approval.

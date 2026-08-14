@@ -1,0 +1,34 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "typed_sequence",
+    srcs = [
+        "__init__.py",
+        "scripted.py",
+        "workflow.py",
+    ],
+    base_module = "examples.fundamentals.typed_sequence",
+    deps = [
+        "//examples:package",
+        "//src:agentrig",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.fundamentals.typed_sequence.scripted",
+    deps = [":typed_sequence"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.fundamentals.typed_sequence",
+    deps = [
+        ":typed_sequence",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)
