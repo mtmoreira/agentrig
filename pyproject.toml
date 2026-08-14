@@ -44,6 +44,7 @@ files = [
   "src/agentrig",
   "tools/generate_buck_python_deps.py",
   "tools/typecheck.py",
+  "tools/validate_agent_context.py",
   "tests/typing/valid_coding_capability.py",
   "tests/typing/valid_codex_integration.py",
   "tests/typing/valid_image_generation.py",

@@ -63,6 +63,7 @@ the change:
 uv sync --locked --extra codex
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
+uv run python tools/validate_agent_context.py
 uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude

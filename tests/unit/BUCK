@@ -7,6 +7,7 @@ agentrig_python_test(
     base_module = "tests.unit",
     deps = [
         "//src:agentrig",
+        "//tools:agent_context_validation",
         "//tools:python_dependency_bridge",
     ],
 )

@@ -13,3 +13,16 @@ python_binary(
     main_module = "tools.generate_buck_python_deps",
     deps = [":python_dependency_bridge"],
 )
+
+python_library(
+    name = "agent_context_validation",
+    srcs = ["validate_agent_context.py"],
+    base_module = "tools",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "validate_agent_context",
+    main_module = "tools.validate_agent_context",
+    deps = [":agent_context_validation"],
+)
