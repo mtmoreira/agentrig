@@ -42,6 +42,7 @@ files = [
   "tests/typing/valid_eval_contracts.py",
   "tests/typing/valid_grade_step.py",
   "tests/typing/valid_repair_loop.py",
+  "tests/typing/valid_retrieval_capability.py",
   "tests/typing/valid_search_capability.py",
   "tests/typing/valid_sequence.py",
   "tests/typing/valid_structured_generation.py",

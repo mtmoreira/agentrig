@@ -27,6 +27,16 @@ from agentrig.capabilities.image_generation import (
     ImageSize,
     ImageSpecification,
 )
+from agentrig.capabilities.retrieval import (
+    RetrievalFilter,
+    RetrievalMatch,
+    RetrievalRequest,
+    RetrievalResult,
+    RetrievalScore,
+    RetrievedChunk,
+    RetrievedDocument,
+    Retriever,
+)
 from agentrig.capabilities.search import (
     SearchCitation,
     SearchHit,
@@ -74,6 +84,14 @@ __all__ = (
     "ImageSize",
     "ImageSpecification",
     "ModelMetadata",
+    "RetrievalFilter",
+    "RetrievalMatch",
+    "RetrievalRequest",
+    "RetrievalResult",
+    "RetrievalScore",
+    "RetrievedChunk",
+    "RetrievedDocument",
+    "Retriever",
     "SearchCitation",
     "SearchHit",
     "SearchProvider",
