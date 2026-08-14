@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extend AgentRig"
+  short_description: "Evolve AgentRig contracts and integrations safely"
+  default_prompt: "Use $extend-agentrig to implement a small, tested AgentRig framework change."
