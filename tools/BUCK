@@ -1,0 +1,15 @@
+python_library(
+    name = "python_dependency_bridge",
+    srcs = [
+        "__init__.py",
+        "generate_buck_python_deps.py",
+    ],
+    base_module = "tools",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "generate_python_dependencies",
+    main_module = "tools.generate_buck_python_deps",
+    deps = [":python_dependency_bridge"],
+)

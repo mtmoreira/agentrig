@@ -1,0 +1,12 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+agentrig_python_test(
+    name = "codex_dependency",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_codex_dependency.py",
+    ],
+    base_module = "tests.integration",
+    deps = ["//third_party/python:extra-codex"],
+)

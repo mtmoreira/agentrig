@@ -32,6 +32,7 @@ uv --version
 uv python install 3.13.14
 uv sync --locked
 uv lock --check
+uv run python tools/generate_buck_python_deps.py --check
 uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
@@ -49,6 +50,11 @@ not from the source tree or development virtual environment. The earlier `uv`
 test command independently checks the editable installation. Buck2 remains the
 authoritative build and test front door. Provider-backed tests use the explicit
 live execution mode described below.
+
+Optional production extras are resolved once in `uv.lock`. The checked-in Buck2
+bridge under `third_party/python` selects the matching hashed wheel for each
+supported host; regenerate it with
+`uv run python tools/generate_buck_python_deps.py` after changing an extra.
 
 ## Test lanes
 

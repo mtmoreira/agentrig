@@ -1,0 +1,3 @@
+load("//third_party/python:locked_deps.bzl", "locked_python_dependencies")
+
+locked_python_dependencies()

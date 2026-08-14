@@ -39,6 +39,7 @@ mypy_path = "src"
 files = [
   "evals",
   "src/agentrig",
+  "tools/generate_buck_python_deps.py",
   "tools/typecheck.py",
   "tests/typing/valid_coding_capability.py",
   "tests/typing/valid_image_generation.py",

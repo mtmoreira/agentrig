@@ -5,5 +5,8 @@ agentrig_python_test(
     scope = "unit",
     srcs = glob(["test_*.py"]),
     base_module = "tests.unit",
-    deps = ["//src:agentrig"],
+    deps = [
+        "//src:agentrig",
+        "//tools:python_dependency_bridge",
+    ],
 )
