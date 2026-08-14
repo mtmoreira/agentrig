@@ -348,6 +348,10 @@ Acceptance:
 
 Important current constraint:
 
+- The initial runtime decision is recorded in
+  [ADR 0001](adr/0001-select-codex-for-first-autonomous-runtime.md). It selects
+  Codex for the first AgentRig adapter without selecting a provider for every
+  application or direct capability.
 - OpenAI now publishes an official `openai-codex` Python SDK with sync and async
   clients, thread lifecycle, streamed events, interruption, multimodal inputs,
   structured turn configuration, and sandbox controls. The spike should evaluate
