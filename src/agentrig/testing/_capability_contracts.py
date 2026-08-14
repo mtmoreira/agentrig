@@ -27,6 +27,34 @@ def validate_contract_suite(
     invocation_count: InvocationCount,
 ) -> None:
     """Validate fixtures before a reusable capability probe can run."""
+    validate_contract_context(
+        label=label,
+        descriptor=descriptor,
+        expected_kind=expected_kind,
+        context=context,
+        cancelled_context=cancelled_context,
+        invocation_count=invocation_count,
+    )
+    if supported_requirements.unmet_by(descriptor):
+        raise ValueError(
+            f"{label} contract supported input is not supported"
+        )
+    if not unsupported_requirements.unmet_by(descriptor):
+        raise ValueError(
+            f"{label} contract unsupported input must be unsupported"
+        )
+
+
+def validate_contract_context(
+    *,
+    label: str,
+    descriptor: CapabilityDescriptor,
+    expected_kind: CapabilityKind,
+    context: RunContext,
+    cancelled_context: RunContext,
+    invocation_count: InvocationCount,
+) -> None:
+    """Validate shared descriptor, context, and counter fixtures."""
     if not isinstance(descriptor, CapabilityDescriptor):
         raise TypeError(
             f"{label} contract descriptor must be a CapabilityDescriptor"
@@ -48,14 +76,6 @@ def validate_contract_suite(
     if not callable(invocation_count):
         raise TypeError(
             f"{label} contract invocation_count must be callable"
-        )
-    if supported_requirements.unmet_by(descriptor):
-        raise ValueError(
-            f"{label} contract supported input is not supported"
-        )
-    if not unsupported_requirements.unmet_by(descriptor):
-        raise ValueError(
-            f"{label} contract unsupported input must be unsupported"
         )
     read_invocation_count(label, invocation_count)
 
