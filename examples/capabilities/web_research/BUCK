@@ -1,0 +1,51 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "web_research",
+    srcs = [
+        "__init__.py",
+        "scripted.py",
+        "workflow.py",
+    ],
+    base_module = "examples.capabilities.web_research",
+    deps = [
+        "//examples:package",
+        "//src:agentrig",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_library(
+    name = "live_support",
+    srcs = ["live.py"],
+    base_module = "examples.capabilities.web_research",
+    deps = [
+        ":web_research",
+        "//src:agentrig",
+        "//src/agentrig/integrations/openai:codex_sdk",
+    ],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.capabilities.web_research.scripted",
+    deps = [":web_research"],
+)
+
+python_binary(
+    name = "live",
+    main_module = "examples.capabilities.web_research.live",
+    deps = [":live_support"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.capabilities.web_research",
+    deps = [
+        ":web_research",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)
