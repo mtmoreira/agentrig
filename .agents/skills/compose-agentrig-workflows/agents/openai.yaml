@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compose AgentRig Workflows"
+  short_description: "Build typed, tested AgentRig workflows"
+  default_prompt: "Use $compose-agentrig-workflows to compose a typed, tested AgentRig workflow for this application."
