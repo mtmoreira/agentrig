@@ -1,0 +1,34 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "configured_workflow",
+    srcs = [
+        "__init__.py",
+        "scripted.py",
+        "workflow.py",
+    ],
+    base_module = "examples.agents.configured_workflow",
+    deps = [
+        "//examples:package",
+        "//src:agentrig",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.agents.configured_workflow.scripted",
+    deps = [":configured_workflow"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.agents.configured_workflow",
+    deps = [
+        ":configured_workflow",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)
