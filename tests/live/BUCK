@@ -1,0 +1,17 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+agentrig_python_test(
+    name = "codex_runtime",
+    scope = "integration",
+    live = True,
+    srcs = [
+        "__init__.py",
+        "test_codex_runtime_live.py",
+    ],
+    base_module = "tests.live",
+    deps = [
+        "//src/agentrig/agents:agents",
+        "//src/agentrig/core:core",
+        "//src/agentrig/integrations/openai:codex_sdk",
+    ],
+)

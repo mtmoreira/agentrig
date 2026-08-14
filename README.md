@@ -30,7 +30,7 @@ From the repository root:
 uv --version
 ./buck2 --version
 uv python install 3.13.14
-uv sync --locked
+uv sync --locked --extra codex
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
 uv run python tools/typecheck.py
