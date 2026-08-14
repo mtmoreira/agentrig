@@ -1,0 +1,51 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "codex_structured_agent",
+    srcs = [
+        "__init__.py",
+        "scripted.py",
+        "workflow.py",
+    ],
+    base_module = "examples.agents.codex_structured_agent",
+    deps = [
+        "//examples:package",
+        "//src:agentrig",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_library(
+    name = "live_support",
+    srcs = ["live.py"],
+    base_module = "examples.agents.codex_structured_agent",
+    deps = [
+        ":codex_structured_agent",
+        "//src:agentrig",
+        "//src/agentrig/integrations/openai:codex_sdk",
+    ],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.agents.codex_structured_agent.scripted",
+    deps = [":codex_structured_agent"],
+)
+
+python_binary(
+    name = "live",
+    main_module = "examples.agents.codex_structured_agent.live",
+    deps = [":live_support"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.agents.codex_structured_agent",
+    deps = [
+        ":codex_structured_agent",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)

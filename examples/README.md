@@ -19,6 +19,9 @@ live entry points and test targets instead of changing the deterministic path.
 
 ## Available examples
 
+- [`agents/codex_structured_agent`](agents/codex_structured_agent/README.md)
+  configures one strict typed agent once, runs it deterministically through a
+  scripted runtime, and offers a separately opted-in read-only Codex entry point.
 - [`agents/configured_workflow`](agents/configured_workflow/README.md)
   binds typed codecs and an agent contract to a runtime, adapts that agent into
   a workflow, and exposes the composed workflow through a new agent contract.
