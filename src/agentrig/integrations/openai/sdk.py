@@ -114,7 +114,7 @@ class _SdkClient:
                 "features.shell_tool=false",
                 'web_search="disabled"',
                 "tools.view_image=false",
-                "agents.enabled=false",
+                "features.multi_agent=false",
                 "features.skill_mcp_dependency_install=false",
                 'history.persistence="none"',
             ),
@@ -453,6 +453,7 @@ def _thread_config(request: CodexThreadRequest) -> dict[str, Any]:
     tools = set(request.allowed_tools)
     return {
         "features": {
+            "multi_agent": False,
             "shell_tool": CODEX_SHELL_TOOL in tools,
             "skill_mcp_dependency_install": False,
         },
@@ -460,7 +461,6 @@ def _thread_config(request: CodexThreadRequest) -> dict[str, Any]:
             "live" if CODEX_WEB_SEARCH_TOOL in tools else "disabled"
         ),
         "tools": {"view_image": False},
-        "agents": {"enabled": False},
         "mcp_servers": {},
         "hooks": {},
         "history": {"persistence": "none"},

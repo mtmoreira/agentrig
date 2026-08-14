@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import unittest
 from collections.abc import Callable
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -13,6 +14,7 @@ from openai_codex.generated.v2_all import (
     CommandExecutionThreadItem,
     ItemCompletedNotification,
     ItemStartedNotification,
+    LegacyAppPathString,
     MessagePhase,
     ThreadItem,
     ThreadStartParams,
@@ -109,7 +111,7 @@ def command_item(status: CommandExecutionStatus) -> ThreadItem:
             type="commandExecution",
             command="private command",
             command_actions=[],
-            cwd="/workspace",
+            cwd=LegacyAppPathString(root="/workspace"),
             status=status,
         )
     )
@@ -230,14 +232,32 @@ class CodexSdkBridgeTest(unittest.TestCase):
         raw = captured[0]
 
         self.assertFalse(raw.config.experimental_api)
-        self.assertIn("features.shell_tool=false", raw.config.config_overrides)
+        self.assertEqual(
+            raw.config.config_overrides,
+            (
+                "features.shell_tool=false",
+                'web_search="disabled"',
+                "tools.view_image=false",
+                "features.multi_agent=false",
+                "features.skill_mcp_dependency_install=false",
+                'history.persistence="none"',
+            ),
+        )
         self.assertTrue(raw.started)
         self.assertTrue(raw.initialized)
         self.assertTrue(raw.closed)
-        self.assertEqual(raw.thread_params[0].config["features"]["shell_tool"], True)
-        self.assertEqual(raw.thread_params[0].config["web_search"], "disabled")
-        self.assertEqual(raw.thread_params[0].config["mcp_servers"], {})
-        self.assertEqual(raw.turn_params[0].sandbox_policy.root.type, "workspaceWrite")
+        thread_config = raw.thread_params[0].config
+        if thread_config is None:
+            raise AssertionError("thread config is required")
+        self.assertIs(thread_config["features"]["multi_agent"], False)
+        self.assertEqual(thread_config["features"]["shell_tool"], True)
+        self.assertNotIn("agents", thread_config)
+        self.assertEqual(thread_config["web_search"], "disabled")
+        self.assertEqual(thread_config["mcp_servers"], {})
+        turn_sandbox = raw.turn_params[0].sandbox_policy
+        if turn_sandbox is None:
+            raise AssertionError("turn sandbox policy is required")
+        self.assertEqual(turn_sandbox.root.type, "workspaceWrite")
         self.assertEqual(raw.unregistered, ["turn-1"])
         self.assertIsInstance(events[0], CodexToolCallStarted)
         self.assertIsInstance(events[1], CodexToolCallCompleted)
@@ -322,6 +342,28 @@ class CodexSdkBridgeTest(unittest.TestCase):
             ),
         )
         self.assertNotIn("private", repr(events))
+
+    def test_default_factory_initializes_the_pinned_runtime_offline(self) -> None:
+        client = CodexSdkClientFactory().create()
+
+        async def exercise() -> None:
+            try:
+                thread = await client.start_thread(
+                    CodexThreadRequest(
+                        model="gpt-5.6-terra",
+                        instructions="Initialize one offline test thread.",
+                        sandbox=CodexSandboxPolicy(
+                            mode=CodexSandboxMode.READ_ONLY,
+                            cwd=str(Path.cwd().resolve()),
+                        ),
+                        approval_mode=CodexApprovalMode.DENY_ALL,
+                    )
+                )
+                self.assertTrue(thread.thread_id)
+            finally:
+                await client.close()
+
+        asyncio.run(exercise())
 
 
 if __name__ == "__main__":
