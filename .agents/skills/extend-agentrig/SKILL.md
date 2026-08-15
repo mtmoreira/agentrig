@@ -12,8 +12,11 @@ Implement the smallest complete framework slice while preserving AgentRig's depe
 1. Read the root `AGENTS.md` and every scoped `AGENTS.md` governing the files involved.
 2. Read the relevant section of `docs/architecture.md`. Consult `docs/development-plan.md` for roadmap context, not as a substitute for current source and tests.
 3. Classify ownership with [architecture-boundaries.md](references/architecture-boundaries.md). Keep application domain behavior outside AgentRig.
-4. Inspect the owning module, package `__init__.py`, BUCK target, focused unit tests, typing fixtures, scripted implementation, and reusable contract suite before designing the change.
-5. Identify whether the change alters a public invariant, serialized vocabulary, dependency direction, provider authority, or package contents.
+4. Prove that an extension is necessary before proposing a new public abstraction. Attempt to express the requested behavior with existing contracts first. Require distinct portable semantics plus repository or user-provided evidence of multiple concrete consumers or implementations; a requested capability name and hypothetical examples are not evidence. If an existing contract fits, improve its adapter, validation, tests, or documentation instead of adding a parallel protocol.
+5. Inspect the owning module, package `__init__.py`, BUCK target, focused unit tests, typing fixtures, scripted implementation, and reusable contract suite before designing the change.
+6. Identify whether the change alters a public invariant, serialized vocabulary, dependency direction, provider authority, or package contents.
+
+Before producing an implementation plan, state exactly one extension decision: `reuse existing contract`, `new abstraction justified`, or `unresolved`. For `unresolved`, provide only the investigation and decision plan. Do not invent new public type names, modules, enum values, or implementation commits until the deciding semantic requirement and concrete reuse evidence are resolved.
 
 ## Implement one vertical slice
 
