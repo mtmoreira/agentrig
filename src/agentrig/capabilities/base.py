@@ -20,6 +20,7 @@ class CapabilityKind(StrEnum):
     SEARCH = "search"
     RETRIEVAL = "retrieval"
     TOOL = "tool"
+    AGENT_RUNTIME = "agent_runtime"
 
 
 class CapabilityFeature(StrEnum):

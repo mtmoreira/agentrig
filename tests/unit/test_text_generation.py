@@ -144,6 +144,7 @@ class CapabilityDescriptorTest(unittest.TestCase):
                 "search",
                 "retrieval",
                 "tool",
+                "agent_runtime",
             ),
         )
         self.assertEqual(

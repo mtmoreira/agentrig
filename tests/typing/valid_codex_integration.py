@@ -6,6 +6,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from agentrig.agents import AgentContract, AgentLimits, AgentRuntime
+from agentrig.capabilities import CapabilityKind, CapabilityRequirements
 from agentrig.core import EffectProfile
 from agentrig.integrations.openai import (
     CODEX_AGENT_RUNTIME_CAPABILITY,
@@ -115,3 +116,7 @@ runtime: AgentRuntime = CodexAgentRuntime(
     sandbox=sandbox,
     output_schemas={"example.output.v1": {"type": "object"}},
 )
+runtime_requirements = CapabilityRequirements(
+    kind=CapabilityKind.AGENT_RUNTIME,
+)
+runtime_requirements.require(CODEX_AGENT_RUNTIME_CAPABILITY)

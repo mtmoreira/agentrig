@@ -30,7 +30,7 @@ CODEX_SUPPORTED_TOOLS = frozenset(
 CODEX_AGENT_RUNTIME_CAPABILITY = CapabilityDescriptor(
     capability_id="openai.codex.agent_runtime",
     version=CODEX_SDK_VERSION,
-    kind=CapabilityKind.CODING,
+    kind=CapabilityKind.AGENT_RUNTIME,
     features=frozenset(
         {
             CapabilityFeature.STREAMING,

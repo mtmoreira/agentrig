@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from agentrig.capabilities import (
     CapabilityFeature,
     CapabilityKind,
+    CapabilityRequirements,
     DataRetention,
 )
 from agentrig.integrations.openai import (
@@ -143,7 +144,7 @@ class CodexCapabilityTest(unittest.TestCase):
         self.assertEqual(CODEX_SDK_VERSION, "0.144.4")
         self.assertEqual(descriptor.capability_id, "openai.codex.agent_runtime")
         self.assertEqual(descriptor.version, CODEX_SDK_VERSION)
-        self.assertEqual(descriptor.kind, CapabilityKind.CODING)
+        self.assertEqual(descriptor.kind, CapabilityKind.AGENT_RUNTIME)
         self.assertEqual(
             descriptor.features,
             frozenset(
@@ -160,6 +161,26 @@ class CodexCapabilityTest(unittest.TestCase):
         self.assertEqual(
             descriptor.data_retention,
             DataRetention.PROVIDER_MANAGED,
+        )
+
+        runtime_requirements = CapabilityRequirements(
+            kind=CapabilityKind.AGENT_RUNTIME,
+            features=frozenset(
+                {
+                    CapabilityFeature.CANCELLATION,
+                    CapabilityFeature.STRUCTURED_OUTPUT,
+                }
+            ),
+            allowed_data_retention=frozenset(
+                {DataRetention.PROVIDER_MANAGED}
+            ),
+        )
+        runtime_requirements.require(descriptor)
+        self.assertEqual(
+            CapabilityRequirements(
+                kind=CapabilityKind.CODING,
+            ).unmet_by(descriptor),
+            ("kind:coding",),
         )
 
 
