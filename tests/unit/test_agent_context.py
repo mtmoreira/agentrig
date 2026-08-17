@@ -29,6 +29,7 @@ def create_repository_fixture(root: Path) -> None:
         "pyproject.toml",
         """
         [tool.uv.build-backend]
+        source-exclude = ["**/AGENTS.md"]
         wheel-exclude = ["**/AGENTS.md"]
         """,
     )
@@ -129,7 +130,7 @@ class AgentContextValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(AgentContextError, "references missing path"):
             validate_repository(self.root)
 
-    def test_rejects_context_hygiene_and_missing_wheel_policy(self) -> None:
+    def test_rejects_context_hygiene_and_missing_distribution_policy(self) -> None:
         guidance_path = self.root / "AGENTS.md"
         guidance_path.write_text("# Guidance\n\n")
         with self.assertRaisesRegex(AgentContextError, "exactly one newline"):
@@ -141,10 +142,24 @@ class AgentContextValidationTest(unittest.TestCase):
             "pyproject.toml",
             """
             [tool.uv.build-backend]
+            source-exclude = ["**/AGENTS.md"]
             wheel-exclude = []
             """,
         )
-        with self.assertRaisesRegex(AgentContextError, "must exclude"):
+        with self.assertRaisesRegex(AgentContextError, "wheel-exclude must exclude"):
+            validate_repository(self.root)
+
+        create_repository_fixture(self.root)
+        write_text(
+            self.root,
+            "pyproject.toml",
+            """
+            [tool.uv.build-backend]
+            source-exclude = []
+            wheel-exclude = ["**/AGENTS.md"]
+            """,
+        )
+        with self.assertRaisesRegex(AgentContextError, "source-exclude must exclude"):
             validate_repository(self.root)
 
 

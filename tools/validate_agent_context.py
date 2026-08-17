@@ -63,7 +63,7 @@ def validate_repository(repository_root: Path) -> ValidationSummary:
     for relative_path in GUIDANCE_PATHS:
         _validate_text_file(root, relative_path)
 
-    _validate_wheel_policy(root)
+    _validate_distribution_policy(root)
     skills_root = root / SKILLS_PATH
     if not skills_root.is_dir():
         raise AgentContextError(f"missing skills directory: {SKILLS_PATH}")
@@ -286,7 +286,7 @@ def _validate_repository_paths(root: Path, context_file: Path) -> None:
             )
 
 
-def _validate_wheel_policy(root: Path) -> None:
+def _validate_distribution_policy(root: Path) -> None:
     pyproject_path = root / "pyproject.toml"
     document = cast(object, tomllib.loads(pyproject_path.read_text()))
     project = _require_mapping(document, "pyproject document")
@@ -296,13 +296,14 @@ def _validate_wheel_policy(root: Path) -> None:
         uv.get("build-backend"),
         "tool.uv.build-backend table",
     )
-    raw_exclusions = backend.get("wheel-exclude")
-    if not isinstance(raw_exclusions, list) or not all(
-        isinstance(value, str) for value in raw_exclusions
-    ):
-        raise AgentContextError("wheel-exclude must be a list of strings")
-    if "**/AGENTS.md" not in raw_exclusions:
-        raise AgentContextError("wheel-exclude must exclude **/AGENTS.md")
+    for setting in ("source-exclude", "wheel-exclude"):
+        raw_exclusions = backend.get(setting)
+        if not isinstance(raw_exclusions, list) or not all(
+            isinstance(value, str) for value in raw_exclusions
+        ):
+            raise AgentContextError(f"{setting} must be a list of strings")
+        if "**/AGENTS.md" not in raw_exclusions:
+            raise AgentContextError(f"{setting} must exclude **/AGENTS.md")
 
 
 def _require_mapping(value: object, label: str) -> Mapping[str, object]:

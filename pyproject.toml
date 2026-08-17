@@ -28,6 +28,7 @@ required-version = "==0.12.3"
 exclude-newer = "2026-08-12T00:00:00Z"
 
 [tool.uv.build-backend]
+source-exclude = ["**/AGENTS.md"]
 wheel-exclude = ["**/AGENTS.md"]
 
 [dependency-groups]
@@ -43,6 +44,7 @@ files = [
   "evals",
   "src/agentrig",
   "tools/generate_buck_python_deps.py",
+  "tools/validate_release.py",
   "tools/typecheck.py",
   "tools/validate_agent_context.py",
   "tests/typing/valid_coding_capability.py",

@@ -26,3 +26,16 @@ python_binary(
     main_module = "tools.validate_agent_context",
     deps = [":agent_context_validation"],
 )
+
+python_library(
+    name = "release_validation",
+    srcs = ["validate_release.py"],
+    base_module = "tools",
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "validate_release",
+    main_module = "tools.validate_release",
+    deps = [":release_validation"],
+)

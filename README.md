@@ -6,7 +6,9 @@ observable workflows.
 
 The project is pre-alpha. Its public API will emerge through small,
 test-supported vertical slices; empty future package trees are intentionally
-not scaffolded.
+not scaffolded. Pre-alpha releases may nevertheless be artifact-stable: see
+[the release contract](docs/releases.md) for the exact distinction and the
+pre-`1.0` compatibility policy.
 
 ## Development prerequisites
 
@@ -52,6 +54,21 @@ test command independently checks the editable installation. Buck2 remains the
 authoritative build and test front door. Provider-backed tests use the explicit
 live execution mode described below.
 
+Building a wheel does not by itself create a release. A release additionally
+binds the package version to an immutable tag and full source commit, validates
+the wheel and source distribution, and records their hashes in a deterministic
+manifest. Once the release owner has created the matching annotated tag, the
+repository supplies that channel-neutral check:
+
+```sh
+uv run python tools/validate_release.py \
+  --tag v0.1.0 \
+  --commit "$(git rev-parse HEAD)" \
+  --write
+```
+
+Tag creation and publication are intentionally separate release-owner actions.
+
 Optional production extras are resolved once in `uv.lock`. The checked-in Buck2
 bridge under `third_party/python` selects the matching hashed wheel for each
 supported host; regenerate it with
@@ -60,7 +77,8 @@ supported host; regenerate it with
 ## AI agent context
 
 The repository includes versioned guidance for AI coding agents. It is part of
-the source checkout and is intentionally excluded from the AgentRig wheel.
+the source checkout and is intentionally excluded from AgentRig distribution
+artifacts.
 
 - [`AGENTS.md`](AGENTS.md) defines repository-wide architecture, safety, build,
   validation, and delivery agreements. Scoped files under `src/agentrig/`,

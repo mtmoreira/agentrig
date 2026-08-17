@@ -1,7 +1,7 @@
 # AgentRig foundational architecture
 
 **Status:** Proposed foundation  
-**Last updated:** 2026-08-12  
+**Last updated:** 2026-08-16
 **Scope:** AgentRig SDK, not Storyworld domain implementation
 
 **Visual companion:** [Architecture field guide](architecture.html)
@@ -890,6 +890,25 @@ type checker, test framework, or dependency resolver is selected by this
 architecture document; those choices require an explicit dependency/tooling
 decision.
 
+### 15.3 Release identity and compatibility
+
+AgentRig releases use Semantic Versioning and matching `vX.Y.Z` Git tags. A
+release is not identified by package metadata alone: it binds the version and
+tag to one full source commit and to the SHA-256 digests of exactly one wheel
+and one source distribution. The repository release validator enforces this
+channel-neutral contract and rejects repository-only or credential-like
+content before distribution.
+
+During `0.x`, minor versions may contain documented public-API compatibility
+breaks; patch versions remain backward-compatible within a minor line except
+for an unavoidable, explicitly documented security or correctness fix. Public
+symbols are those exported by their owning package's `__init__.py`. Versions,
+tags, artifacts, and manifests are never reused.
+
+The distribution channel, artifact signing, and publication credentials remain
+separate decisions. See [the release contract](releases.md) and
+[ADR 0002](adr/0002-establish-immutable-release-contract.md).
+
 ## 16. Theory of operation
 
 A typical AgentRig run proceeds as follows:
@@ -941,7 +960,6 @@ configured workflows as AgentRig agents.
 - Durable execution backend
 - Provider routing and fallback registry
 - Persistent trace and artifact backends
-- Public API stability and package versioning policy
 
 These decisions should be made through small spikes and ADRs, not implied by
 folder names.

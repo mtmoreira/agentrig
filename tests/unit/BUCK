@@ -9,5 +9,6 @@ agentrig_python_test(
         "//src:agentrig",
         "//tools:agent_context_validation",
         "//tools:python_dependency_bridge",
+        "//tools:release_validation",
     ],
 )
