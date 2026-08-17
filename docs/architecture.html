@@ -1605,8 +1605,9 @@
             <h2>Codex and Claude are runtimes—not permanent job titles.</h2>
           </div>
           <p class="section-intro">
-            The same autonomous runtime can back many configured agents. The contract at
-            the workflow boundary says what role that instance is playing.
+            The same autonomous runtime can back many configured agents. An application-scoped
+            catalog resolves each explicit binding; the workflow contract says what role that
+            runtime is playing.
           </p>
         </header>
 
@@ -1672,6 +1673,13 @@
             </tbody>
           </table>
           <div class="matrix-legend"><span class="l-native">Native runtime surface</span><span class="l-agent">Configured agent adapted to capability</span><span class="l-direct">Direct capability integration</span></div>
+        </div>
+
+        <div class="rule-strip" aria-label="Runtime catalog rules">
+          <div class="rule-chip"><strong>Application</strong> selects one exact binding per agent</div>
+          <div class="rule-chip"><strong>Catalog</strong> validates portable requirements</div>
+          <div class="rule-chip"><strong>Integration</strong> owns provider translation</div>
+          <div class="rule-chip"><strong>Secrets</strong> stay in the application boundary</div>
         </div>
       </section>
 
@@ -2015,7 +2023,7 @@ outcome = <span class="kw">await</span> workflow.<span class="fn">run</span>(
       </section>
 
       <footer>
-        <span>AgentRig architecture field guide · companion artifact · 2026-08-12</span>
+        <span>AgentRig architecture field guide · companion artifact · 2026-08-17</span>
         <span><a href="architecture.md">Normative architecture</a> · <a href="development-plan.md">Development plan</a></span>
       </footer>
     </main>

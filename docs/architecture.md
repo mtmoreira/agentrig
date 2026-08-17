@@ -1,7 +1,7 @@
 # AgentRig foundational architecture
 
-**Status:** Proposed foundation  
-**Last updated:** 2026-08-16
+**Status:** Proposed foundation
+**Last updated:** 2026-08-17
 **Scope:** AgentRig SDK, not Storyworld domain implementation
 
 **Visual companion:** [Architecture field guide](architecture.html)
@@ -477,9 +477,10 @@ Each implementation exposes a descriptor covering relevant facts such as:
 - Known limits
 
 Callers express `CapabilityRequirements`; composition validates them before an
-expensive run starts. Initial applications should inject implementations
-explicitly. A routing registry is deferred until more than one real consumer
-requires policy-based selection.
+expensive run starts. Applications inject implementations explicitly. When an
+application needs several selectable runtimes, it may construct an immutable,
+application-scoped runtime catalog and resolve an exact binding through those
+requirements. Automatic policy-based selection and fallback remain deferred.
 
 ## 8. Agents and runtimes
 
@@ -565,7 +566,30 @@ researcher = ConfiguredAgent[ResearchTask, ResearchReport](
 These are distinct configured agents even though they share a vendor runtime.
 They can have different permissions, schemas, graders, and eval baselines.
 
-### 8.4 Agent-backed capabilities
+### 8.4 Application-scoped runtime catalog
+
+An application that uses several runtime bindings may construct an explicit
+catalog at its composition root:
+
+```text
+agent route
+  -> exact binding ID
+  -> capability requirement check
+  -> AgentRuntime
+```
+
+The catalog standardizes registration identity, duplicate rejection, and
+capability validation. It does not choose a vendor, read application
+configuration, resolve credentials, or initialize provider services. It is an
+injected value, never a mutable global registry or import-time service locator.
+
+Provider integrations may accept a late-bound authentication source for client
+construction. The application owns credential references and secret resolution;
+AgentRig must not put resolved credentials in registrations, portable requests,
+events, failures, or representations. See
+[ADR 0003](adr/0003-establish-application-scoped-runtime-catalog.md).
+
+### 8.5 Agent-backed capabilities
 
 Sometimes a workflow needs an `ImageGenerator`, but the implementation is an
 agent that invokes an image tool and verifies the output. An adapter should bind
@@ -594,7 +618,7 @@ This pattern answers the multi-role provider problem:
 - Adapt those agents to narrow capabilities where substitution is useful.
 - Keep direct provider integrations available when autonomy adds no value.
 
-### 8.5 Workflow as agent
+### 8.6 Workflow as agent
 
 A workflow may expose an `AgentContract` and the `Agent.run` method. That makes a
 multi-step process substitutable anywhere an agent with the same input/output
@@ -958,7 +982,7 @@ configured workflows as AgentRig agents.
 - The Python dependency resolver and lockfile bridge used with Buck2
 - Exact schema library and minimum Python version
 - Durable execution backend
-- Provider routing and fallback registry
+- Automatic provider ranking, fallback, and health-based routing policy
 - Persistent trace and artifact backends
 
 These decisions should be made through small spikes and ADRs, not implied by

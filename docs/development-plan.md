@@ -1,8 +1,8 @@
 # AgentRig development plan
 
-**Status:** Proposed minimum plan  
-**Last updated:** 2026-08-12  
-**Target consumer:** Storyworld  
+**Status:** Proposed minimum plan
+**Last updated:** 2026-08-17
+**Target consumer:** Storyworld
 **Boundary:** Build AgentRig infrastructure only; do not implement Storyworld
 
 ## 1. Objective
@@ -20,6 +20,8 @@ Build the smallest coherent AgentRig SDK that lets Storyworld:
 7. Evaluate agents and workflows over versioned datasets and compare baselines.
 8. Build and test through Buck2 while remaining a standard installable Python
    package.
+9. Let an application bind different configured agents to explicit provider
+   runtimes without placing routing policy or credentials in AgentRig.
 
 This plan intentionally does not implement Storyworld's domain schemas, event
 store, photo workflow, narrative planning, production compiler, renderers, or
@@ -87,8 +89,8 @@ The first usable release is complete when all of the following are demonstrated:
 - Unit tests fail on unexpected network access.
 - Live tests are separately marked and cannot pass when skipped for missing
   credentials.
-- No global client, provider registry, or service initialization occurs at import
-  time.
+- No global client, mutable provider registry, or service initialization occurs
+  at import time.
 
 ## 4. Milestones
 
@@ -384,6 +386,39 @@ Acceptance:
   boundary in a workflow fixture.
 - Unsupported feature requirements fail before provider invocation.
 - Live tests validate real request translation and response normalization.
+
+### Milestone 9A — Application-scoped runtime catalog
+
+StoryWorld now provides concrete evidence for explicit per-agent runtime
+selection. Implement the decision recorded in
+[ADR 0003](adr/0003-establish-application-scoped-runtime-catalog.md) before
+StoryWorld creates a provider catalog of its own.
+
+Deliver:
+
+- Application-scoped runtime registration and immutable catalog contracts
+- A distinct agent-runtime capability identity
+- Exact binding resolution with portable requirement validation
+- Shared scripted/real runtime conformance coverage
+- Application-injected Codex authentication at the client-construction seam
+- A deterministic example where two agents select different scripted runtimes
+
+Acceptance:
+
+- Catalog construction performs no provider or credential access.
+- Duplicate, unknown, and incompatible bindings fail before runtime execution.
+- Credentials cannot enter registrations, runtime requests, events, failures,
+  or representations.
+- A configured agent remains provider-neutral after its runtime is resolved.
+- A bounded, explicitly opted-in Codex test verifies the same portable runtime
+  semantics as the scripted path.
+- Automatic ranking, fallback, load balancing, and health routing are absent.
+
+Release note:
+
+- Adding the public catalog while correcting the Codex runtime descriptor from
+  coding identity to agent-runtime identity requires AgentRig 0.2.0 under the
+  pre-1.0 compatibility policy.
 
 ### Milestone 10 — Storyworld-enabling workflow examples
 
