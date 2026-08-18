@@ -5,7 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentrig.agents import AgentContract, AgentLimits, AgentRuntime
-from agentrig.capabilities import CapabilityKind, CapabilityRequirements
+from agentrig.capabilities import (
+    CapabilityFeature,
+    CapabilityKind,
+    CapabilityRequirements,
+)
 from agentrig.core import EffectProfile
 from agentrig.integrations.ollama import (
     OLLAMA_AGENT_RUNTIME_CAPABILITY,
@@ -76,5 +80,8 @@ runtime: AgentRuntime = OllamaAgentRuntime(
     output_schemas={"example.output.v1": {"type": "object"}},
     options=options,
 )
-requirements = CapabilityRequirements(kind=CapabilityKind.AGENT_RUNTIME)
+requirements = CapabilityRequirements(
+    kind=CapabilityKind.AGENT_RUNTIME,
+    features=frozenset({CapabilityFeature.USAGE_REPORTING}),
+)
 requirements.require(OLLAMA_AGENT_RUNTIME_CAPABILITY)

@@ -6,7 +6,11 @@ import asyncio
 import json
 from collections.abc import Mapping
 
-from agentrig.agents import AgentExecutionRequest, AgentExecutionResult
+from agentrig.agents import (
+    AgentExecutionRequest,
+    AgentExecutionResult,
+    AgentRuntimeUsage,
+)
 from agentrig.core._json import JsonValue, thaw_json_value
 from agentrig.core.context import RunContext
 from agentrig.core.deadline import DeadlineExceeded
@@ -93,7 +97,7 @@ class OllamaAgentRuntime:
                 context,
             )
             result = _decode_response(response, expected_model=self._model)
-            _emit_usage(context, request, response)
+            _emit_usage(context, request, result.usage)
         except AgentRigError as error:
             result = AgentExecutionResult.from_failure(error.failure)
         except asyncio.CancelledError as error:
@@ -215,12 +219,17 @@ def _decode_response(
         "model": expected_model,
         "finish_reason": response.finish_reason.value,
     }
+    usage = AgentRuntimeUsage(
+        input_tokens=response.input_tokens,
+        output_tokens=response.output_tokens,
+    )
     try:
         if response.model != expected_model:
             raise ValueError("Ollama response model does not match request")
         output = json.loads(response.content)
         return AgentExecutionResult.succeeded(
             output,
+            usage=usage,
             provider_metadata=metadata,
         )
     except (json.JSONDecodeError, TypeError, ValueError):
@@ -230,6 +239,7 @@ def _decode_response(
                 message="Ollama returned invalid structured output",
                 code="ollama.invalid_output",
             ),
+            usage=usage,
             provider_metadata=metadata,
         )
 
@@ -265,17 +275,16 @@ def _base_attributes(request: AgentExecutionRequest) -> dict[str, JsonValue]:
 def _emit_usage(
     context: RunContext,
     request: AgentExecutionRequest,
-    response: OllamaChatResponse,
+    usage: AgentRuntimeUsage,
 ) -> None:
-    _emit(
-        context,
-        EventKind.USAGE_REPORTED,
-        {
-            **_base_attributes(request),
-            "input_tokens": response.input_tokens,
-            "output_tokens": response.output_tokens,
-        },
-    )
+    attributes: dict[str, JsonValue] = {**_base_attributes(request)}
+    if usage.input_tokens is not None:
+        attributes["input_tokens"] = usage.input_tokens
+    if usage.cached_input_tokens is not None:
+        attributes["cached_input_tokens"] = usage.cached_input_tokens
+    if usage.output_tokens is not None:
+        attributes["output_tokens"] = usage.output_tokens
+    _emit(context, EventKind.USAGE_REPORTED, attributes)
 
 
 def _emit_completed(

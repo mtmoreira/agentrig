@@ -39,6 +39,7 @@ CODEX_AGENT_RUNTIME_CAPABILITY = CapabilityDescriptor(
             CapabilityFeature.SESSION_CONTINUATION,
             CapabilityFeature.APPROVAL_REQUESTS,
             CapabilityFeature.TOOL_USE,
+            CapabilityFeature.USAGE_REPORTING,
         }
     ),
     data_retention=DataRetention.PROVIDER_MANAGED,

@@ -156,6 +156,7 @@ class CodexCapabilityTest(unittest.TestCase):
                     CapabilityFeature.SESSION_CONTINUATION,
                     CapabilityFeature.APPROVAL_REQUESTS,
                     CapabilityFeature.TOOL_USE,
+                    CapabilityFeature.USAGE_REPORTING,
                 }
             ),
         )

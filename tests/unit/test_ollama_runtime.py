@@ -213,6 +213,7 @@ class OllamaContractTest(unittest.TestCase):
                 {
                     CapabilityFeature.CANCELLATION,
                     CapabilityFeature.STRUCTURED_OUTPUT,
+                    CapabilityFeature.USAGE_REPORTING,
                 }
             ),
         )
@@ -299,6 +300,10 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
         self.assertIsInstance(runtime, AgentRuntime)
         self.assertEqual(factory.calls, 1)
         self.assertEqual(result.result.output, {"result": "complete"})
+        self.assertEqual(result.usage.input_tokens, 12)
+        self.assertIsNone(result.usage.cached_input_tokens)
+        self.assertEqual(result.usage.output_tokens, 4)
+        self.assertEqual(result.usage.total_tokens, 16)
         self.assertEqual(
             result.provider_metadata,
             {
@@ -329,8 +334,14 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
                 EventKind.PROVIDER_CALL_COMPLETED,
             ],
         )
-        self.assertEqual(sink.events[1].attributes["input_tokens"], 12)
-        self.assertEqual(sink.events[1].attributes["output_tokens"], 4)
+        self.assertEqual(
+            sink.events[1].attributes["input_tokens"],
+            result.usage.input_tokens,
+        )
+        self.assertEqual(
+            sink.events[1].attributes["output_tokens"],
+            result.usage.output_tokens,
+        )
         self.assertNotIn("draft", repr(sink.events))
 
     def test_rejects_authority_and_options_before_client_creation(self) -> None:
@@ -373,7 +384,9 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
 
         self.assertEqual(invalid.result.failure.code, "ollama.invalid_output")  # type: ignore[union-attr]
         self.assertEqual(invalid.result.failure.kind, FailureKind.PERMANENT_PROVIDER)  # type: ignore[union-attr]
+        self.assertEqual(invalid.usage.total_tokens, 16)
         self.assertEqual(transport.result.failure.code, "ollama.transport_failed")  # type: ignore[union-attr]
+        self.assertFalse(transport.usage.is_reported)
         self.assertNotIn("private", repr(transport.result.failure))
         self.assertEqual(failing_client.closes, 1)
 

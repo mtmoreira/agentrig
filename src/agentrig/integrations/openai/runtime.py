@@ -6,7 +6,11 @@ import asyncio
 import json
 from collections.abc import AsyncIterator, Mapping
 
-from agentrig.agents import AgentExecutionRequest, AgentExecutionResult
+from agentrig.agents import (
+    AgentExecutionRequest,
+    AgentExecutionResult,
+    AgentRuntimeUsage,
+)
 from agentrig.core._json import JsonValue, freeze_json_object, thaw_json_value
 from agentrig.core.context import RunContext
 from agentrig.core.deadline import DeadlineExceeded
@@ -227,6 +231,7 @@ class CodexAgentRuntime:
         event_task: asyncio.Task[CodexTurnEvent] | None = None
         approval_requested = False
         tool_calls = 0
+        usage = AgentRuntimeUsage()
         terminal: CodexTurnCompleted | None = None
         events = turn.events().__aiter__()
         try:
@@ -243,6 +248,7 @@ class CodexAgentRuntime:
                     await asyncio.gather(event_task, return_exceptions=True)
                     return AgentExecutionResult.from_failure(
                         failure,
+                        usage=usage,
                         provider_metadata=_metadata(turn),
                     )
 
@@ -277,6 +283,7 @@ class CodexAgentRuntime:
                                 "Codex attempted a tool outside agent authority",
                                 "codex.tool_authority_exceeded",
                             ),
+                            usage=usage,
                             provider_metadata=_metadata(turn),
                         )
                     _emit_tool(context, request, event, started=True)
@@ -296,18 +303,12 @@ class CodexAgentRuntime:
                         },
                     )
                 elif isinstance(event, CodexUsageReported):
-                    _emit(
-                        context,
-                        EventKind.USAGE_REPORTED,
-                        {
-                            **_base_attributes(request),
-                            "provider": _PROVIDER,
-                            "turn_id": event.turn_id,
-                            "input_tokens": event.input_tokens,
-                            "cached_input_tokens": event.cached_input_tokens,
-                            "output_tokens": event.output_tokens,
-                        },
+                    usage = AgentRuntimeUsage(
+                        input_tokens=event.input_tokens,
+                        cached_input_tokens=event.cached_input_tokens,
+                        output_tokens=event.output_tokens,
                     )
+                    _emit_usage(context, request, event.turn_id, usage)
                 elif isinstance(event, CodexTurnCompleted):
                     terminal = event
 
@@ -327,6 +328,7 @@ class CodexAgentRuntime:
                             else "codex.approval_denied"
                         ),
                     ),
+                    usage=usage,
                     provider_metadata=_metadata(turn),
                 )
             if terminal is None:
@@ -336,9 +338,10 @@ class CodexAgentRuntime:
                         message="Codex stream ended without a terminal event",
                         code="codex.missing_terminal_event",
                     ),
+                    usage=usage,
                     provider_metadata=_metadata(turn),
                 )
-            return _terminal_result(terminal, turn)
+            return _terminal_result(terminal, turn, usage)
         finally:
             constraint_task.cancel()
             if event_task is not None:
@@ -397,11 +400,13 @@ async def _next_event(
 def _terminal_result(
     terminal: CodexTurnCompleted,
     turn: CodexTurn,
+    usage: AgentRuntimeUsage,
 ) -> AgentExecutionResult:
     metadata = _metadata(turn)
     if terminal.status is CodexTurnStatus.SUCCEEDED:
         return AgentExecutionResult.succeeded(
             terminal.output,
+            usage=usage,
             provider_metadata=metadata,
         )
     failures = {
@@ -433,8 +438,29 @@ def _terminal_result(
     }
     return AgentExecutionResult.from_failure(
         failures[terminal.status],
+        usage=usage,
         provider_metadata=metadata,
     )
+
+
+def _emit_usage(
+    context: RunContext,
+    request: AgentExecutionRequest,
+    turn_id: str,
+    usage: AgentRuntimeUsage,
+) -> None:
+    attributes: dict[str, JsonValue] = {
+        **_base_attributes(request),
+        "provider": _PROVIDER,
+        "turn_id": turn_id,
+    }
+    if usage.input_tokens is not None:
+        attributes["input_tokens"] = usage.input_tokens
+    if usage.cached_input_tokens is not None:
+        attributes["cached_input_tokens"] = usage.cached_input_tokens
+    if usage.output_tokens is not None:
+        attributes["output_tokens"] = usage.output_tokens
+    _emit(context, EventKind.USAGE_REPORTED, attributes)
 
 
 def _failure_kind_for_code(code: str | None) -> FailureKind:

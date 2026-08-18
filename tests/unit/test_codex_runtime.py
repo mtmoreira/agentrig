@@ -273,6 +273,10 @@ class CodexAgentRuntimeTest(unittest.TestCase):
 
         self.assertIsInstance(runtime, AgentRuntime)
         self.assertEqual(result.result.output, {"result": "complete"})
+        self.assertEqual(result.usage.input_tokens, 10)
+        self.assertEqual(result.usage.cached_input_tokens, 3)
+        self.assertEqual(result.usage.output_tokens, 5)
+        self.assertEqual(result.usage.total_tokens, 15)
         self.assertEqual(
             result.provider_metadata,
             {
@@ -294,6 +298,18 @@ class CodexAgentRuntimeTest(unittest.TestCase):
                 EventKind.USAGE_REPORTED,
                 EventKind.PROVIDER_CALL_COMPLETED,
             ],
+        )
+        self.assertEqual(
+            sink.events[4].attributes,
+            {
+                "agent_id": "codex-test",
+                "agent_version": "1",
+                "provider": "openai.codex",
+                "turn_id": "turn-1",
+                "input_tokens": result.usage.input_tokens,
+                "cached_input_tokens": result.usage.cached_input_tokens,
+                "output_tokens": result.usage.output_tokens,
+            },
         )
         self.assertNotIn("draft", repr(sink.events))
 
@@ -459,6 +475,12 @@ class CodexAgentRuntimeTest(unittest.TestCase):
                     FakeThread(
                         FakeTurn(
                             (
+                                CodexUsageReported(
+                                    turn_id="turn-1",
+                                    input_tokens=6,
+                                    cached_input_tokens=1,
+                                    output_tokens=2,
+                                ),
                                 CodexTurnCompleted(
                                     turn_id="turn-1",
                                     status=CodexTurnStatus.FAILED,
@@ -484,6 +506,7 @@ class CodexAgentRuntimeTest(unittest.TestCase):
             overloaded.result.failure.kind,  # type: ignore[union-attr]
             FailureKind.TRANSIENT_PROVIDER,
         )
+        self.assertEqual(overloaded.usage.total_tokens, 8)
         self.assertEqual(transport.result.failure.code, "codex.transport_failed")  # type: ignore[union-attr]
         self.assertNotIn("private", transport.result.failure.message)  # type: ignore[union-attr]
 

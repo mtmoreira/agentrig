@@ -27,6 +27,7 @@ OLLAMA_AGENT_RUNTIME_CAPABILITY = CapabilityDescriptor(
         {
             CapabilityFeature.CANCELLATION,
             CapabilityFeature.STRUCTURED_OUTPUT,
+            CapabilityFeature.USAGE_REPORTING,
         }
     ),
     data_retention=DataRetention.UNKNOWN,
