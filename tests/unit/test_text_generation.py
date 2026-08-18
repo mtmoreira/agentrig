@@ -174,6 +174,7 @@ class CapabilityDescriptorTest(unittest.TestCase):
                 "regions",
                 "citations",
                 "idempotency_keys",
+                "usage_reporting",
             ),
         )
         self.assertEqual(

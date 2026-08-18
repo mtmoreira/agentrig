@@ -10,6 +10,7 @@ from typing import TypeAlias
 from agentrig.agents import (
     AgentExecutionRequest,
     AgentExecutionResult,
+    AgentRuntimeUsage,
 )
 from agentrig.core._validation import require_trimmed_string
 from agentrig.core.context import RunContext
@@ -245,6 +246,7 @@ class ScriptedAgentRuntime:
                 )
 
         _check_constraints(context)
+        _emit_usage(context, request, call.index, scenario.result.usage)
         _emit_completed(context, request, call.index, scenario.result)
         return scenario.result
 
@@ -318,6 +320,26 @@ def _emit_completed(
         if failure.code is not None:
             attributes["failure_code"] = failure.code
     _emit(context, EventKind.PROVIDER_CALL_COMPLETED, attributes)
+
+
+def _emit_usage(
+    context: RunContext,
+    request: AgentExecutionRequest,
+    call_index: int,
+    usage: AgentRuntimeUsage,
+) -> None:
+    if not usage.is_reported:
+        return
+    attributes: dict[str, JsonValue] = {
+        **_base_attributes(request, call_index=call_index),
+    }
+    if usage.input_tokens is not None:
+        attributes["input_tokens"] = usage.input_tokens
+    if usage.cached_input_tokens is not None:
+        attributes["cached_input_tokens"] = usage.cached_input_tokens
+    if usage.output_tokens is not None:
+        attributes["output_tokens"] = usage.output_tokens
+    _emit(context, EventKind.USAGE_REPORTED, attributes)
 
 
 def _base_attributes(

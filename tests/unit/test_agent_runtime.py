@@ -11,7 +11,9 @@ from agentrig.agents import (
     AgentExecutionRequest,
     AgentExecutionResult,
     AgentLimits,
+    AgentResult,
     AgentRuntime,
+    AgentRuntimeUsage,
     AgentStatus,
 )
 from agentrig.core import (
@@ -159,6 +161,11 @@ class AgentExecutionResultTest(unittest.TestCase):
 
         execution = AgentExecutionResult.succeeded(
             output,
+            usage=AgentRuntimeUsage(
+                input_tokens=12,
+                cached_input_tokens=3,
+                output_tokens=5,
+            ),
             provider_metadata=provider_metadata,
         )
         output["answer"] = []
@@ -166,6 +173,8 @@ class AgentExecutionResultTest(unittest.TestCase):
 
         self.assertEqual(execution.result.unwrap(), {"answer": ("draft",)})
         self.assertEqual(execution.result.status, AgentStatus.SUCCEEDED)
+        self.assertEqual(execution.usage.total_tokens, 17)
+        self.assertTrue(execution.usage.is_reported)
         self.assertNotIn("session_id", execution.result.unwrap())
         self.assertEqual(
             execution.provider_metadata["session_id"],
@@ -183,16 +192,47 @@ class AgentExecutionResultTest(unittest.TestCase):
 
         execution = AgentExecutionResult.from_failure(
             failure,
+            usage=AgentRuntimeUsage(input_tokens=7, output_tokens=2),
             provider_metadata={"provider": "example"},
         )
 
         self.assertEqual(execution.result.status, AgentStatus.FAILED)
         self.assertIs(execution.result.failure, failure)
+        self.assertEqual(execution.usage.total_tokens, 9)
         self.assertEqual(execution.provider_metadata["provider"], "example")
+
+    def test_usage_defaults_to_unknown_and_validates_portable_counts(self) -> None:
+        unknown = AgentExecutionResult.succeeded(None).usage
+
+        self.assertFalse(unknown.is_reported)
+        self.assertIsNone(unknown.total_tokens)
+        self.assertEqual(
+            AgentRuntimeUsage(input_tokens=0, output_tokens=0).total_tokens,
+            0,
+        )
+        self.assertIsNone(
+            AgentRuntimeUsage(input_tokens=1).total_tokens,
+        )
+
+        for invalid in (-1, True, 1.5):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    AgentRuntimeUsage(
+                        input_tokens=invalid,  # type: ignore[arg-type]
+                    )
+        with self.assertRaises(ValueError):
+            AgentRuntimeUsage(cached_input_tokens=1)
+        with self.assertRaises(ValueError):
+            AgentRuntimeUsage(input_tokens=1, cached_input_tokens=2)
 
     def test_rejects_invalid_result_output_and_metadata(self) -> None:
         with self.assertRaises(TypeError):
             AgentExecutionResult(result="not-a-result")  # type: ignore[arg-type]
+        with self.assertRaises(TypeError):
+            AgentExecutionResult(
+                result=AgentResult.succeeded(None),
+                usage="invalid",  # type: ignore[arg-type]
+            )
         with self.assertRaises(ValueError):
             AgentExecutionResult.succeeded(object())  # type: ignore[arg-type]
         with self.assertRaises(ValueError):

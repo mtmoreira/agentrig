@@ -15,6 +15,57 @@ from agentrig.core.errors import Failure
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class AgentRuntimeUsage:
+    """Portable token counts reported by one autonomous runtime execution."""
+
+    input_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    output_tokens: int | None = None
+
+    def __post_init__(self) -> None:
+        _require_optional_token_count(
+            "agent runtime input_tokens",
+            self.input_tokens,
+        )
+        _require_optional_token_count(
+            "agent runtime cached_input_tokens",
+            self.cached_input_tokens,
+        )
+        _require_optional_token_count(
+            "agent runtime output_tokens",
+            self.output_tokens,
+        )
+        if self.cached_input_tokens is not None:
+            if self.input_tokens is None:
+                raise ValueError(
+                    "agent runtime cached_input_tokens require input_tokens"
+                )
+            if self.cached_input_tokens > self.input_tokens:
+                raise ValueError(
+                    "agent runtime cached_input_tokens cannot exceed input_tokens"
+                )
+
+    @property
+    def total_tokens(self) -> int | None:
+        """Return a total only when input and output counts are available."""
+        if self.input_tokens is None or self.output_tokens is None:
+            return None
+        return self.input_tokens + self.output_tokens
+
+    @property
+    def is_reported(self) -> bool:
+        """Whether the runtime reported any portable usage count."""
+        return any(
+            value is not None
+            for value in (
+                self.input_tokens,
+                self.cached_input_tokens,
+                self.output_tokens,
+            )
+        )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class AgentExecutionRequest:
     """Immutable encoded input and configuration passed to an agent runtime."""
 
@@ -47,11 +98,14 @@ class AgentExecutionResult:
     """Normalized runtime result with non-portable metadata kept separate."""
 
     result: AgentResult[JsonValue]
+    usage: AgentRuntimeUsage = field(default_factory=AgentRuntimeUsage)
     provider_metadata: Mapping[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not isinstance(self.result, AgentResult):
             raise TypeError("runtime result must contain an AgentResult")
+        if not isinstance(self.usage, AgentRuntimeUsage):
+            raise TypeError("runtime result usage must be AgentRuntimeUsage")
         if self.result.is_success:
             frozen_output = freeze_json_value(
                 "runtime result output",
@@ -80,11 +134,13 @@ class AgentExecutionResult:
         output: JsonValue,
         *,
         artifacts: Iterable[ArtifactRef] = (),
+        usage: AgentRuntimeUsage | None = None,
         provider_metadata: Mapping[str, str] | None = None,
     ) -> AgentExecutionResult:
         """Create a successful normalized runtime result."""
         return cls(
             result=AgentResult.succeeded(output, artifacts=artifacts),
+            usage=usage if usage is not None else AgentRuntimeUsage(),
             provider_metadata=(
                 provider_metadata if provider_metadata is not None else {}
             ),
@@ -96,11 +152,13 @@ class AgentExecutionResult:
         failure: Failure,
         *,
         artifacts: Iterable[ArtifactRef] = (),
+        usage: AgentRuntimeUsage | None = None,
         provider_metadata: Mapping[str, str] | None = None,
     ) -> AgentExecutionResult:
         """Create a failed normalized runtime result."""
         return cls(
             result=AgentResult.from_failure(failure, artifacts=artifacts),
+            usage=usage if usage is not None else AgentRuntimeUsage(),
             provider_metadata=(
                 provider_metadata if provider_metadata is not None else {}
             ),
@@ -118,3 +176,10 @@ class AgentRuntime(Protocol):
     ) -> AgentExecutionResult:
         """Translate one autonomous provider run into a normalized result."""
         ...
+
+
+def _require_optional_token_count(name: str, value: int | None) -> None:
+    if value is None:
+        return
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{name} must be a non-negative integer or None")

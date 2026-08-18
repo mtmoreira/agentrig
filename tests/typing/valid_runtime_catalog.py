@@ -10,9 +10,11 @@ from agentrig.agents import (
     AgentRuntime,
     AgentRuntimeCatalog,
     AgentRuntimeRegistration,
+    AgentRuntimeUsage,
 )
 from agentrig.capabilities import (
     CapabilityDescriptor,
+    CapabilityFeature,
     CapabilityKind,
     CapabilityRequirements,
 )
@@ -27,13 +29,17 @@ class ExampleRuntime:
         context: RunContext,
     ) -> AgentExecutionResult:
         del request, context
-        return AgentExecutionResult.succeeded({"status": "complete"})
+        return AgentExecutionResult.succeeded(
+            {"status": "complete"},
+            usage=AgentRuntimeUsage(input_tokens=3, output_tokens=2),
+        )
 
 
 descriptor = CapabilityDescriptor(
     capability_id="example.agent_runtime",
     version="1",
     kind=CapabilityKind.AGENT_RUNTIME,
+    features=frozenset({CapabilityFeature.USAGE_REPORTING}),
 )
 catalog = AgentRuntimeCatalog(
     (

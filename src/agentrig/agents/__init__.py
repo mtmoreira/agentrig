@@ -20,6 +20,7 @@ from agentrig.agents.runtime import (
     AgentExecutionRequest,
     AgentExecutionResult,
     AgentRuntime,
+    AgentRuntimeUsage,
 )
 
 __all__ = (
@@ -34,6 +35,7 @@ __all__ = (
     "AgentRuntime",
     "AgentRuntimeCatalog",
     "AgentRuntimeRegistration",
+    "AgentRuntimeUsage",
     "AgentStatus",
     "ConfiguredAgent",
 )

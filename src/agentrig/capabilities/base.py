@@ -39,6 +39,7 @@ class CapabilityFeature(StrEnum):
     REGIONS = "regions"
     CITATIONS = "citations"
     IDEMPOTENCY_KEYS = "idempotency_keys"
+    USAGE_REPORTING = "usage_reporting"
 
 
 class CapabilityLimit(StrEnum):

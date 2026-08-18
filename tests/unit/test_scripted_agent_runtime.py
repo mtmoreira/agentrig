@@ -11,6 +11,7 @@ from agentrig.agents import (
     AgentExecutionResult,
     AgentLimits,
     AgentRuntime,
+    AgentRuntimeUsage,
     AgentStatus,
 )
 from agentrig.core import (
@@ -186,6 +187,46 @@ class ScriptedAgentRuntimeTest(unittest.TestCase):
         self.assertIs(runtime.calls[0].request, request)
         self.assertIs(runtime.calls[0].context, context)
         self.assertTrue(runtime.is_exhausted)
+
+    def test_emits_normalized_usage_from_the_scripted_result(self) -> None:
+        usage = AgentRuntimeUsage(
+            input_tokens=9,
+            cached_input_tokens=2,
+            output_tokens=4,
+        )
+        expected = AgentExecutionResult.succeeded(
+            {"answer": "private-output-sentinel"},
+            usage=usage,
+        )
+        runtime = ScriptedAgentRuntime(
+            scenarios=(ScriptedAgentScenario(result=expected),)
+        )
+        context, sink = create_context()
+
+        result = asyncio.run(runtime.execute(create_request(), context))
+
+        self.assertIs(result, expected)
+        self.assertIs(result.usage, usage)
+        self.assertEqual(
+            [event.kind for event in sink.events],
+            [
+                EventKind.PROVIDER_CALL_STARTED,
+                EventKind.USAGE_REPORTED,
+                EventKind.PROVIDER_CALL_COMPLETED,
+            ],
+        )
+        self.assertEqual(
+            sink.events[1].attributes,
+            {
+                "agent_id": "researcher",
+                "agent_version": "1",
+                "call_index": 0,
+                "input_tokens": 9,
+                "cached_input_tokens": 2,
+                "output_tokens": 4,
+            },
+        )
+        self.assertNotIn("private-output-sentinel", repr(sink.events))
 
     def test_disallowed_tool_is_rejected_before_tool_execution(self) -> None:
         runtime = ScriptedAgentRuntime(
