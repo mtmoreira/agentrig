@@ -219,6 +219,7 @@ dependencies = []
 
 [project.optional-dependencies]
 codex = ["openai-codex==0.144.4"]
+ollama = ["ollama==0.6.2"]
 """,
             encoding="utf-8",
         )
@@ -278,6 +279,8 @@ codex = ["openai-codex==0.144.4"]
         metadata["Requires-Python"] = ">=3.12"
         metadata["Requires-Dist"] = "openai-codex==0.144.4 ; extra == 'codex'"
         metadata["Provides-Extra"] = "codex"
+        metadata["Requires-Dist"] = "ollama==0.6.2 ; extra == 'ollama'"
+        metadata["Provides-Extra"] = "ollama"
         return metadata
 
 

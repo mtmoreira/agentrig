@@ -82,6 +82,11 @@ SUPPORTED_PLATFORMS = (
 _UNIVERSAL_WHEEL = re.compile(r"-(?:py3|py2\.py3)-none-any\.whl$")
 _SAFE_FILENAME = re.compile(r"^[A-Za-z0-9._+-]+\.whl$")
 _SAFE_PACKAGE_NAME = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_PYTHON_FULL_VERSION_MARKER = re.compile(
+    r"^python_full_version\s*(<|<=|==|!=|>=|>)\s*'"
+    r"([0-9]+)\.([0-9]+)(?:\.([0-9]+))?'$"
+)
+_BUCK_PYTHON_VERSION = (3, 13, 0)
 
 
 class DependencyBridgeError(ValueError):
@@ -165,10 +170,15 @@ def load_dependency_graph(
             raw_requirements,
             f"optional dependency group {extra_name!r}",
         )
-        roots = tuple(
-            _dependency_name(requirement, "optional dependency")
-            for requirement in requirements
-        )
+        selected_roots: list[str] = []
+        for requirement in requirements:
+            selected_root = _dependency_name(
+                requirement,
+                "optional dependency",
+            )
+            if selected_root is not None:
+                selected_roots.append(selected_root)
+        roots = tuple(selected_roots)
         if not roots:
             raise DependencyBridgeError(
                 f"optional dependency group {extra_name!r} is empty"
@@ -325,24 +335,56 @@ def _parse_registry_package(
 def _dependency_names(package: Mapping[str, object]) -> tuple[str, ...]:
     raw_dependencies = package.get("dependencies", [])
     dependencies = _require_sequence(raw_dependencies, "package dependencies")
-    names = tuple(
-        _dependency_name(dependency, "dependency")
-        for dependency in dependencies
-    )
+    selected_names: list[str] = []
+    for dependency in dependencies:
+        selected_name = _dependency_name(dependency, "dependency")
+        if selected_name is not None:
+            selected_names.append(selected_name)
+    names = tuple(selected_names)
     return tuple(sorted(set(names)))
 
 
-def _dependency_name(value: object, label: str) -> str:
+def _dependency_name(value: object, label: str) -> str | None:
     dependency = _require_mapping(value, label)
-    unsupported_fields = set(dependency) - {"name"}
+    unsupported_fields = set(dependency) - {"marker", "name"}
     if unsupported_fields:
         raise DependencyBridgeError(
             f"{label} uses unsupported lock fields: "
             f"{', '.join(sorted(unsupported_fields))}"
         )
+    marker = dependency.get("marker")
+    if marker is not None:
+        if not isinstance(marker, str):
+            raise DependencyBridgeError(f"{label} marker must be text")
+        if not _marker_applies_to_buck_python(marker):
+            return None
     return normalize_package_name(
         _require_string(dependency.get("name"), f"{label} name")
     )
+
+
+def _marker_applies_to_buck_python(marker: str) -> bool:
+    """Evaluate the strict marker subset used by the Buck Python 3.13 lock."""
+    match = _PYTHON_FULL_VERSION_MARKER.fullmatch(marker)
+    if match is None:
+        raise DependencyBridgeError(
+            "dependency marker is unsupported by the Buck Python bridge"
+        )
+    operator, major, minor, patch = match.groups()
+    requested = (int(major), int(minor), int(patch or "0"))
+    if operator == "<":
+        return _BUCK_PYTHON_VERSION < requested
+    if operator == "<=":
+        return _BUCK_PYTHON_VERSION <= requested
+    if operator == "==":
+        return _BUCK_PYTHON_VERSION == requested
+    if operator == "!=":
+        return _BUCK_PYTHON_VERSION != requested
+    if operator == ">=":
+        return _BUCK_PYTHON_VERSION >= requested
+    if operator == ">":
+        return _BUCK_PYTHON_VERSION > requested
+    raise AssertionError("validated marker operator is unsupported")
 
 
 def _parse_wheel(

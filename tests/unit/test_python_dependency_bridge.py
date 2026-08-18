@@ -37,8 +37,12 @@ class PythonDependencyBridgeTest(unittest.TestCase):
 
         self.assertEqual(checked_in, generated)
         self.assertIn('name = "extra-codex"', generated)
+        self.assertIn('name = "extra-ollama"', generated)
         self.assertIn("# openai-codex==0.144.4", generated)
         self.assertIn("# openai-codex-cli-bin==0.144.4", generated)
+        self.assertIn("# ollama==0.6.2", generated)
+        self.assertIn("# httpx==", generated)
+        self.assertIn("# pydantic==", generated)
         self.assertNotIn("# mypy==", generated)
 
     def test_normalizes_only_safe_distribution_names(self) -> None:
@@ -53,6 +57,7 @@ class PythonDependencyBridgeTest(unittest.TestCase):
         graph = load_dependency_graph(REPOSITORY_ROOT / "uv.lock")
 
         codex = select_locked_wheels(graph.packages["openai-codex"])
+        ollama = select_locked_wheels(graph.packages["ollama"])
         runtime = select_locked_wheels(
             graph.packages["openai-codex-cli-bin"]
         )
@@ -61,6 +66,7 @@ class PythonDependencyBridgeTest(unittest.TestCase):
         )
 
         self.assertEqual(tuple(codex), ("universal",))
+        self.assertEqual(tuple(ollama), ("universal",))
         self.assertEqual(
             frozenset(runtime),
             {
@@ -97,7 +103,7 @@ class PythonDependencyBridgeTest(unittest.TestCase):
         ):
             load_dependency_graph(fixture)
 
-    def test_rejects_conditional_locked_dependency_records(self) -> None:
+    def test_excludes_dependency_with_false_buck_python_marker(self) -> None:
         fixture = write_fixture(
             """
             version = 1
@@ -116,15 +122,69 @@ class PythonDependencyBridgeTest(unittest.TestCase):
             dependencies = [
                 { name = "conditional", marker = "python_version < '3.13'" },
             ]
+            wheels = [
+                { url = "https://files.pythonhosted.org/dependency-1.0.0-py3-none-any.whl", hash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+            ]
             """
         )
         self.addCleanup(fixture.unlink)
 
         with self.assertRaisesRegex(
             DependencyBridgeError,
-            "unsupported lock fields: marker",
+            "marker is unsupported",
         ):
             load_dependency_graph(fixture)
+
+        fixture.write_text(
+            fixture.read_text().replace(
+                "python_version < '3.13'",
+                "python_full_version < '3.13'",
+            )
+        )
+        graph = load_dependency_graph(fixture)
+        self.assertEqual(graph.packages["dependency"].dependencies, ())
+
+    def test_includes_dependency_with_true_buck_python_marker(self) -> None:
+        fixture = write_fixture(
+            """
+            version = 1
+
+            [[package]]
+            name = "agentrig"
+            version = "0.1.0"
+
+            [package.optional-dependencies]
+            demo = [{ name = "dependency" }]
+
+            [[package]]
+            name = "conditional"
+            version = "1.0.0"
+            source = { registry = "https://pypi.org/simple" }
+            wheels = [
+                { url = "https://files.pythonhosted.org/conditional-1.0.0-py3-none-any.whl", hash = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+            ]
+
+            [[package]]
+            name = "dependency"
+            version = "1.0.0"
+            source = { registry = "https://pypi.org/simple" }
+            dependencies = [
+                { name = "conditional", marker = "python_full_version >= '3.13'" },
+            ]
+            wheels = [
+                { url = "https://files.pythonhosted.org/dependency-1.0.0-py3-none-any.whl", hash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+            ]
+            """
+        )
+        self.addCleanup(fixture.unlink)
+
+        graph = load_dependency_graph(fixture)
+
+        self.assertEqual(
+            graph.packages["dependency"].dependencies,
+            ("conditional",),
+        )
+        self.assertIn("conditional", graph.packages)
 
 
 if __name__ == "__main__":

@@ -32,7 +32,7 @@ From the repository root:
 uv --version
 ./buck2 --version
 uv python install 3.13.14
-uv sync --locked --extra codex
+uv sync --locked --extra codex --extra ollama
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
 uv run python tools/validate_agent_context.py
@@ -73,6 +73,8 @@ Optional production extras are resolved once in `uv.lock`. The checked-in Buck2
 bridge under `third_party/python` selects the matching hashed wheel for each
 supported host; regenerate it with
 `uv run python tools/generate_buck_python_deps.py` after changing an extra.
+The `codex` and `ollama` extras install only their respective provider SDK
+dependencies; importing the base AgentRig package does not require either one.
 
 ## AI agent context
 

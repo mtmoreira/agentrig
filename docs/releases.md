@@ -63,7 +63,7 @@ at that exact commit. Build into an empty directory from the tagged checkout
 and validate the candidate artifacts:
 
 ```sh
-uv sync --locked --extra codex
+uv sync --locked --extra codex --extra ollama
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
 uv run python tools/validate_agent_context.py

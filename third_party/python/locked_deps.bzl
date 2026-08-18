@@ -38,6 +38,246 @@ def locked_python_dependencies():
         ],
     )
 
+    # anyio==4.14.2
+    native.remote_file(
+        name = "anyio__universal_download",
+        url = "https://files.pythonhosted.org/packages/da/35/f2287558c17e29fafc8ef3daf819bb9834061cfa43bff8014f7df7f63bdc/anyio-4.14.2-py3-none-any.whl",
+        sha256 = "9f505dda5ac9f0c8309b5e8bd445a8c2bf7246f3ce950121e45ea15bc41d1494",
+        out = "anyio-4.14.2-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=anyio",
+            "version=4.14.2",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "anyio__universal_wheel",
+        binary_src = ":anyio__universal_download",
+        labels = [
+            "locked-python",
+            "package=anyio",
+            "version=4.14.2",
+        ],
+    )
+    native.python_library(
+        name = "anyio",
+        deps = [
+            ":anyio__universal_wheel",
+            ":idna",
+        ],
+        labels = [
+            "locked-python",
+            "package=anyio",
+            "version=4.14.2",
+        ],
+    )
+
+    # certifi==2026.7.22
+    native.remote_file(
+        name = "certifi__universal_download",
+        url = "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl",
+        sha256 = "62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775",
+        out = "certifi-2026.7.22-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=certifi",
+            "version=2026.7.22",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "certifi__universal_wheel",
+        binary_src = ":certifi__universal_download",
+        labels = [
+            "locked-python",
+            "package=certifi",
+            "version=2026.7.22",
+        ],
+    )
+    native.python_library(
+        name = "certifi",
+        deps = [
+            ":certifi__universal_wheel",
+        ],
+        labels = [
+            "locked-python",
+            "package=certifi",
+            "version=2026.7.22",
+        ],
+    )
+
+    # h11==0.16.0
+    native.remote_file(
+        name = "h11__universal_download",
+        url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+        sha256 = "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+        out = "h11-0.16.0-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=h11",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "h11__universal_wheel",
+        binary_src = ":h11__universal_download",
+        labels = [
+            "locked-python",
+            "package=h11",
+            "version=0.16.0",
+        ],
+    )
+    native.python_library(
+        name = "h11",
+        deps = [
+            ":h11__universal_wheel",
+        ],
+        labels = [
+            "locked-python",
+            "package=h11",
+            "version=0.16.0",
+        ],
+    )
+
+    # httpcore==1.0.9
+    native.remote_file(
+        name = "httpcore__universal_download",
+        url = "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+        sha256 = "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+        out = "httpcore-1.0.9-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=httpcore",
+            "version=1.0.9",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "httpcore__universal_wheel",
+        binary_src = ":httpcore__universal_download",
+        labels = [
+            "locked-python",
+            "package=httpcore",
+            "version=1.0.9",
+        ],
+    )
+    native.python_library(
+        name = "httpcore",
+        deps = [
+            ":httpcore__universal_wheel",
+            ":certifi",
+            ":h11",
+        ],
+        labels = [
+            "locked-python",
+            "package=httpcore",
+            "version=1.0.9",
+        ],
+    )
+
+    # httpx==0.28.1
+    native.remote_file(
+        name = "httpx__universal_download",
+        url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+        sha256 = "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+        out = "httpx-0.28.1-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=httpx",
+            "version=0.28.1",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "httpx__universal_wheel",
+        binary_src = ":httpx__universal_download",
+        labels = [
+            "locked-python",
+            "package=httpx",
+            "version=0.28.1",
+        ],
+    )
+    native.python_library(
+        name = "httpx",
+        deps = [
+            ":httpx__universal_wheel",
+            ":anyio",
+            ":certifi",
+            ":httpcore",
+            ":idna",
+        ],
+        labels = [
+            "locked-python",
+            "package=httpx",
+            "version=0.28.1",
+        ],
+    )
+
+    # idna==3.18
+    native.remote_file(
+        name = "idna__universal_download",
+        url = "https://files.pythonhosted.org/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl",
+        sha256 = "7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2",
+        out = "idna-3.18-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=idna",
+            "version=3.18",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "idna__universal_wheel",
+        binary_src = ":idna__universal_download",
+        labels = [
+            "locked-python",
+            "package=idna",
+            "version=3.18",
+        ],
+    )
+    native.python_library(
+        name = "idna",
+        deps = [
+            ":idna__universal_wheel",
+        ],
+        labels = [
+            "locked-python",
+            "package=idna",
+            "version=3.18",
+        ],
+    )
+
+    # ollama==0.6.2
+    native.remote_file(
+        name = "ollama__universal_download",
+        url = "https://files.pythonhosted.org/packages/c4/ab/d6722beeb2d10f7a3b9ff49375708904fde18f82b5609a0bc4aeb5996a4d/ollama-0.6.2-py3-none-any.whl",
+        sha256 = "3ad7daab28e5a973445c36a73882a3ef698c2ebb00e21e308652741577509f7d",
+        out = "ollama-0.6.2-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=ollama",
+            "version=0.6.2",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "ollama__universal_wheel",
+        binary_src = ":ollama__universal_download",
+        labels = [
+            "locked-python",
+            "package=ollama",
+            "version=0.6.2",
+        ],
+    )
+    native.python_library(
+        name = "ollama",
+        deps = [
+            ":ollama__universal_wheel",
+            ":httpx",
+            ":pydantic",
+        ],
+        labels = [
+            "locked-python",
+            "package=ollama",
+            "version=0.6.2",
+        ],
+    )
+
     # openai-codex==0.144.4
     native.remote_file(
         name = "openai-codex__universal_download",
@@ -568,6 +808,16 @@ def locked_python_dependencies():
         name = "extra-codex",
         deps = [
             ":openai-codex",
+        ],
+        labels = ["locked-python", "optional-extra"],
+        visibility = ["PUBLIC"],
+    )
+
+    # Project optional dependency group: ollama
+    native.python_library(
+        name = "extra-ollama",
+        deps = [
+            ":ollama",
         ],
         labels = ["locked-python", "optional-extra"],
         visibility = ["PUBLIC"],

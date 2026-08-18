@@ -21,3 +21,14 @@ agentrig_python_test(
     base_module = "tests.integration",
     deps = ["//src/agentrig/integrations/openai:codex_sdk"],
 )
+
+agentrig_python_test(
+    name = "ollama_dependency",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_ollama_dependency.py",
+    ],
+    base_module = "tests.integration",
+    deps = ["//third_party/python:extra-ollama"],
+)
