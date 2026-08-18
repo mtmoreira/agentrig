@@ -55,6 +55,7 @@ options = OllamaRuntimeOptions(
     temperature=0.2,
     seed=7,
     max_output_tokens=128,
+    think=False,
 )
 contract = AgentContract[str, dict[str, str]](
     agent_id="ollama-runtime",

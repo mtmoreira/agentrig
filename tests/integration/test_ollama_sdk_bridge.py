@@ -186,6 +186,7 @@ class OllamaSdkBridgeTest(unittest.TestCase):
                         {"role": "user", "content": "private input"},
                     ],
                     "stream": False,
+                    "think": False,
                     "format": {
                         "type": "object",
                         "properties": {"value": {"type": "string"}},

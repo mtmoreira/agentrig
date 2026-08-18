@@ -141,6 +141,7 @@ class OllamaAgentRuntime:
             ),
             output_schema=self._output_schemas[request.contract.output_schema],
             options=self._options.to_provider_options(),
+            think=self._options.think,
             keep_alive=self._options.keep_alive,
         )
 

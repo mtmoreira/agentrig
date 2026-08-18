@@ -161,6 +161,7 @@ class _SdkClient:
                     for message in request.messages
                 ],
                 stream=False,
+                think=request.think,
                 format=_thaw_object(request.output_schema),
                 options=_thaw_object(request.options),
                 keep_alive=request.keep_alive,

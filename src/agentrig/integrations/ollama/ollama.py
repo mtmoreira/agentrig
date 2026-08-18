@@ -6,7 +6,7 @@ import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Protocol, runtime_checkable
+from typing import Literal, Protocol, runtime_checkable
 
 from agentrig.capabilities import (
     CapabilityDescriptor,
@@ -62,6 +62,7 @@ class OllamaRuntimeOptions:
     temperature: float | None = None
     seed: int | None = None
     max_output_tokens: int | None = None
+    think: bool | Literal["low", "medium", "high"] | None = False
     keep_alive: float | str | None = None
 
     def __post_init__(self) -> None:
@@ -90,6 +91,7 @@ class OllamaRuntimeOptions:
             raise ValueError(
                 "Ollama max output tokens must be a positive integer"
             )
+        _validate_think(self.think)
         if self.keep_alive is not None:
             if isinstance(self.keep_alive, bool):
                 raise ValueError("Ollama keep_alive must be text or a number")
@@ -130,6 +132,7 @@ class OllamaChatRequest:
     messages: tuple[OllamaChatMessage, ...] = field(repr=False)
     output_schema: Mapping[str, JsonValue] = field(repr=False)
     options: Mapping[str, JsonValue] = field(default_factory=dict)
+    think: bool | Literal["low", "medium", "high"] | None = False
     keep_alive: float | str | None = None
 
     def __post_init__(self) -> None:
@@ -149,8 +152,18 @@ class OllamaChatRequest:
             "options",
             freeze_json_object("Ollama chat options", self.options),
         )
+        _validate_think(self.think)
         if self.keep_alive is not None:
             OllamaRuntimeOptions(keep_alive=self.keep_alive)
+
+
+def _validate_think(value: object) -> None:
+    if value is None or isinstance(value, bool):
+        return
+    if not isinstance(value, str) or value not in {"low", "medium", "high"}:
+        raise ValueError(
+            "Ollama think must be a boolean, supported level, or None"
+        )
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

@@ -240,6 +240,7 @@ class OllamaContractTest(unittest.TestCase):
             temperature=0.2,
             seed=7,
             max_output_tokens=128,
+            think="low",
             keep_alive="5m",
         )
 
@@ -254,6 +255,9 @@ class OllamaContractTest(unittest.TestCase):
                 OllamaRuntimeOptions(temperature=invalid)
         with self.assertRaises(ValueError):
             OllamaRuntimeOptions(max_output_tokens=0)
+        for invalid_think in ("", "enabled", 1, []):
+            with self.subTest(think=invalid_think), self.assertRaises(ValueError):
+                OllamaRuntimeOptions(think=invalid_think)  # type: ignore[arg-type]
 
     def test_request_freezes_schema_options_and_omits_private_messages(self) -> None:
         schema: dict[str, object] = {"type": "object"}
@@ -271,6 +275,7 @@ class OllamaContractTest(unittest.TestCase):
 
         self.assertEqual(request.output_schema, {"type": "object"})
         self.assertEqual(request.options, {"seed": 7})
+        self.assertIs(request.think, False)
         self.assertNotIn("private prompt", repr(request))
 
 
@@ -283,6 +288,7 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
                 temperature=0.1,
                 seed=11,
                 max_output_tokens=64,
+                think="low",
                 keep_alive="2m",
             ),
         )
@@ -312,6 +318,7 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
             request.options,
             {"temperature": 0.1, "seed": 11, "num_predict": 64},
         )
+        self.assertEqual(request.think, "low")
         self.assertEqual(request.keep_alive, "2m")
         self.assertEqual(client.closes, 1)
         self.assertEqual(
