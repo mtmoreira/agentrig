@@ -15,3 +15,19 @@ agentrig_python_test(
         "//src/agentrig/integrations/openai:codex_sdk",
     ],
 )
+
+agentrig_python_test(
+    name = "ollama_runtime",
+    scope = "integration",
+    live = True,
+    srcs = [
+        "__init__.py",
+        "test_ollama_runtime_live.py",
+    ],
+    base_module = "tests.live",
+    deps = [
+        "//src/agentrig/agents:agents",
+        "//src/agentrig/core:core",
+        "//src/agentrig/integrations/ollama:ollama_sdk",
+    ],
+)
