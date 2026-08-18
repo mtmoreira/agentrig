@@ -39,6 +39,27 @@ private names, and package internals are not public APIs.
 Released versions and tags are never moved, deleted, or reused. A correction
 uses a new version.
 
+## AgentRig 0.2.0
+
+AgentRig 0.2.0 adds application-scoped runtime composition while preserving the
+provider-neutral execution boundary established in 0.1.0:
+
+- `agent_runtime` capability identity for portable autonomous-runtime
+  requirements;
+- an immutable, application-scoped runtime catalog with exact registration and
+  resolution semantics, without global provider state or automatic fallback;
+- late-bound Codex authentication resolved only when the SDK client is created;
+- an exact-pinned optional `ollama` extra, injected structured Ollama runtime,
+  official asynchronous SDK bridge, and bounded real-service contract;
+- explicit per-binding Ollama thinking configuration, defaulting off for strict
+  structured output so thinking models preserve their content token budget;
+- corrected Buck unit and live entry points that propagate failing test status.
+
+These additions do not intentionally remove or rename a public 0.1.0 export.
+As a pre-1.0 minor release, 0.2.0 establishes the supported baseline for the
+new runtime-catalog and Ollama APIs; consumers must still opt into provider SDK
+extras explicitly.
+
 ## Required release identity
 
 For version `X.Y.Z`, a candidate release must contain exactly:
@@ -71,7 +92,7 @@ uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 
-release_version="0.1.0"
+release_version="0.2.0"
 release_commit="$(git rev-parse HEAD)"
 git tag -a "v$release_version" -m "AgentRig $release_version"
 release_dir="$(mktemp -d)"
