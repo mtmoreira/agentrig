@@ -1,0 +1,15 @@
+python_library(
+    name = "ollama",
+    srcs = [
+        "__init__.py",
+        "ollama.py",
+        "runtime.py",
+    ],
+    base_module = "agentrig.integrations.ollama",
+    deps = [
+        "//src/agentrig/agents:agents",
+        "//src/agentrig/capabilities:capabilities",
+        "//src/agentrig/core:core",
+    ],
+    visibility = ["PUBLIC"],
+)
