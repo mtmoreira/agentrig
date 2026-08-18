@@ -13,7 +13,7 @@ def main() -> None:
 
     import __test_main__
 
-    __test_main__.main(sys.argv)
+    raise SystemExit(__test_main__.main(sys.argv))
 
 
 if __name__ == "__main__":
