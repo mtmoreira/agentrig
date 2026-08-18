@@ -32,3 +32,14 @@ agentrig_python_test(
     base_module = "tests.integration",
     deps = ["//third_party/python:extra-ollama"],
 )
+
+agentrig_python_test(
+    name = "ollama_sdk_bridge",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_ollama_sdk_bridge.py",
+    ],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations/ollama:ollama_sdk"],
+)

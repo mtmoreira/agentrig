@@ -13,3 +13,15 @@ python_library(
     ],
     visibility = ["PUBLIC"],
 )
+
+python_library(
+    name = "ollama_sdk",
+    srcs = ["sdk.py"],
+    base_module = "agentrig.integrations.ollama",
+    deps = [
+        ":ollama",
+        "//src/agentrig/core:core",
+        "//third_party/python:extra-ollama",
+    ],
+    visibility = ["PUBLIC"],
+)

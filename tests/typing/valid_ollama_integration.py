@@ -18,6 +18,7 @@ from agentrig.integrations.ollama import (
     OllamaFinishReason,
     OllamaRuntimeOptions,
 )
+from agentrig.integrations.ollama.sdk import OllamaSdkClientFactory
 
 
 class FakeClient:
@@ -46,6 +47,10 @@ class ExampleAuthenticationSource:
 
 factory: OllamaClientFactory = FakeFactory()
 authentication_source: OllamaAuthenticationSource = ExampleAuthenticationSource()
+sdk_factory: OllamaClientFactory = OllamaSdkClientFactory(
+    host="http://127.0.0.1:11434",
+    authentication_source=authentication_source,
+)
 options = OllamaRuntimeOptions(
     temperature=0.2,
     seed=7,
