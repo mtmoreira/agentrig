@@ -30,8 +30,20 @@ from openai_codex.generated.v2_all import (
 )
 from openai_codex.models import JsonObject, Notification
 
+from agentrig.agents import (
+    AgentRuntimeCatalog,
+    AgentRuntimeRegistration,
+)
+from agentrig.capabilities import (
+    CapabilityFeature,
+    CapabilityKind,
+    CapabilityRequirements,
+)
+from agentrig.core import AgentRigError
 from agentrig.integrations.openai import (
+    CODEX_AGENT_RUNTIME_CAPABILITY,
     CODEX_SHELL_TOOL,
+    CodexAgentRuntime,
     CodexApprovalMode,
     CodexApprovalRequested,
     CodexClient,
@@ -128,6 +140,135 @@ def completed_turn() -> Turn:
 
 
 class CodexSdkBridgeTest(unittest.TestCase):
+    def test_catalog_preflight_does_not_resolve_authentication(self) -> None:
+        builder_calls = 0
+
+        class AuthenticationSource:
+            calls = 0
+
+            def resolve_environment(self) -> dict[str, str]:
+                self.calls += 1
+                return {"EXAMPLE_AUTH": "private"}
+
+        def build(
+            config: CodexConfig,
+            approval_handler: Callable[[str, JsonObject | None], JsonObject],
+        ) -> Any:
+            nonlocal builder_calls
+            del config, approval_handler
+            builder_calls += 1
+            raise AssertionError("builder must not be called")
+
+        source = AuthenticationSource()
+        runtime = CodexAgentRuntime(
+            client_factory=CodexSdkClientFactory(
+                authentication_source=source,
+                raw_client_builder=build,
+            ),
+            model="gpt-5.6-terra",
+            sandbox=CodexSandboxPolicy(
+                mode=CodexSandboxMode.READ_ONLY,
+                cwd="/workspace",
+            ),
+            output_schemas={"example.output.v1": {"type": "object"}},
+        )
+        catalog = AgentRuntimeCatalog(
+            (
+                AgentRuntimeRegistration(
+                    binding_id="codex-primary",
+                    descriptor=CODEX_AGENT_RUNTIME_CAPABILITY,
+                    runtime=runtime,
+                ),
+            )
+        )
+
+        with self.assertRaises(AgentRigError) as raised:
+            catalog.resolve(
+                "codex-primary",
+                CapabilityRequirements(
+                    kind=CapabilityKind.AGENT_RUNTIME,
+                    features=frozenset({CapabilityFeature.CITATIONS}),
+                ),
+            )
+
+        self.assertEqual(
+            raised.exception.failure.code,
+            "agent_runtime.binding_incompatible",
+        )
+        self.assertEqual(source.calls, 0)
+        self.assertEqual(builder_calls, 0)
+
+    def test_resolves_and_copies_authentication_only_at_client_creation(self) -> None:
+        private_value = "private-authentication-value"
+        environment = {"EXAMPLE_AUTH": private_value}
+        captured: list[FakeRawClient] = []
+
+        class AuthenticationSource:
+            calls = 0
+
+            def resolve_environment(self) -> dict[str, str]:
+                self.calls += 1
+                return environment
+
+        def build(
+            config: CodexConfig,
+            approval_handler: Callable[[str, JsonObject | None], JsonObject],
+        ) -> Any:
+            raw = FakeRawClient(config, approval_handler)
+            captured.append(raw)
+            return raw
+
+        source = AuthenticationSource()
+        factory = CodexSdkClientFactory(
+            authentication_source=source,
+            raw_client_builder=build,
+        )
+
+        self.assertEqual(source.calls, 0)
+        client = factory.create()
+        environment["EXAMPLE_AUTH"] = "changed"
+
+        self.assertEqual(source.calls, 1)
+        self.assertEqual(
+            captured[0].config.env,
+            {"EXAMPLE_AUTH": private_value},
+        )
+        self.assertNotIn(private_value, repr(factory))
+        self.assertNotIn(private_value, repr(client))
+
+    def test_authentication_resolution_failure_is_safe_and_skips_builder(self) -> None:
+        private_value = "private-resolution-failure"
+        builder_calls = 0
+
+        class FailingAuthenticationSource:
+            def resolve_environment(self) -> dict[str, str]:
+                raise RuntimeError(private_value)
+
+        def build(
+            config: CodexConfig,
+            approval_handler: Callable[[str, JsonObject | None], JsonObject],
+        ) -> Any:
+            nonlocal builder_calls
+            del config, approval_handler
+            builder_calls += 1
+            raise AssertionError("builder must not be called")
+
+        factory = CodexSdkClientFactory(
+            authentication_source=FailingAuthenticationSource(),
+            raw_client_builder=build,
+        )
+
+        with self.assertRaises(AgentRigError) as raised:
+            factory.create()
+
+        self.assertEqual(builder_calls, 0)
+        self.assertEqual(
+            raised.exception.failure.code,
+            "codex.authentication_resolution_failed",
+        )
+        self.assertNotIn(private_value, repr(raised.exception))
+        self.assertNotIn(private_value, repr(raised.exception.failure))
+
     def test_maps_stable_sdk_lifecycle_without_raw_payloads(self) -> None:
         captured: list[FakeRawClient] = []
 
@@ -234,6 +375,7 @@ class CodexSdkBridgeTest(unittest.TestCase):
         raw = captured[0]
 
         self.assertFalse(raw.config.experimental_api)
+        self.assertIsNone(raw.config.env)
         self.assertEqual(
             raw.config.config_overrides,
             (

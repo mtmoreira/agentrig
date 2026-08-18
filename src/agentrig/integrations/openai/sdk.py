@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Mapping
 from queue import Empty, Queue
 from typing import Any, Protocol, cast
 
@@ -42,11 +42,13 @@ from openai_codex.generated.v2_all import (
 from openai_codex.models import JsonObject, Notification
 
 from agentrig.core._json import JsonValue, thaw_json_value
+from agentrig.core.errors import AgentRigError, Failure, FailureKind
 from agentrig.integrations.openai.codex import (
     CODEX_SHELL_TOOL,
     CODEX_WEB_SEARCH_TOOL,
     CodexApprovalMode,
     CodexApprovalRequested,
+    CodexAuthenticationSource,
     CodexClient,
     CodexClientFactory,
     CodexProgressKind,
@@ -98,11 +100,66 @@ RawClientBuilder = Callable[
 class CodexSdkClientFactory:
     """Create stable SDK-backed clients with experimental APIs disabled."""
 
-    def __init__(self, *, raw_client_builder: RawClientBuilder | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        authentication_source: CodexAuthenticationSource | None = None,
+        raw_client_builder: RawClientBuilder | None = None,
+    ) -> None:
+        if (
+            authentication_source is not None
+            and not isinstance(authentication_source, CodexAuthenticationSource)
+        ):
+            raise TypeError(
+                "Codex authentication source must satisfy "
+                "CodexAuthenticationSource"
+            )
+        self._authentication_source = authentication_source
         self._builder = raw_client_builder or _default_raw_client_builder
 
     def create(self) -> CodexClient:
-        return _SdkClient(self._builder)
+        environment = (
+            _resolve_authentication_environment(self._authentication_source)
+            if self._authentication_source is not None
+            else None
+        )
+        return _SdkClient(self._builder, environment)
+
+
+def _resolve_authentication_environment(
+    source: CodexAuthenticationSource,
+) -> dict[str, str]:
+    try:
+        resolved = source.resolve_environment()
+        if not isinstance(resolved, Mapping):
+            raise TypeError("authentication environment must be a mapping")
+        copied = dict(resolved)
+        if not copied:
+            raise ValueError("authentication environment must not be empty")
+        for name, value in copied.items():
+            if (
+                not isinstance(name, str)
+                or not name
+                or name != name.strip()
+                or "=" in name
+                or "\x00" in name
+            ):
+                raise ValueError("authentication variable name is invalid")
+            if (
+                not isinstance(value, str)
+                or not value
+                or "\x00" in value
+            ):
+                raise ValueError("authentication variable value is invalid")
+        return copied
+    except Exception:
+        raise AgentRigError(
+            Failure(
+                kind=FailureKind.PERMANENT_PROVIDER,
+                message="Codex authentication could not be resolved",
+                code="codex.authentication_resolution_failed",
+            )
+        ) from None
 
 
 class _ClosingRawCodexClient(RawCodexClient):
@@ -121,7 +178,11 @@ class _ClosingRawCodexClient(RawCodexClient):
 
 
 class _SdkClient:
-    def __init__(self, builder: RawClientBuilder) -> None:
+    def __init__(
+        self,
+        builder: RawClientBuilder,
+        authentication_environment: Mapping[str, str] | None,
+    ) -> None:
         self._approvals: Queue[CodexApprovalRequested] = Queue()
         config = CodexConfig(
             experimental_api=False,
@@ -135,6 +196,11 @@ class _SdkClient:
             ),
             client_name="agentrig",
             client_title="AgentRig",
+            env=(
+                dict(authentication_environment)
+                if authentication_environment is not None
+                else None
+            ),
         )
         self._raw = builder(config, self._handle_approval)
         self._started = False

@@ -12,6 +12,7 @@ from agentrig.integrations.openai import (
     CODEX_AGENT_RUNTIME_CAPABILITY,
     CodexAgentRuntime,
     CodexApprovalMode,
+    CodexAuthenticationSource,
     CodexClient,
     CodexClientFactory,
     CodexSandboxMode,
@@ -96,6 +97,15 @@ turn_request = CodexTurnRequest(
 )
 factory: CodexClientFactory = FakeClientFactory()
 client: CodexClient = factory.create()
+
+
+@dataclass(frozen=True)
+class ExampleAuthenticationSource:
+    def resolve_environment(self) -> dict[str, str]:
+        return {"EXAMPLE_AUTH": "private"}
+
+
+authentication_source: CodexAuthenticationSource = ExampleAuthenticationSource()
 
 contract = AgentContract[str, dict[str, str]](
     agent_id="codex-runtime",

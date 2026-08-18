@@ -45,6 +45,15 @@ CODEX_AGENT_RUNTIME_CAPABILITY = CapabilityDescriptor(
 )
 
 
+@runtime_checkable
+class CodexAuthenticationSource(Protocol):
+    """Resolve a private process-environment overlay at client creation."""
+
+    def resolve_environment(self) -> Mapping[str, str]:
+        """Return only application-authorized authentication variables."""
+        ...
+
+
 class CodexSandboxMode(StrEnum):
     """Bounded sandbox modes supported by the initial adapter."""
 

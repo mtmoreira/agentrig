@@ -19,6 +19,7 @@ from agentrig.integrations.openai import (
     CODEX_WEB_SEARCH_TOOL,
     CodexApprovalMode,
     CodexApprovalRequested,
+    CodexAuthenticationSource,
     CodexClient,
     CodexClientFactory,
     CodexProgressKind,
@@ -182,6 +183,15 @@ class CodexCapabilityTest(unittest.TestCase):
             ).unmet_by(descriptor),
             ("kind:coding",),
         )
+
+    def test_authentication_source_is_an_injected_protocol(self) -> None:
+        class ExampleAuthenticationSource:
+            def resolve_environment(self) -> dict[str, str]:
+                return {"EXAMPLE_AUTH": "private"}
+
+        source = ExampleAuthenticationSource()
+
+        self.assertIsInstance(source, CodexAuthenticationSource)
 
 
 class CodexSandboxPolicyTest(unittest.TestCase):

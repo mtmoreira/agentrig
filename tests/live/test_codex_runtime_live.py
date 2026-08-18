@@ -29,6 +29,7 @@ from agentrig.integrations.openai import (
 from agentrig.integrations.openai.sdk import CodexSdkClientFactory
 
 _MODEL_ENVIRONMENT_VARIABLE = "AGENTRIG_CODEX_LIVE_MODEL"
+_API_KEY_ENVIRONMENT_VARIABLE = "AGENTRIG_CODEX_LIVE_API_KEY"
 _DEFAULT_MODEL = "gpt-5.6-terra"
 _OUTPUT_SCHEMA_ID = "agentrig.live.codex_result.v1"
 _PRIVATE_SENTINEL = "private-live-prompt-sentinel"
@@ -50,6 +51,16 @@ def _model() -> str:
             f"{_MODEL_ENVIRONMENT_VARIABLE} must be nonempty and trimmed"
         )
     return model
+
+
+class ApplicationAuthenticationSource:
+    def resolve_environment(self) -> dict[str, str]:
+        api_key = os.environ.get(_API_KEY_ENVIRONMENT_VARIABLE)
+        if api_key is None or not api_key or api_key != api_key.strip():
+            raise RuntimeError(
+                f"{_API_KEY_ENVIRONMENT_VARIABLE} must be nonempty and trimmed"
+            )
+        return {"OPENAI_API_KEY": api_key}
 
 
 def _contract() -> AgentContract[object, object]:
@@ -93,7 +104,9 @@ class CodexRuntimeLiveTest(unittest.TestCase):
         if not isinstance(context.event_sink, InMemoryEventSink):
             raise AssertionError("live test requires an in-memory event sink")
         runtime = CodexAgentRuntime(
-            client_factory=CodexSdkClientFactory(),
+            client_factory=CodexSdkClientFactory(
+                authentication_source=ApplicationAuthenticationSource()
+            ),
             model=_model(),
             sandbox=CodexSandboxPolicy(
                 mode=CodexSandboxMode.READ_ONLY,
