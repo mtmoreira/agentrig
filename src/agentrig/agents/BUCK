@@ -2,6 +2,9 @@ python_library(
     name = "agents",
     srcs = glob(["*.py"]),
     base_module = "agentrig.agents",
-    deps = ["//src/agentrig/core:core"],
+    deps = [
+        "//src/agentrig/capabilities:capabilities",
+        "//src/agentrig/core:core",
+    ],
     visibility = ["PUBLIC"],
 )

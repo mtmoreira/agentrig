@@ -1,6 +1,10 @@
 """Provider-independent autonomous agent contracts."""
 
 from agentrig.agents.base import Agent
+from agentrig.agents.catalog import (
+    AgentRuntimeCatalog,
+    AgentRuntimeRegistration,
+)
 from agentrig.agents.configured import (
     AgentInputCodec,
     AgentOutputCodec,
@@ -28,6 +32,8 @@ __all__ = (
     "AgentOutputCodec",
     "AgentResult",
     "AgentRuntime",
+    "AgentRuntimeCatalog",
+    "AgentRuntimeRegistration",
     "AgentStatus",
     "ConfiguredAgent",
 )
