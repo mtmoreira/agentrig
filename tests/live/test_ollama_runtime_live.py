@@ -25,6 +25,7 @@ from agentrig.integrations.ollama import (
     OllamaRuntimeOptions,
 )
 from agentrig.integrations.ollama.sdk import OllamaSdkClientFactory
+from tests.support.live_test_main import require_live_test_opt_in
 
 _HOST_ENVIRONMENT_VARIABLE = "AGENTRIG_OLLAMA_LIVE_HOST"
 _MODEL_ENVIRONMENT_VARIABLE = "AGENTRIG_OLLAMA_LIVE_MODEL"
@@ -98,6 +99,7 @@ def _context() -> RunContext:
 
 class OllamaRuntimeLiveTest(unittest.TestCase):
     def test_returns_strict_output_through_a_bounded_live_turn(self) -> None:
+        require_live_test_opt_in()
         host = _required_environment(_HOST_ENVIRONMENT_VARIABLE)
         model = _required_environment(_MODEL_ENVIRONMENT_VARIABLE)
         context = _context()
@@ -165,6 +167,10 @@ class OllamaRuntimeLiveTest(unittest.TestCase):
         usage = events[1].attributes
         self.assertGreaterEqual(usage["input_tokens"], 0)
         self.assertGreaterEqual(usage["output_tokens"], 0)
+        self.assertTrue(execution.usage.is_reported)
+        self.assertIsNotNone(execution.usage.total_tokens)
+        self.assertEqual(execution.usage.input_tokens, usage["input_tokens"])
+        self.assertEqual(execution.usage.output_tokens, usage["output_tokens"])
         serialized_events = "\n".join(event.to_json() for event in events)
         if _PRIVATE_SENTINEL in serialized_events:
             self.fail("live Ollama events retained private input")

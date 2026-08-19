@@ -3,36 +3,52 @@
 Live tests are isolated from AgentRig's default offline lanes. They require an
 explicit opt-in and fail when required provider configuration is unavailable.
 
-The Codex runtime test requires an application-scoped API key through
-`AGENTRIG_CODEX_LIVE_API_KEY`, maps it into the provider process only when the
-client is created, starts an ephemeral thread in a read-only sandbox with
-network access disabled, and requests a small strict JSON result without tools.
-It verifies the normalized result, provider metadata, usage, and safe event
-projection without recording the prompt or output in events.
+The Codex runtime test requires an explicit application-selected authentication
+mode through `AGENTRIG_CODEX_LIVE_AUTH_MODE`. In `api_key` mode, it resolves
+`AGENTRIG_CODEX_LIVE_API_KEY` only when the client is created and maps it into
+the provider process. In `ambient` mode, the application deliberately leaves
+authentication to the existing Codex environment. The test starts an ephemeral
+thread in a read-only sandbox with network access disabled and requests a small
+strict JSON result without tools. It verifies the normalized result, provider
+metadata, usage, and safe event projection without recording the prompt or
+output in events.
 
 Run only this test with:
 
 ```sh
-./buck2 test //tests/live:codex_runtime -- \
-  --env AGENTRIG_RUN_LIVE=1 \
-  --env AGENTRIG_CODEX_LIVE_API_KEY
+: "${AGENTRIG_CODEX_LIVE_API_KEY:?export the application-owned API key}"
+AGENTRIG_RUN_LIVE=1 \
+AGENTRIG_CODEX_LIVE_AUTH_MODE=api_key \
+uv run python -m unittest \
+  tests.live.test_codex_runtime_live -v
+```
+
+To use an existing Codex login explicitly instead:
+
+```sh
+AGENTRIG_RUN_LIVE=1 \
+AGENTRIG_CODEX_LIVE_AUTH_MODE=ambient \
+uv run python -m unittest tests.live.test_codex_runtime_live -v
 ```
 
 The default model is `gpt-5.6-terra`. Override it explicitly when validating a
 different supported Codex model:
 
 ```sh
-./buck2 test //tests/live:codex_runtime -- \
-  --env AGENTRIG_RUN_LIVE=1 \
-  --env AGENTRIG_CODEX_LIVE_API_KEY \
-  --env AGENTRIG_CODEX_LIVE_MODEL=gpt-5.6-terra
+: "${AGENTRIG_CODEX_LIVE_API_KEY:?export the application-owned API key}"
+AGENTRIG_RUN_LIVE=1 \
+AGENTRIG_CODEX_LIVE_AUTH_MODE=api_key \
+AGENTRIG_CODEX_LIVE_MODEL=gpt-5.6-terra \
+uv run python -m unittest tests.live.test_codex_runtime_live -v
 ```
 
 Set `AGENTRIG_CODEX_LIVE_API_KEY` from an application-owned secret source. The
 test maps it to the Codex provider process without putting it in an AgentRig
 request, fixture, event, failure, or representation. See the official
 [Codex authentication guide](https://developers.openai.com/codex/auth), and
-never commit the value or include it directly in a shell command.
+never commit the value or include it directly in a shell command. Ambient mode
+does not read, copy, print, or persist the existing authentication material; it
+only selects the SDK factory's already-supported ambient behavior.
 
 ## Ollama
 
@@ -51,10 +67,8 @@ For an unauthenticated local service, run:
 ```sh
 : "${AGENTRIG_OLLAMA_LIVE_HOST:?export the exact Ollama host}"
 : "${AGENTRIG_OLLAMA_LIVE_MODEL:?export an already-installed model}"
-./buck2 test //tests/live:ollama_runtime -- \
-  --env AGENTRIG_RUN_LIVE=1 \
-  --env "AGENTRIG_OLLAMA_LIVE_HOST=${AGENTRIG_OLLAMA_LIVE_HOST}" \
-  --env "AGENTRIG_OLLAMA_LIVE_MODEL=${AGENTRIG_OLLAMA_LIVE_MODEL}"
+AGENTRIG_RUN_LIVE=1 \
+uv run python -m unittest tests.live.test_ollama_runtime_live -v
 ```
 
 The live test also supports `AGENTRIG_OLLAMA_LIVE_API_KEY` through its

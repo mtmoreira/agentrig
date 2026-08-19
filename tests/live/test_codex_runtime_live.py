@@ -27,9 +27,13 @@ from agentrig.integrations.openai import (
     CodexSandboxPolicy,
 )
 from agentrig.integrations.openai.sdk import CodexSdkClientFactory
+from tests.support.live_test_main import require_live_test_opt_in
 
 _MODEL_ENVIRONMENT_VARIABLE = "AGENTRIG_CODEX_LIVE_MODEL"
 _API_KEY_ENVIRONMENT_VARIABLE = "AGENTRIG_CODEX_LIVE_API_KEY"
+_AUTHENTICATION_MODE_ENVIRONMENT_VARIABLE = "AGENTRIG_CODEX_LIVE_AUTH_MODE"
+_API_KEY_AUTHENTICATION_MODE = "api_key"
+_AMBIENT_AUTHENTICATION_MODE = "ambient"
 _DEFAULT_MODEL = "gpt-5.6-terra"
 _OUTPUT_SCHEMA_ID = "agentrig.live.codex_result.v1"
 _PRIVATE_SENTINEL = "private-live-prompt-sentinel"
@@ -61,6 +65,21 @@ class ApplicationAuthenticationSource:
                 f"{_API_KEY_ENVIRONMENT_VARIABLE} must be nonempty and trimmed"
             )
         return {"OPENAI_API_KEY": api_key}
+
+
+def _client_factory() -> CodexSdkClientFactory:
+    mode = os.environ.get(_AUTHENTICATION_MODE_ENVIRONMENT_VARIABLE)
+    if mode == _API_KEY_AUTHENTICATION_MODE:
+        return CodexSdkClientFactory(
+            authentication_source=ApplicationAuthenticationSource()
+        )
+    if mode == _AMBIENT_AUTHENTICATION_MODE:
+        return CodexSdkClientFactory()
+    raise RuntimeError(
+        f"{_AUTHENTICATION_MODE_ENVIRONMENT_VARIABLE} must be "
+        f"{_API_KEY_AUTHENTICATION_MODE!r} or "
+        f"{_AMBIENT_AUTHENTICATION_MODE!r}"
+    )
 
 
 def _contract() -> AgentContract[object, object]:
@@ -100,13 +119,12 @@ def _context() -> RunContext:
 
 class CodexRuntimeLiveTest(unittest.TestCase):
     def test_returns_strict_output_through_a_bounded_live_turn(self) -> None:
+        require_live_test_opt_in()
         context = _context()
         if not isinstance(context.event_sink, InMemoryEventSink):
             raise AssertionError("live test requires an in-memory event sink")
         runtime = CodexAgentRuntime(
-            client_factory=CodexSdkClientFactory(
-                authentication_source=ApplicationAuthenticationSource()
-            ),
+            client_factory=_client_factory(),
             model=_model(),
             sandbox=CodexSandboxPolicy(
                 mode=CodexSandboxMode.READ_ONLY,
@@ -168,6 +186,26 @@ class CodexRuntimeLiveTest(unittest.TestCase):
                     EventKind.PROVIDER_CALL_COMPLETED,
                 }
             )
+        )
+        usage_events = tuple(
+            event
+            for event in events
+            if event.kind is EventKind.USAGE_REPORTED
+        )
+        reported_usage = usage_events[-1].attributes
+        self.assertTrue(execution.usage.is_reported)
+        self.assertIsNotNone(execution.usage.total_tokens)
+        self.assertEqual(
+            execution.usage.input_tokens,
+            reported_usage["input_tokens"],
+        )
+        self.assertEqual(
+            execution.usage.cached_input_tokens,
+            reported_usage["cached_input_tokens"],
+        )
+        self.assertEqual(
+            execution.usage.output_tokens,
+            reported_usage["output_tokens"],
         )
         serialized_events = "\n".join(event.to_json() for event in events)
         self.assertNotIn(_PRIVATE_SENTINEL, serialized_events)

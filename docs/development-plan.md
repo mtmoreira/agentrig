@@ -1,7 +1,7 @@
 # AgentRig development plan
 
 **Status:** Proposed minimum plan
-**Last updated:** 2026-08-17
+**Last updated:** 2026-08-18
 **Target consumer:** Storyworld
 **Boundary:** Build AgentRig infrastructure only; do not implement Storyworld
 
@@ -201,7 +201,7 @@ Deferred:
 Deliver:
 
 - `Agent`, `AgentContract`, `AgentResult`, and agent status
-- `AgentRuntime` request/result contract
+- `AgentRuntime` request/result contract with portable optional token usage
 - `ConfiguredAgent`
 - Tool allowlist and permission metadata
 - Scripted runtime fake with progress, tool, approval, failure, and cancellation
@@ -215,6 +215,8 @@ Acceptance:
 - Output-schema mismatch fails as a contract violation.
 - Disallowed tool requests are rejected before execution.
 - Provider/session metadata remains outside portable output schemas.
+- Reported runtime usage is available on the normalized result and matches the
+  safe usage event; unknown provider counts remain unknown rather than zero.
 - A configured workflow can itself satisfy an agent contract.
 
 ### Milestone 5 — Grade steps, approvals, and repair loops

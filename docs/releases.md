@@ -39,6 +39,27 @@ private names, and package internals are not public APIs.
 Released versions and tags are never moved, deleted, or reused. A correction
 uses a new version.
 
+## AgentRig 0.2.1
+
+AgentRig 0.2.1 adds a backward-compatible portable usage contract to the
+autonomous-runtime surface introduced in 0.2.0:
+
+- exported immutable `AgentRuntimeUsage` with optional input, cached-input, and
+  output token counts;
+- normalized usage attached to successful and failed `AgentExecutionResult`
+  values without changing existing constructor call sites;
+- stable `usage_reporting` capability identity;
+- matching normalized result usage and safe usage events from the scripted,
+  Codex, and Ollama runtimes; and
+- bounded live Codex and Ollama assertions that verify the result/event usage
+  relationship without logging credentials, prompts, reasoning, or output,
+  with explicit API-key or ambient Codex authentication selection.
+
+The release adds no provider selection, ranking, fallback, credential storage,
+or base dependency. Missing provider counts remain `None`, so downstream
+applications can distinguish unknown usage from measured zero usage. Existing
+0.2.0 imports and constructor calls remain supported.
+
 ## AgentRig 0.2.0
 
 AgentRig 0.2.0 adds application-scoped runtime composition while preserving the
@@ -92,7 +113,7 @@ uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 
-release_version="0.2.0"
+release_version="0.2.1"
 release_commit="$(git rev-parse HEAD)"
 git tag -a "v$release_version" -m "AgentRig $release_version"
 release_dir="$(mktemp -d)"

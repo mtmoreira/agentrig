@@ -526,7 +526,14 @@ class AgentRuntime(Protocol):
 The request contains provider-neutral configuration and an explicit
 provider-options field owned by the integration. The runtime translates
 provider events into AgentRig core events and provider output into a normalized
-execution result.
+execution result. That result contains an `AgentRuntimeUsage` value with
+optional input, cached-input, and output token counts. Unknown counts remain
+`None`; applications must not infer zero usage from missing provider data.
+
+A runtime that advertises `usage_reporting` returns the same normalized usage
+value it projects into its safe usage event. Applications can therefore enforce
+portable limits from the result without depending on provider event schemas or
+retaining raw provider responses.
 
 ### 8.3 Configured agents
 

@@ -41,7 +41,7 @@ uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 uv build
 uv run --isolated --no-project \
-  --with ./dist/agentrig-0.2.0-py3-none-any.whl \
+  --with ./dist/agentrig-0.2.1-py3-none-any.whl \
   python -c 'import agentrig; print(agentrig.__name__)'
 ```
 
@@ -62,7 +62,7 @@ repository supplies that channel-neutral check:
 
 ```sh
 uv run python tools/validate_release.py \
-  --tag v0.2.0 \
+  --tag v0.2.1 \
   --commit "$(git rev-parse HEAD)" \
   --write
 ```
@@ -75,6 +75,9 @@ supported host; regenerate it with
 `uv run python tools/generate_buck_python_deps.py` after changing an extra.
 The `codex` and `ollama` extras install only their respective provider SDK
 dependencies; importing the base AgentRig package does not require either one.
+Both autonomous runtimes return the same portable `AgentRuntimeUsage` value and
+emit a matching safe usage event, so applications can enforce provider-neutral
+limits without parsing provider-specific event payloads.
 
 ## AI agent context
 
