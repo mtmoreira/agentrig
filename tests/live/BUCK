@@ -17,6 +17,22 @@ agentrig_python_test(
 )
 
 agentrig_python_test(
+    name = "openai_responses",
+    scope = "integration",
+    live = True,
+    srcs = [
+        "__init__.py",
+        "test_openai_responses_live.py",
+    ],
+    base_module = "tests.live",
+    deps = [
+        "//src/agentrig/capabilities:capabilities",
+        "//src/agentrig/core:core",
+        "//src/agentrig/integrations/openai:responses_sdk",
+    ],
+)
+
+agentrig_python_test(
     name = "ollama_runtime",
     scope = "integration",
     live = True,

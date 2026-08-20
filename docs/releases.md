@@ -39,6 +39,26 @@ private names, and package internals are not public APIs.
 Released versions and tags are never moved, deleted, or reused. A correction
 uses a new version.
 
+## AgentRig 0.2.2
+
+AgentRig 0.2.2 adds a backward-compatible production boundary for strict
+multimodal generation through the OpenAI Responses API:
+
+- exported application-owned artifact resolution with private, digest-verified
+  bytes;
+- an injected Responses client contract and optional official OpenAI Python SDK
+  bridge;
+- strict JSON-schema output, bounded image and output limits, cancellation and
+  deadlines, portable usage, and safe normalized failures;
+- stateless, non-streaming, tool-free SDK requests with `store=false`; and
+- offline contract/SDK tests plus a separately opted-in synthetic-only live
+  image test.
+
+The adapter declares `provider_managed` retention. `store=false` prevents API
+response storage for later retrieval but does not claim an organization-level
+zero-data-retention policy or bypass provider safety handling. Existing 0.2.1
+imports and runtime behavior remain supported.
+
 ## AgentRig 0.2.1
 
 AgentRig 0.2.1 adds a backward-compatible portable usage contract to the
@@ -105,7 +125,7 @@ at that exact commit. Build into an empty directory from the tagged checkout
 and validate the candidate artifacts:
 
 ```sh
-uv sync --locked --extra codex --extra ollama
+uv sync --locked --extra codex --extra ollama --extra openai
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
 uv run python tools/validate_agent_context.py
@@ -113,7 +133,7 @@ uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 
-release_version="0.2.1"
+release_version="0.2.2"
 release_commit="$(git rev-parse HEAD)"
 git tag -a "v$release_version" -m "AgentRig $release_version"
 release_dir="$(mktemp -d)"

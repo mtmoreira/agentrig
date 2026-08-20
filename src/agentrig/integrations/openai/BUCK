@@ -3,6 +3,7 @@ python_library(
     srcs = [
         "__init__.py",
         "codex.py",
+        "responses.py",
         "runtime.py",
     ],
     base_module = "agentrig.integrations.openai",
@@ -10,6 +11,18 @@ python_library(
         "//src/agentrig/agents:agents",
         "//src/agentrig/capabilities:capabilities",
         "//src/agentrig/core:core",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_library(
+    name = "responses_sdk",
+    srcs = ["responses_sdk.py"],
+    base_module = "agentrig.integrations.openai",
+    deps = [
+        ":openai",
+        "//src/agentrig/core:core",
+        "//third_party/python:extra-openai",
     ],
     visibility = ["PUBLIC"],
 )

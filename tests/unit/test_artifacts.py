@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import unittest
 
-from agentrig.core import ArtifactId, ArtifactRef, ContentDigest, RunId
+from agentrig.core import (
+    ArtifactId,
+    ArtifactRef,
+    ArtifactResolver,
+    ContentDigest,
+    ResolvedArtifact,
+    RunId,
+)
 
 
 def create_artifact(**overrides: object) -> ArtifactRef:
@@ -124,6 +131,37 @@ class ArtifactRefTest(unittest.TestCase):
             create_artifact(input_artifact_ids=(repeated_id, repeated_id))
         with self.assertRaises(ValueError):
             create_artifact(input_artifact_ids=(ArtifactId("artifact-1"),))
+
+
+class ResolvedArtifactTest(unittest.TestCase):
+    def test_keeps_private_bytes_out_of_representation(self) -> None:
+        private_content = b"private-image-content"
+        resolved = ResolvedArtifact(
+            artifact=create_artifact(),
+            content=private_content,
+        )
+
+        self.assertEqual(resolved.content, private_content)
+        self.assertNotIn(private_content.decode(), repr(resolved))
+
+        class Resolver:
+            async def resolve(self, artifact: ArtifactRef) -> ResolvedArtifact:
+                return ResolvedArtifact(artifact=artifact, content=b"image")
+
+        self.assertIsInstance(Resolver(), ArtifactResolver)
+
+    def test_requires_exact_reference_and_nonempty_bytes(self) -> None:
+        with self.assertRaises(TypeError):
+            ResolvedArtifact(artifact=object(), content=b"image")  # type: ignore[arg-type]
+        with self.assertRaises(ValueError):
+            ResolvedArtifact(artifact=create_artifact(), content=b"")
+        with self.assertRaisesRegex(ValueError, "digest does not match"):
+            ResolvedArtifact(
+                artifact=create_artifact(
+                    content_digest=ContentDigest("sha256", "0" * 64)
+                ),
+                content=b"image",
+            )
 
 
 if __name__ == "__main__":

@@ -105,6 +105,72 @@ def locked_python_dependencies():
         ],
     )
 
+    # colorama==0.4.6
+    native.remote_file(
+        name = "colorama__universal_download",
+        url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+        sha256 = "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+        out = "colorama-0.4.6-py2.py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=colorama",
+            "version=0.4.6",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "colorama__universal_wheel",
+        binary_src = ":colorama__universal_download",
+        labels = [
+            "locked-python",
+            "package=colorama",
+            "version=0.4.6",
+        ],
+    )
+    native.python_library(
+        name = "colorama",
+        deps = [
+            ":colorama__universal_wheel",
+        ],
+        labels = [
+            "locked-python",
+            "package=colorama",
+            "version=0.4.6",
+        ],
+    )
+
+    # distro==1.9.0
+    native.remote_file(
+        name = "distro__universal_download",
+        url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl",
+        sha256 = "7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2",
+        out = "distro-1.9.0-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=distro",
+            "version=1.9.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "distro__universal_wheel",
+        binary_src = ":distro__universal_download",
+        labels = [
+            "locked-python",
+            "package=distro",
+            "version=1.9.0",
+        ],
+    )
+    native.python_library(
+        name = "distro",
+        deps = [
+            ":distro__universal_wheel",
+        ],
+        labels = [
+            "locked-python",
+            "package=distro",
+            "version=1.9.0",
+        ],
+    )
+
     # h11==0.16.0
     native.remote_file(
         name = "h11__universal_download",
@@ -243,6 +309,198 @@ def locked_python_dependencies():
         ],
     )
 
+    # jiter==0.16.0
+    native.remote_file(
+        name = "jiter__linux_arm64_download",
+        url = "https://files.pythonhosted.org/packages/96/3f/02fdfc6705cad96127d883af5c34e4867f554f29ec7705ec1a46156400a9/jiter-0.16.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl",
+        sha256 = "0542a7189c26920778658fc8fcf2af8bae05bae9924577f71804acef37996536",
+        out = "jiter-0.16.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl",
+        target_compatible_with = [
+            "prelude//os/constraints:linux",
+            "prelude//cpu/constraints:arm64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "jiter__linux_arm64_wheel",
+        binary_src = ":jiter__linux_arm64_download",
+        target_compatible_with = [
+            "prelude//os/constraints:linux",
+            "prelude//cpu/constraints:arm64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.remote_file(
+        name = "jiter__linux_x86_64_download",
+        url = "https://files.pythonhosted.org/packages/0f/94/db768b6938e0df35c86beeba3dfbbb025c9ee5c19e1aa271f2396e50864d/jiter-0.16.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+        sha256 = "c682bea068a90b764577bdb78a60a4c1d1606daf9cd4c893832a37c7cc9d9026",
+        out = "jiter-0.16.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+        target_compatible_with = [
+            "prelude//os/constraints:linux",
+            "prelude//cpu/constraints:x86_64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "jiter__linux_x86_64_wheel",
+        binary_src = ":jiter__linux_x86_64_download",
+        target_compatible_with = [
+            "prelude//os/constraints:linux",
+            "prelude//cpu/constraints:x86_64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.remote_file(
+        name = "jiter__macos_arm64_download",
+        url = "https://files.pythonhosted.org/packages/d0/2b/c3eaf16f5d7c9bad66ea32f40a95bd169b29a91217fcc7f081375157e99c/jiter-0.16.0-cp313-cp313-macosx_11_0_arm64.whl",
+        sha256 = "d28bb3c26762358dadf3e5bf0bccd29ae987d65e6988d2e6f49829c76b003c09",
+        out = "jiter-0.16.0-cp313-cp313-macosx_11_0_arm64.whl",
+        target_compatible_with = [
+            "prelude//os/constraints:macos",
+            "prelude//cpu/constraints:arm64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "jiter__macos_arm64_wheel",
+        binary_src = ":jiter__macos_arm64_download",
+        target_compatible_with = [
+            "prelude//os/constraints:macos",
+            "prelude//cpu/constraints:arm64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.remote_file(
+        name = "jiter__macos_x86_64_download",
+        url = "https://files.pythonhosted.org/packages/91/c0/555fc60473d30d66894ba825e63615e3be7524fac23858356afa7a38906c/jiter-0.16.0-cp313-cp313-macosx_10_12_x86_64.whl",
+        sha256 = "41977aa5654023948c2dae2a81cbf9c43343954bef1cd59a154dd15a4d84c195",
+        out = "jiter-0.16.0-cp313-cp313-macosx_10_12_x86_64.whl",
+        target_compatible_with = [
+            "prelude//os/constraints:macos",
+            "prelude//cpu/constraints:x86_64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "jiter__macos_x86_64_wheel",
+        binary_src = ":jiter__macos_x86_64_download",
+        target_compatible_with = [
+            "prelude//os/constraints:macos",
+            "prelude//cpu/constraints:x86_64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.remote_file(
+        name = "jiter__windows_arm64_download",
+        url = "https://files.pythonhosted.org/packages/19/4b/b390ed59bafb3f31d008d1218578f10327714484b334439947f7e5b11e7f/jiter-0.16.0-cp313-cp313-win_arm64.whl",
+        sha256 = "3c1fd2dbe1b0af19e987f03fe66c5f5bd105a2229c1aff4ab14890b24f41d21a",
+        out = "jiter-0.16.0-cp313-cp313-win_arm64.whl",
+        target_compatible_with = [
+            "prelude//os/constraints:windows",
+            "prelude//cpu/constraints:arm64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "jiter__windows_arm64_wheel",
+        binary_src = ":jiter__windows_arm64_download",
+        target_compatible_with = [
+            "prelude//os/constraints:windows",
+            "prelude//cpu/constraints:arm64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.remote_file(
+        name = "jiter__windows_x86_64_download",
+        url = "https://files.pythonhosted.org/packages/88/6a/de61d04b9eec69c71719968d2f716532a3bc121170c44a39e14979c6be81/jiter-0.16.0-cp313-cp313-win_amd64.whl",
+        sha256 = "baad945ed47f163ad833314f8e3288c396118934f94e7bbb9e243ce4b341a4fd",
+        out = "jiter-0.16.0-cp313-cp313-win_amd64.whl",
+        target_compatible_with = [
+            "prelude//os/constraints:windows",
+            "prelude//cpu/constraints:x86_64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "jiter__windows_x86_64_wheel",
+        binary_src = ":jiter__windows_x86_64_download",
+        target_compatible_with = [
+            "prelude//os/constraints:windows",
+            "prelude//cpu/constraints:x86_64",
+        ],
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+    native.python_library(
+        name = "jiter",
+        deps = select({
+            "prelude//os:linux": select({
+                "prelude//cpu:arm64": [":jiter__linux_arm64_wheel"],
+                "prelude//cpu:x86_64": [":jiter__linux_x86_64_wheel"],
+            }),
+            "prelude//os:macos": select({
+                "prelude//cpu:arm64": [":jiter__macos_arm64_wheel"],
+                "prelude//cpu:x86_64": [":jiter__macos_x86_64_wheel"],
+            }),
+            "prelude//os:windows": select({
+                "prelude//cpu:arm64": [":jiter__windows_arm64_wheel"],
+                "prelude//cpu:x86_64": [":jiter__windows_x86_64_wheel"],
+            }),
+        }),
+        labels = [
+            "locked-python",
+            "package=jiter",
+            "version=0.16.0",
+        ],
+    )
+
     # ollama==0.6.2
     native.remote_file(
         name = "ollama__universal_download",
@@ -275,6 +533,47 @@ def locked_python_dependencies():
             "locked-python",
             "package=ollama",
             "version=0.6.2",
+        ],
+    )
+
+    # openai==2.47.0
+    native.remote_file(
+        name = "openai__universal_download",
+        url = "https://files.pythonhosted.org/packages/41/69/26b032059273ad798d18fbcdbe369e871181841fd8bcb5caee32b7510039/openai-2.47.0-py3-none-any.whl",
+        sha256 = "b3a1a7ad974092427ccb46d89f8852bdb67866680bcabeecc3ff5a3fdd71b15b",
+        out = "openai-2.47.0-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=openai",
+            "version=2.47.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "openai__universal_wheel",
+        binary_src = ":openai__universal_download",
+        labels = [
+            "locked-python",
+            "package=openai",
+            "version=2.47.0",
+        ],
+    )
+    native.python_library(
+        name = "openai",
+        deps = [
+            ":openai__universal_wheel",
+            ":anyio",
+            ":distro",
+            ":httpx",
+            ":jiter",
+            ":pydantic",
+            ":sniffio",
+            ":tqdm",
+            ":typing-extensions",
+        ],
+        labels = [
+            "locked-python",
+            "package=openai",
+            "version=2.47.0",
         ],
     )
 
@@ -736,6 +1035,73 @@ def locked_python_dependencies():
         ],
     )
 
+    # sniffio==1.3.1
+    native.remote_file(
+        name = "sniffio__universal_download",
+        url = "https://files.pythonhosted.org/packages/e9/44/75a9c9421471a6c4805dbf2356f7c181a29c1879239abab1ea2cc8f38b40/sniffio-1.3.1-py3-none-any.whl",
+        sha256 = "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2",
+        out = "sniffio-1.3.1-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=sniffio",
+            "version=1.3.1",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "sniffio__universal_wheel",
+        binary_src = ":sniffio__universal_download",
+        labels = [
+            "locked-python",
+            "package=sniffio",
+            "version=1.3.1",
+        ],
+    )
+    native.python_library(
+        name = "sniffio",
+        deps = [
+            ":sniffio__universal_wheel",
+        ],
+        labels = [
+            "locked-python",
+            "package=sniffio",
+            "version=1.3.1",
+        ],
+    )
+
+    # tqdm==4.70.0
+    native.remote_file(
+        name = "tqdm__universal_download",
+        url = "https://files.pythonhosted.org/packages/f9/1c/01bfd571a64e7f270e6bab5e33777debe0edc56759233ce84f27dec92d14/tqdm-4.70.0-py3-none-any.whl",
+        sha256 = "7f585706bfddbdebf89daac705b2dfcc16890130727d3197ca62c732b4310953",
+        out = "tqdm-4.70.0-py3-none-any.whl",
+        labels = [
+            "locked-python",
+            "package=tqdm",
+            "version=4.70.0",
+        ],
+    )
+    native.prebuilt_python_library(
+        name = "tqdm__universal_wheel",
+        binary_src = ":tqdm__universal_download",
+        labels = [
+            "locked-python",
+            "package=tqdm",
+            "version=4.70.0",
+        ],
+    )
+    native.python_library(
+        name = "tqdm",
+        deps = [
+            ":tqdm__universal_wheel",
+            ":colorama",
+        ],
+        labels = [
+            "locked-python",
+            "package=tqdm",
+            "version=4.70.0",
+        ],
+    )
+
     # typing-extensions==4.16.0
     native.remote_file(
         name = "typing-extensions__universal_download",
@@ -818,6 +1184,16 @@ def locked_python_dependencies():
         name = "extra-ollama",
         deps = [
             ":ollama",
+        ],
+        labels = ["locked-python", "optional-extra"],
+        visibility = ["PUBLIC"],
+    )
+
+    # Project optional dependency group: openai
+    native.python_library(
+        name = "extra-openai",
+        deps = [
+            ":openai",
         ],
         labels = ["locked-python", "optional-extra"],
         visibility = ["PUBLIC"],

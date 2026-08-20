@@ -32,7 +32,7 @@ From the repository root:
 uv --version
 ./buck2 --version
 uv python install 3.13.14
-uv sync --locked --extra codex --extra ollama
+uv sync --locked --extra codex --extra ollama --extra openai
 uv lock --check
 uv run python tools/generate_buck_python_deps.py --check
 uv run python tools/validate_agent_context.py
@@ -41,7 +41,7 @@ uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 uv build
 uv run --isolated --no-project \
-  --with ./dist/agentrig-0.2.1-py3-none-any.whl \
+  --with ./dist/agentrig-0.2.2-py3-none-any.whl \
   python -c 'import agentrig; print(agentrig.__name__)'
 ```
 
@@ -62,7 +62,7 @@ repository supplies that channel-neutral check:
 
 ```sh
 uv run python tools/validate_release.py \
-  --tag v0.2.1 \
+  --tag v0.2.2 \
   --commit "$(git rev-parse HEAD)" \
   --write
 ```
@@ -73,8 +73,13 @@ Optional production extras are resolved once in `uv.lock`. The checked-in Buck2
 bridge under `third_party/python` selects the matching hashed wheel for each
 supported host; regenerate it with
 `uv run python tools/generate_buck_python_deps.py` after changing an extra.
-The `codex` and `ollama` extras install only their respective provider SDK
-dependencies; importing the base AgentRig package does not require either one.
+The `codex`, `ollama`, and `openai` extras install only their respective
+provider SDK dependencies; importing the base AgentRig package does not require
+any of them. The `openai` extra provides a strict, tool-free Responses adapter
+for structured multimodal generation. It resolves artifact bytes through an
+application-owned seam, sends requests with `store=false`, and conservatively
+advertises provider-managed retention because stateless API operation is not a
+zero-data-retention guarantee.
 Both autonomous runtimes return the same portable `AgentRuntimeUsage` value and
 emit a matching safe usage event, so applications can enforce provider-neutral
 limits without parsing provider-specific event payloads.

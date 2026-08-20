@@ -38,10 +38,13 @@ class PythonDependencyBridgeTest(unittest.TestCase):
         self.assertEqual(checked_in, generated)
         self.assertIn('name = "extra-codex"', generated)
         self.assertIn('name = "extra-ollama"', generated)
+        self.assertIn('name = "extra-openai"', generated)
         self.assertIn("# openai-codex==0.144.4", generated)
         self.assertIn("# openai-codex-cli-bin==0.144.4", generated)
         self.assertIn("# ollama==0.6.2", generated)
         self.assertIn("# httpx==", generated)
+        self.assertIn("# colorama==0.4.6", generated)
+        self.assertIn("# openai==2.47.0", generated)
         self.assertIn("# pydantic==", generated)
         self.assertNotIn("# mypy==", generated)
 
@@ -170,6 +173,48 @@ class PythonDependencyBridgeTest(unittest.TestCase):
             source = { registry = "https://pypi.org/simple" }
             dependencies = [
                 { name = "conditional", marker = "python_full_version >= '3.13'" },
+            ]
+            wheels = [
+                { url = "https://files.pythonhosted.org/dependency-1.0.0-py3-none-any.whl", hash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+            ]
+            """
+        )
+        self.addCleanup(fixture.unlink)
+
+        graph = load_dependency_graph(fixture)
+
+        self.assertEqual(
+            graph.packages["dependency"].dependencies,
+            ("conditional",),
+        )
+        self.assertIn("conditional", graph.packages)
+
+    def test_includes_dependency_used_by_a_supported_host(self) -> None:
+        fixture = write_fixture(
+            """
+            version = 1
+
+            [[package]]
+            name = "agentrig"
+            version = "0.1.0"
+
+            [package.optional-dependencies]
+            demo = [{ name = "dependency" }]
+
+            [[package]]
+            name = "conditional"
+            version = "1.0.0"
+            source = { registry = "https://pypi.org/simple" }
+            wheels = [
+                { url = "https://files.pythonhosted.org/conditional-1.0.0-py3-none-any.whl", hash = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" },
+            ]
+
+            [[package]]
+            name = "dependency"
+            version = "1.0.0"
+            source = { registry = "https://pypi.org/simple" }
+            dependencies = [
+                { name = "conditional", marker = "sys_platform == 'win32'" },
             ]
             wheels = [
                 { url = "https://files.pythonhosted.org/dependency-1.0.0-py3-none-any.whl", hash = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },

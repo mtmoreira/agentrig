@@ -87,6 +87,12 @@ _PYTHON_FULL_VERSION_MARKER = re.compile(
     r"([0-9]+)\.([0-9]+)(?:\.([0-9]+))?'$"
 )
 _BUCK_PYTHON_VERSION = (3, 13, 0)
+_SUPPORTED_HOST_MARKERS = {
+    # The bridge renders one dependency graph shared by every supported Buck
+    # host, so a host-only dependency is included when any supported host uses
+    # it. Buck selects the correct wheel at the package target.
+    "sys_platform == 'win32'": True,
+}
 
 
 class DependencyBridgeError(ValueError):
@@ -364,7 +370,10 @@ def _dependency_name(value: object, label: str) -> str | None:
 
 
 def _marker_applies_to_buck_python(marker: str) -> bool:
-    """Evaluate the strict marker subset used by the Buck Python 3.13 lock."""
+    """Evaluate the strict marker subset used by supported Buck hosts."""
+    host_value = _SUPPORTED_HOST_MARKERS.get(marker)
+    if host_value is not None:
+        return host_value
     match = _PYTHON_FULL_VERSION_MARKER.fullmatch(marker)
     if match is None:
         raise DependencyBridgeError(

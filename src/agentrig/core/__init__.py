@@ -1,6 +1,12 @@
 """Provider-independent execution primitives."""
 
-from agentrig.core.artifacts import ArtifactId, ArtifactRef, ContentDigest
+from agentrig.core.artifacts import (
+    ArtifactId,
+    ArtifactRef,
+    ArtifactResolver,
+    ContentDigest,
+    ResolvedArtifact,
+)
 from agentrig.core.cancellation import (
     Cancellation,
     CancellationSource,
@@ -68,6 +74,7 @@ __all__ = (
     "AgentRigError",
     "ArtifactId",
     "ArtifactRef",
+    "ArtifactResolver",
     "Cancellation",
     "CancellationSource",
     "CancellationToken",
@@ -112,6 +119,7 @@ __all__ = (
     "REDACTED_VALUE",
     "RedactionPolicy",
     "RedactingEventSink",
+    "ResolvedArtifact",
     "RunId",
     "RunCancelled",
     "RunContext",

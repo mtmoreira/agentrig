@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import PurePosixPath
+from typing import Protocol, runtime_checkable
 from urllib.parse import urlsplit
 
 from agentrig.core._validation import freeze_string_map, require_trimmed_string
@@ -103,6 +106,39 @@ class ArtifactRef:
             "provider_lineage",
             freeze_string_map("provider lineage", self.provider_lineage),
         )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ResolvedArtifact:
+    """Private artifact bytes detached from a storage implementation."""
+
+    artifact: ArtifactRef
+    content: bytes = field(repr=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.artifact, ArtifactRef):
+            raise TypeError("resolved artifact must reference an ArtifactRef")
+        if not isinstance(self.content, bytes) or not self.content:
+            raise ValueError("resolved artifact content must be nonempty bytes")
+        expected = self.artifact.content_digest
+        if expected is not None:
+            try:
+                actual = hashlib.new(expected.algorithm, self.content).hexdigest()
+            except ValueError:
+                raise ValueError(
+                    "resolved artifact digest algorithm is unsupported"
+                ) from None
+            if not hmac.compare_digest(actual, expected.value.lower()):
+                raise ValueError("resolved artifact content digest does not match")
+
+
+@runtime_checkable
+class ArtifactResolver(Protocol):
+    """Resolve one portable reference without exposing storage to providers."""
+
+    async def resolve(self, artifact: ArtifactRef) -> ResolvedArtifact:
+        """Return bytes for exactly the requested artifact reference."""
+        ...
 
 
 def _validate_uri(uri: str) -> None:

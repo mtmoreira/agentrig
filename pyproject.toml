@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "agentrig"
-version = "0.2.1"
+version = "0.2.2"
 description = "Typed infrastructure for composing heterogeneous AI agents and capabilities"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -24,6 +24,9 @@ codex = [
 ]
 ollama = [
     "ollama==0.6.2",
+]
+openai = [
+    "openai==2.47.0",
 ]
 
 [tool.uv]
@@ -54,6 +57,7 @@ files = [
   "tests/typing/valid_codex_integration.py",
   "tests/typing/valid_image_generation.py",
   "tests/typing/valid_ollama_integration.py",
+  "tests/typing/valid_openai_responses.py",
   "tests/typing/valid_agent_step.py",
   "tests/typing/valid_approval_step.py",
   "tests/typing/valid_eval_contracts.py",

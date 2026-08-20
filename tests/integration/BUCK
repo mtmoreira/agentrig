@@ -23,6 +23,28 @@ agentrig_python_test(
 )
 
 agentrig_python_test(
+    name = "openai_dependency",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_openai_dependency.py",
+    ],
+    base_module = "tests.integration",
+    deps = ["//third_party/python:extra-openai"],
+)
+
+agentrig_python_test(
+    name = "openai_responses_sdk",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_openai_responses_sdk.py",
+    ],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations/openai:responses_sdk"],
+)
+
+agentrig_python_test(
     name = "ollama_dependency",
     scope = "integration",
     srcs = [
