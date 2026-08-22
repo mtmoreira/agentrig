@@ -27,6 +27,7 @@ from agentrig.capabilities.image_generation import (
     ImageSize,
     ImageSpecification,
 )
+from agentrig.capabilities.mcp import McpServerBinding, McpTransport, mcp_tool_id
 from agentrig.capabilities.retrieval import (
     RetrievalFilter,
     RetrievalMatch,
@@ -90,6 +91,8 @@ __all__ = (
     "ImageRegion",
     "ImageSize",
     "ImageSpecification",
+    "McpServerBinding",
+    "McpTransport",
     "ModelMetadata",
     "RetrievalFilter",
     "RetrievalMatch",
@@ -122,4 +125,5 @@ __all__ = (
     "ToolSchema",
     "ValidationEvidence",
     "WorkspaceAuthorization",
+    "mcp_tool_id",
 )

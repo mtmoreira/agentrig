@@ -1,6 +1,13 @@
 python_library(
     name = "integrations",
-    srcs = ["__init__.py"],
+    srcs = [
+        "__init__.py",
+        "process.py",
+    ],
     base_module = "agentrig.integrations",
+    deps = [
+        "//src/agentrig/capabilities:capabilities",
+        "//src/agentrig/core:core",
+    ],
     visibility = ["PUBLIC"],
 )

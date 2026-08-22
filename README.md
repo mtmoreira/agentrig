@@ -84,6 +84,11 @@ Both autonomous runtimes return the same portable `AgentRuntimeUsage` value and
 emit a matching safe usage event, so applications can enforce provider-neutral
 limits without parsing provider-specific event payloads.
 
+AgentRig also provides dependency-free bindings for guarded local commands and
+MCP servers. Command tools use a fixed executable and working directory with no
+shell or inherited environment. MCP bindings expose only explicitly allowlisted
+tools, and the Codex adapter selects them by stable `mcp.<server>.<tool>` IDs.
+
 ## AI agent context
 
 The repository includes versioned guidance for AI coding agents. It is part of

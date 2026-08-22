@@ -156,6 +156,13 @@ A callable capability made available to an agent for intermediate use. A tool
 has a typed schema, a bounded purpose, and declared side effects. Tools are not
 implicitly available to every agent.
 
+Local executables use a fixed absolute executable, a fixed working directory,
+no shell, an explicit environment allowlist, and bounded time and output. MCP
+servers are immutable bindings with an explicit transport and tool allowlist.
+Agent contracts refer to MCP tools through stable `mcp.<server>.<tool>` IDs;
+runtime adapters must reject unknown IDs before provider initialization and
+translate provider events back to those same IDs.
+
 ### Step
 
 A typed node in a workflow. A step may call an agent, invoke a capability, run a

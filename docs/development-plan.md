@@ -214,6 +214,9 @@ Acceptance:
 - The same fake runtime configures two agents with different contracts and tools.
 - Output-schema mismatch fails as a contract violation.
 - Disallowed tool requests are rejected before execution.
+- CLI tools run without a shell, inherited environment, or unbounded output;
+  MCP tools are selected from explicit server bindings and fail closed when an
+  agent contract names an unavailable tool.
 - Provider/session metadata remains outside portable output schemas.
 - Reported runtime usage is available on the normalized result and matches the
   safe usage event; unknown provider counts remain unknown rather than zero.

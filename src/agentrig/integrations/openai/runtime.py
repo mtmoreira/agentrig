@@ -16,6 +16,7 @@ from agentrig.core.context import RunContext
 from agentrig.core.deadline import DeadlineExceeded
 from agentrig.core.errors import Failure, FailureKind, normalize_exception
 from agentrig.core.events import Event, EventKind
+from agentrig.capabilities import McpServerBinding
 from agentrig.integrations.openai.codex import (
     CODEX_AGENT_RUNTIME_CAPABILITY,
     CODEX_SUPPORTED_TOOLS,
@@ -53,6 +54,7 @@ class CodexAgentRuntime:
         output_schemas: Mapping[str, Mapping[str, JsonValue]],
         approval_mode: CodexApprovalMode = CodexApprovalMode.DENY_ALL,
         ephemeral: bool = True,
+        mcp_servers: tuple[McpServerBinding, ...] = (),
     ) -> None:
         if not isinstance(client_factory, CodexClientFactory):
             raise TypeError("Codex runtime factory must satisfy CodexClientFactory")
@@ -82,6 +84,23 @@ class CodexAgentRuntime:
         self._output_schemas = schemas
         self._approval_mode = approval_mode
         self._ephemeral = ephemeral
+        servers = tuple(mcp_servers)
+        server_ids: set[str] = set()
+        tool_ids: set[str] = set()
+        for server in servers:
+            if not isinstance(server, McpServerBinding):
+                raise TypeError(
+                    "Codex MCP servers must be McpServerBinding values"
+                )
+            if server.server_id in server_ids:
+                raise ValueError("Codex MCP server IDs must be unique")
+            overlap = tool_ids.intersection(server.tool_ids)
+            if overlap:
+                raise ValueError("Codex MCP tool IDs must be unique")
+            server_ids.add(server.server_id)
+            tool_ids.update(server.tool_ids)
+        self._mcp_servers = servers
+        self._mcp_tool_ids = frozenset(tool_ids)
 
     async def execute(
         self,
@@ -121,6 +140,9 @@ class CodexAgentRuntime:
                 sandbox=self._sandbox,
                 approval_mode=self._approval_mode,
                 allowed_tools=request.contract.allowed_tools,
+                mcp_servers=self._selected_mcp_servers(
+                    request.contract.allowed_tools
+                ),
                 ephemeral=self._ephemeral,
             )
             thread = (
@@ -173,7 +195,11 @@ class CodexAgentRuntime:
                 "agent output schema is not configured for Codex",
                 "codex.output_schema_not_configured",
             )
-        unsupported_tools = set(contract.allowed_tools) - CODEX_SUPPORTED_TOOLS
+        unsupported_tools = (
+            set(contract.allowed_tools)
+            - CODEX_SUPPORTED_TOOLS
+            - self._mcp_tool_ids
+        )
         if unsupported_tools:
             return _invalid_configuration(
                 "agent contract authorizes unsupported Codex tools",
@@ -220,6 +246,17 @@ class CodexAgentRuntime:
                 "codex.web_search_requires_network",
             )
         return None
+
+    def _selected_mcp_servers(
+        self,
+        allowed_tools: tuple[str, ...],
+    ) -> tuple[McpServerBinding, ...]:
+        selected: list[McpServerBinding] = []
+        for server in self._mcp_servers:
+            binding = server.selected(allowed_tools)
+            if binding is not None:
+                selected.append(binding)
+        return tuple(selected)
 
     async def _stream_result(
         self,

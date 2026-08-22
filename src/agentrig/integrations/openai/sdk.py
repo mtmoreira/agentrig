@@ -23,6 +23,8 @@ from openai_codex.generated.v2_all import (
     ItemCompletedNotification,
     ItemStartedNotification,
     MessagePhase,
+    McpToolCallStatus,
+    McpToolCallThreadItem,
     PatchApplyStatus,
     PlanThreadItem,
     ReadOnlySandboxPolicy,
@@ -66,7 +68,9 @@ from agentrig.integrations.openai.codex import (
     CodexTurnStarted,
     CodexTurnStatus,
     CodexUsageReported,
+    codex_mcp_tool_name,
 )
+from agentrig.capabilities import McpServerBinding, McpTransport
 
 _COMMAND_APPROVAL = "item/commandExecution/requestApproval"
 _FILE_APPROVAL = "item/fileChange/requestApproval"
@@ -445,6 +449,13 @@ class _SdkTurn:
                 started=started,
                 succeeded=True,
             )
+        if isinstance(item, McpToolCallThreadItem):
+            return self._tool_event(
+                call_id=item.id,
+                tool_name=codex_mcp_tool_name(item.server, item.tool),
+                started=started,
+                succeeded=item.status is McpToolCallStatus.completed,
+            )
         return ()
 
     def _tool_event(
@@ -545,10 +556,30 @@ def _thread_config(request: CodexThreadRequest) -> dict[str, Any]:
             "live" if CODEX_WEB_SEARCH_TOOL in tools else "disabled"
         ),
         "tools": {"view_image": False},
-        "mcp_servers": {},
+        "mcp_servers": {
+            server.server_id: _mcp_server_config(server)
+            for server in request.mcp_servers
+        },
         "hooks": {},
         "history": {"persistence": "none"},
     }
+
+
+def _mcp_server_config(server: McpServerBinding) -> dict[str, Any]:
+    config: dict[str, Any] = {
+        "enabled_tools": list(server.allowed_tools),
+    }
+    if server.transport is McpTransport.STDIO:
+        config["command"] = server.command[0]
+        config["args"] = list(server.command[1:])
+        config["env_vars"] = list(server.environment_variables)
+    else:
+        config["url"] = server.url
+        if server.bearer_token_environment_variable is not None:
+            config["bearer_token_env_var"] = (
+                server.bearer_token_environment_variable
+            )
+    return config
 
 
 def _sandbox_mode(policy: CodexSandboxPolicy) -> SandboxMode:

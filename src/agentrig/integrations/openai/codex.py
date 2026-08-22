@@ -13,6 +13,8 @@ from agentrig.capabilities import (
     CapabilityFeature,
     CapabilityKind,
     DataRetention,
+    McpServerBinding,
+    mcp_tool_id,
 )
 from agentrig.core._json import JsonValue, freeze_json_object, freeze_json_value
 from agentrig.core._validation import require_trimmed_string
@@ -113,6 +115,7 @@ class CodexThreadRequest:
     sandbox: CodexSandboxPolicy
     approval_mode: CodexApprovalMode
     allowed_tools: tuple[str, ...] = ()
+    mcp_servers: tuple[McpServerBinding, ...] = ()
     ephemeral: bool = True
     service_name: str = "agentrig"
 
@@ -128,7 +131,19 @@ class CodexThreadRequest:
         tools = tuple(self.allowed_tools)
         if len(tools) != len(set(tools)):
             raise ValueError("Codex allowed tools must not contain duplicates")
-        unsupported = set(tools) - CODEX_SUPPORTED_TOOLS
+        servers = tuple(self.mcp_servers)
+        server_ids: set[str] = set()
+        mcp_tools: set[str] = set()
+        for server in servers:
+            if not isinstance(server, McpServerBinding):
+                raise TypeError(
+                    "Codex MCP servers must be McpServerBinding values"
+                )
+            if server.server_id in server_ids:
+                raise ValueError("Codex MCP server IDs must be unique")
+            server_ids.add(server.server_id)
+            mcp_tools.update(server.tool_ids)
+        unsupported = set(tools) - CODEX_SUPPORTED_TOOLS - mcp_tools
         if unsupported:
             raise ValueError("Codex allowed tools contain unsupported values")
         if (
@@ -140,6 +155,7 @@ class CodexThreadRequest:
             raise TypeError("Codex thread ephemeral must be a bool")
         require_trimmed_string("Codex service name", self.service_name)
         object.__setattr__(self, "allowed_tools", tools)
+        object.__setattr__(self, "mcp_servers", servers)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -388,6 +404,11 @@ def _validate_tool_event(turn_id: str, call_id: str, tool_name: str) -> None:
     require_trimmed_string("Codex turn ID", turn_id)
     require_trimmed_string("Codex tool call ID", call_id)
     require_trimmed_string("Codex tool name", tool_name)
+
+
+def codex_mcp_tool_name(server_id: str, tool_name: str) -> str:
+    """Return the contract tool ID used for Codex MCP events."""
+    return mcp_tool_id(server_id, tool_name)
 
 
 def _require_bounded_absolute_path(field_name: str, value: str) -> None:

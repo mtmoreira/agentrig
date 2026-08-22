@@ -38,6 +38,8 @@ from agentrig.capabilities import (
     CapabilityFeature,
     CapabilityKind,
     CapabilityRequirements,
+    McpServerBinding,
+    McpTransport,
 )
 from agentrig.core import AgentRigError
 from agentrig.integrations.openai import (
@@ -295,7 +297,16 @@ class CodexSdkBridgeTest(unittest.TestCase):
                     instructions="Return JSON.",
                     sandbox=sandbox,
                     approval_mode=CodexApprovalMode.MANUAL,
-                    allowed_tools=(CODEX_SHELL_TOOL,),
+                    allowed_tools=(CODEX_SHELL_TOOL, "mcp.eda.simulate"),
+                    mcp_servers=(
+                        McpServerBinding(
+                            server_id="eda",
+                            transport=McpTransport.STDIO,
+                            command=("/usr/bin/eda-mcp", "--stdio"),
+                            allowed_tools=("simulate",),
+                            environment_variables=("EDA_HOME",),
+                        ),
+                    ),
                 )
             )
             turn = await thread.start_turn(
@@ -397,7 +408,17 @@ class CodexSdkBridgeTest(unittest.TestCase):
         self.assertEqual(thread_config["features"]["shell_tool"], True)
         self.assertNotIn("agents", thread_config)
         self.assertEqual(thread_config["web_search"], "disabled")
-        self.assertEqual(thread_config["mcp_servers"], {})
+        self.assertEqual(
+            thread_config["mcp_servers"],
+            {
+                "eda": {
+                    "enabled_tools": ["simulate"],
+                    "command": "/usr/bin/eda-mcp",
+                    "args": ["--stdio"],
+                    "env_vars": ["EDA_HOME"],
+                }
+            },
+        )
         turn_sandbox = raw.turn_params[0].sandbox_policy
         if turn_sandbox is None:
             raise AssertionError("turn sandbox policy is required")
