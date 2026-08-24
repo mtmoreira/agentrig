@@ -9,6 +9,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 dist/
+build/
 
 # Buck2
 .buckconfig.local
@@ -18,4 +19,3 @@ buck-out/
 # Editors
 .idea/
 .vscode/
-

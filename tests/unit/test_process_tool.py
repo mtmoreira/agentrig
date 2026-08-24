@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 from agentrig.capabilities import ToolInvocation
 from agentrig.core import CancellationSource, ExecutionStatus, RunContext, RunId
-from agentrig.integrations import CommandInput, CommandTool
+from agentrig.integrations import CommandInput, CommandTool, DetachedCommandTool
 
 
 @dataclass(frozen=True)
@@ -117,6 +117,39 @@ class CommandToolTest(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.CancelledError):
             await tool.invoke(invocation, run_context)
 
+    async def test_detached_tool_acknowledges_process_without_streams(self) -> None:
+        tool = DetachedCommandTool(
+            tool_id="process.viewer",
+            version="1",
+            purpose="Open a local viewer.",
+            executable="/usr/bin/true",
+            working_directory="/private/tmp",
+        )
+        invocation = ToolInvocation(
+            invocation_id="invoke-4",
+            contract=tool.contract,
+            input=CommandInput(arguments=("private-wave.vcd",)),
+        )
+
+        process = FakeProcess(pid=4321)
+        with patch(
+            "agentrig.integrations.process.asyncio.create_subprocess_exec",
+            return_value=process,
+        ) as create_process:
+            result = await tool.invoke(invocation, context())
+
+        self.assertEqual(result.status, ExecutionStatus.SUCCEEDED)
+        self.assertEqual(result.unwrap().process_id, 4321)
+        self.assertEqual(
+            create_process.call_args.kwargs["stdout"],
+            asyncio.subprocess.DEVNULL,
+        )
+        self.assertEqual(
+            create_process.call_args.kwargs["stderr"],
+            asyncio.subprocess.DEVNULL,
+        )
+        self.assertNotIn("private-wave.vcd", repr(result.unwrap()))
+
 
 if __name__ == "__main__":
     unittest.main()
@@ -127,6 +160,7 @@ class FakeProcess:
     stdout: bytes = b""
     stderr: bytes = b""
     returncode: int | None = 0
+    pid: int = 1234
 
     async def communicate(self) -> tuple[bytes, bytes]:
         return self.stdout, self.stderr

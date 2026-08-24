@@ -60,6 +60,21 @@ class CommandOutput:
             raise TypeError("command truncated must be a bool")
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DetachedCommandOutput:
+    """Acknowledgement that a detached process was created."""
+
+    process_id: int
+
+    def __post_init__(self) -> None:
+        if (
+            isinstance(self.process_id, bool)
+            or not isinstance(self.process_id, int)
+            or self.process_id < 1
+        ):
+            raise ValueError("detached command process_id must be positive")
+
+
 class CommandTool:
     """Execute one fixed executable without a shell or inherited environment."""
 
@@ -224,6 +239,110 @@ class CommandTool:
             )
 
 
+class DetachedCommandTool:
+    """Start one fixed executable without waiting for process completion."""
+
+    def __init__(
+        self,
+        *,
+        tool_id: str,
+        version: str,
+        purpose: str,
+        executable: str,
+        working_directory: str,
+        base_arguments: tuple[str, ...] = (),
+        allowed_environment_variables: tuple[str, ...] = (),
+    ) -> None:
+        executable_path = Path(executable)
+        working_path = Path(working_directory)
+        if not executable_path.is_absolute():
+            raise ValueError("command executable must be an absolute path")
+        if not working_path.is_absolute():
+            raise ValueError("command working directory must be an absolute path")
+        if working_path == Path("/") or ".." in working_path.parts:
+            raise ValueError("command working directory must be bounded")
+        _validate_strings("command base argument", base_arguments)
+        _validate_strings(
+            "command environment variable",
+            allowed_environment_variables,
+        )
+        if len(set(allowed_environment_variables)) != len(
+            allowed_environment_variables
+        ):
+            raise ValueError("command environment allowlist contains duplicates")
+
+        self._executable = str(executable_path)
+        self._working_directory = str(working_path)
+        self._base_arguments = tuple(base_arguments)
+        self._allowed_environment = frozenset(allowed_environment_variables)
+        self._contract = ToolContract[CommandInput, DetachedCommandOutput](
+            descriptor=CapabilityDescriptor(
+                capability_id=tool_id,
+                version=version,
+                kind=CapabilityKind.TOOL,
+                data_retention=DataRetention.NOT_RETAINED,
+            ),
+            purpose=purpose,
+            effect_profile=EffectProfile.NON_REPEATABLE,
+            input_schema=_input_schema(tool_id),
+            output_schema=_detached_output_schema(tool_id),
+        )
+
+    @property
+    def contract(self) -> ToolContract[CommandInput, DetachedCommandOutput]:
+        return self._contract
+
+    async def invoke(
+        self,
+        invocation: ToolInvocation[CommandInput, DetachedCommandOutput],
+        context: RunContext,
+    ) -> ToolResult[DetachedCommandOutput]:
+        if invocation.contract != self._contract:
+            raise ValueError("command invocation contract does not match tool")
+        try:
+            context.cancellation.raise_if_cancelled()
+            if context.deadline is not None:
+                context.deadline.raise_if_expired(context.clock)
+            arguments = tuple(invocation.input.arguments)
+            _validate_strings("command argument", arguments)
+            supplied_environment = dict(invocation.input.environment or {})
+            if set(supplied_environment) - self._allowed_environment:
+                return _detached_failure(
+                    invocation,
+                    "command environment exceeds its allowlist",
+                    "command.environment_not_allowed",
+                )
+            _validate_environment(supplied_environment)
+            environment = {
+                name: supplied_environment[name]
+                for name in sorted(supplied_environment)
+            }
+            process = await asyncio.create_subprocess_exec(
+                self._executable,
+                *self._base_arguments,
+                *arguments,
+                cwd=self._working_directory,
+                env=environment,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL,
+                start_new_session=True,
+            )
+            output = DetachedCommandOutput(process_id=process.pid)
+            return ToolResult.succeeded(
+                invocation=invocation,
+                encoded_output=self._contract.output_schema.encode(output),
+            )
+        except asyncio.CancelledError:
+            raise
+        except (OSError, ValueError):
+            return _detached_failure(
+                invocation,
+                "command execution failed",
+                "command.execution_failed",
+            )
+
+
 async def _terminate(process: asyncio.subprocess.Process) -> None:
     if process.returncode is not None:
         return
@@ -274,6 +393,15 @@ def _output_schema(tool_id: str) -> ToolSchema[CommandOutput]:
         },
         encoder=_encode_output,
         decoder=_decode_output,
+    )
+
+
+def _detached_output_schema(tool_id: str) -> ToolSchema[DetachedCommandOutput]:
+    return ToolSchema(
+        schema_id=f"{tool_id}.output.v1",
+        json_schema={"type": "object", "required": ["process_id"]},
+        encoder=_encode_detached_output,
+        decoder=_decode_detached_output,
     )
 
 
@@ -344,6 +472,19 @@ def _decode_output(value: JsonValue) -> CommandOutput:
     )
 
 
+def _encode_detached_output(value: DetachedCommandOutput) -> JsonValue:
+    return {"process_id": value.process_id}
+
+
+def _decode_detached_output(value: JsonValue) -> DetachedCommandOutput:
+    if not isinstance(value, Mapping):
+        raise ValueError("detached command output must be an object")
+    process_id = value.get("process_id")
+    if isinstance(process_id, bool) or not isinstance(process_id, int):
+        raise ValueError("detached command output has invalid fields")
+    return DetachedCommandOutput(process_id=process_id)
+
+
 def _validate_strings(name: str, values: tuple[object, ...]) -> None:
     for value in values:
         if not isinstance(value, str) or "\x00" in value:
@@ -368,6 +509,21 @@ def _failure(
     message: str,
     code: str,
 ) -> ToolResult[CommandOutput]:
+    return ToolResult.from_failure(
+        invocation=invocation,
+        failure=Failure(
+            kind=FailureKind.INVALID_INPUT,
+            message=message,
+            code=code,
+        ),
+    )
+
+
+def _detached_failure(
+    invocation: ToolInvocation[CommandInput, DetachedCommandOutput],
+    message: str,
+    code: str,
+) -> ToolResult[DetachedCommandOutput]:
     return ToolResult.from_failure(
         invocation=invocation,
         failure=Failure(
