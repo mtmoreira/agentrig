@@ -1,0 +1,100 @@
+{
+  "schema_id": "agentrig.qualification-evidence.v1",
+  "manifest_id": "evidence-manifest:agentrig-cupidoodle-m3",
+  "owning_repository": "agentrig",
+  "qualified_parent": "11ab1a8fe44fd433efa3d6340a320ab71bd49a41",
+  "dependencies": [
+    {
+      "repository_id": "agentrig",
+      "commit": "b03087d1040b40e1d7d1efc98439d501964567c6",
+      "relationship": "first_parent_base"
+    }
+  ],
+  "provenance": {
+    "workflow_id": "cupidoodle-m3-image-runtime",
+    "validation_profile_id": "complete-offline-candidate",
+    "source_branch": "codex/cupidoodle-m3-image-runtime"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "bounded-image-edit-report",
+      "locator": "build/cupidoodle-m3-agentrig-qualification/bounded-image-edit-report.json",
+      "media_type": "application/json",
+      "sha256": "53c344b15991b0836dbf5602436b53821cf95614d6e04d61f1044dac2eace061",
+      "size_bytes": 749,
+      "producer_id": "example.bounded-image-edit.v1",
+      "availability": "local_ignored_build",
+      "retention": "milestone_review",
+      "review_state": "accepted"
+    },
+    {
+      "artifact_id": "image-runtime-eval",
+      "locator": "build/cupidoodle-m3-agentrig-qualification/image-runtime-eval.txt",
+      "media_type": "text/plain",
+      "sha256": "8eee2c4c91e7ea2e3c448247f304ddcc00ed7f477cafc5d9e254c9c17088236d",
+      "size_bytes": 236,
+      "producer_id": "evals.image-runtime.v1",
+      "availability": "local_ignored_build",
+      "retention": "milestone_review",
+      "review_state": "accepted"
+    },
+    {
+      "artifact_id": "focus-validation",
+      "locator": "build/cupidoodle-m3-agentrig-qualification/focus-validation.txt",
+      "media_type": "text/plain",
+      "sha256": "ac4c0981ddab43a3a98beeb6aa896f697fc4182fc5b32831a2d18caea774fdaa",
+      "size_bytes": 6005,
+      "producer_id": "validation.focus.v1",
+      "availability": "local_ignored_build",
+      "retention": "milestone_review",
+      "review_state": "accepted"
+    },
+    {
+      "artifact_id": "full-validation",
+      "locator": "build/cupidoodle-m3-agentrig-qualification/full-validation.txt",
+      "media_type": "text/plain",
+      "sha256": "6e982dc908071143f54d3497c9f4c7b6df4ed9e1b9e7bb0e1660c5dd0a76bf67",
+      "size_bytes": 194666,
+      "producer_id": "validation.complete-offline.v1",
+      "availability": "local_ignored_build",
+      "retention": "milestone_review",
+      "review_state": "accepted"
+    }
+  ],
+  "validation_outcomes": [
+    {
+      "validation_id": "focus",
+      "outcome": "passed",
+      "completed": true,
+      "exit_code": 0,
+      "transcript_artifact_id": "focus-validation"
+    },
+    {
+      "validation_id": "complete-offline",
+      "outcome": "passed",
+      "completed": true,
+      "exit_code": 0,
+      "transcript_artifact_id": "full-validation"
+    },
+    {
+      "validation_id": "image-runtime-eval",
+      "outcome": "passed",
+      "completed": true,
+      "exit_code": 0,
+      "transcript_artifact_id": "image-runtime-eval"
+    }
+  ],
+  "qualification_lane": "offline-scripted",
+  "review": {
+    "state": "accepted",
+    "reviewer_class": "milestone-owner"
+  },
+  "authorization_boundaries": {
+    "live_provider_calls": false,
+    "network_calls": false,
+    "production_authorized": false,
+    "release_authorized": false,
+    "push_authorized": false,
+    "tag_authorized": false
+  }
+}
