@@ -39,15 +39,22 @@ private names, and package internals are not public APIs.
 Released versions and tags are never moved, deleted, or reused. A correction
 uses a new version.
 
-## Unreleased image runtime compatibility
+## AgentRig 0.3.0
 
-The next minor candidate adds explicit `ImageInput` roles, image-native usage,
-a bounded selected-route executor, and an optional OpenAI image client seam.
+AgentRig 0.3.0 adds a provider-neutral, bounded image execution runtime:
+
+- explicit `ImageInput` roles for edit bases, identity references, masks, and
+  regions, with exact ordered output lineage;
+- portable image-native usage and cost reporting that preserves unknown values;
+- one selected-route executor with bounded transient retries, idempotency,
+  shared concurrency, deadlines, cancellation, and optional cost ceilings;
+- an injected OpenAI image client seam and optional official SDK bridge; and
+- offline contract, SDK, integration, developer-example, and eval coverage.
+
 Existing `ImageGenerationRequest(reference_images=..., mask=...)` construction
 and results without an explicit usage argument remain supported. New edits
 should migrate to role-bound `inputs`; callers must not mix legacy and explicit
-forms. No release version or immutable tag is assigned until separately
-authorized release preparation completes.
+forms.
 
 ## AgentRig 0.2.2
 
@@ -143,7 +150,7 @@ uv run python tools/typecheck.py
 uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 
-release_version="0.2.2"
+release_version="0.3.0"
 release_commit="$(git rev-parse HEAD)"
 git tag -a "v$release_version" -m "AgentRig $release_version"
 release_dir="$(mktemp -d)"

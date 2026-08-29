@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "agentrig"
-version = "0.2.2"
+version = "0.3.0"
 description = "Typed infrastructure for composing heterogeneous AI agents and capabilities"
 readme = "README.md"
 requires-python = ">=3.12"

@@ -47,7 +47,7 @@ uv run python -m unittest discover -s tests/unit -t .
 ./buck2 test //... --exclude live --always-exclude
 uv build
 uv run --isolated --no-project \
-  --with ./dist/agentrig-0.2.2-py3-none-any.whl \
+  --with ./dist/agentrig-0.3.0-py3-none-any.whl \
   python -c 'import agentrig; print(agentrig.__name__)'
 ```
 
@@ -68,7 +68,7 @@ repository supplies that channel-neutral check:
 
 ```sh
 uv run python tools/validate_release.py \
-  --tag v0.2.2 \
+  --tag v0.3.0 \
   --commit "$(git rev-parse HEAD)" \
   --write
 ```

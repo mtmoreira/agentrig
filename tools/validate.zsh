@@ -58,7 +58,7 @@ validation_log="$(mktemp -t agentrig-validation.XXXXXX)"
 
   print 'CHECKPOINT package-build'
   uv build --out-dir "$candidate_directory"
-  wheel="$candidate_directory/agentrig-0.2.2-py3-none-any.whl"
+  wheel="$candidate_directory/agentrig-0.3.0-py3-none-any.whl"
   [[ -f "$wheel" ]]
 
   print 'CHECKPOINT isolated-base'
