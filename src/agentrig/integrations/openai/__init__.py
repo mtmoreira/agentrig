@@ -28,6 +28,19 @@ from agentrig.integrations.openai.codex import (
     CodexUsageReported,
 )
 from agentrig.integrations.openai.runtime import CodexAgentRuntime
+from agentrig.integrations.openai.images import (
+    ImageArtifactPublisher,
+    OPENAI_IMAGE_CAPABILITY,
+    OPENAI_IMAGE_MAX_INPUTS,
+    OPENAI_IMAGE_SDK_VERSION,
+    OpenAIImageClient,
+    OpenAIImageClientFactory,
+    OpenAIImageGenerator,
+    OpenAIImageOperation,
+    OpenAIImageRequest,
+    OpenAIImageResult,
+    OpenAIImageSource,
+)
 from agentrig.integrations.openai.responses import (
     OPENAI_RESPONSES_MAX_IMAGE_BYTES,
     OPENAI_RESPONSES_MAX_INPUT_IMAGES,
@@ -73,6 +86,17 @@ __all__ = (
     "CodexTurnStatus",
     "CodexUsageReported",
     "OPENAI_RESPONSES_MAX_IMAGE_BYTES",
+    "ImageArtifactPublisher",
+    "OPENAI_IMAGE_CAPABILITY",
+    "OPENAI_IMAGE_MAX_INPUTS",
+    "OPENAI_IMAGE_SDK_VERSION",
+    "OpenAIImageClient",
+    "OpenAIImageClientFactory",
+    "OpenAIImageGenerator",
+    "OpenAIImageOperation",
+    "OpenAIImageRequest",
+    "OpenAIImageResult",
+    "OpenAIImageSource",
     "OPENAI_RESPONSES_MAX_INPUT_IMAGES",
     "OPENAI_RESPONSES_MAX_OUTPUT_TOKENS",
     "OPENAI_RESPONSES_SDK_VERSION",

@@ -16,6 +16,7 @@ from agentrig.capabilities import (
     CodingValidationStatus,
     ImageGenerationRequest,
     ImageGenerationResult,
+    ImageUsage,
     ModelMetadata,
     ValidationEvidence,
 )
@@ -212,6 +213,7 @@ class ScriptedImageGeneration:
     artifact_id: ArtifactId
     workspace_path: str
     model: ModelMetadata
+    usage: ImageUsage = ImageUsage()
 
     def __post_init__(self) -> None:
         if not isinstance(self.artifact_id, ArtifactId):
@@ -237,6 +239,8 @@ class ScriptedImageGeneration:
             )
         if not isinstance(self.model, ModelMetadata):
             raise TypeError("scripted image model must be ModelMetadata")
+        if not isinstance(self.usage, ImageUsage):
+            raise TypeError("scripted image usage must be ImageUsage")
 
 
 ScriptedImageGenerationOutcome: TypeAlias = ScriptedImageGeneration | Failure
@@ -343,4 +347,5 @@ class ScriptedImageGenerator:
             request=request,
             image=image,
             model=outcome.model,
+            usage=outcome.usage,
         )

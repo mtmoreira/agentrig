@@ -3,6 +3,7 @@ python_library(
     srcs = [
         "__init__.py",
         "codex.py",
+        "images.py",
         "responses.py",
         "runtime.py",
     ],
@@ -21,6 +22,19 @@ python_library(
     base_module = "agentrig.integrations.openai",
     deps = [
         ":openai",
+        "//src/agentrig/core:core",
+        "//third_party/python:extra-openai",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_library(
+    name = "images_sdk",
+    srcs = ["images_sdk.py"],
+    base_module = "agentrig.integrations.openai",
+    deps = [
+        ":openai",
+        "//src/agentrig/capabilities:capabilities",
         "//src/agentrig/core:core",
         "//third_party/python:extra-openai",
     ],

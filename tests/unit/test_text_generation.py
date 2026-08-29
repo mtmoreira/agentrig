@@ -154,6 +154,7 @@ class CapabilityDescriptorTest(unittest.TestCase):
                 "max_changed_files",
                 "max_output_tokens",
                 "max_reference_images",
+                "max_image_inputs",
                 "max_results",
                 "max_tool_calls",
             ),
@@ -170,11 +171,13 @@ class CapabilityDescriptorTest(unittest.TestCase):
                 "approval_requests",
                 "tool_use",
                 "reference_images",
+                "image_editing",
                 "masks",
                 "regions",
                 "citations",
                 "idempotency_keys",
                 "usage_reporting",
+                "cost_reporting",
             ),
         )
         self.assertEqual(

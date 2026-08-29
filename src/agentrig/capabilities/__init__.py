@@ -20,12 +20,15 @@ from agentrig.capabilities.coding import (
     WorkspaceAuthorization,
 )
 from agentrig.capabilities.image_generation import (
+    ImageInput,
+    ImageInputRole,
     ImageGenerationRequest,
     ImageGenerationResult,
     ImageGenerator,
     ImageRegion,
     ImageSize,
     ImageSpecification,
+    ImageUsage,
 )
 from agentrig.capabilities.mcp import McpServerBinding, McpTransport, mcp_tool_id
 from agentrig.capabilities.retrieval import (
@@ -88,9 +91,12 @@ __all__ = (
     "ImageGenerationRequest",
     "ImageGenerationResult",
     "ImageGenerator",
+    "ImageInput",
+    "ImageInputRole",
     "ImageRegion",
     "ImageSize",
     "ImageSpecification",
+    "ImageUsage",
     "McpServerBinding",
     "McpTransport",
     "ModelMetadata",

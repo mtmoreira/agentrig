@@ -8,8 +8,11 @@ from agentrig.capabilities import (
     ImageGenerationRequest,
     ImageGenerationResult,
     ImageGenerator,
+    ImageInput,
+    ImageInputRole,
     ImageSize,
     ImageSpecification,
+    ImageUsage,
     ModelMetadata,
 )
 from agentrig.core import ArtifactId, ArtifactRef, RunContext, RunId
@@ -36,6 +39,7 @@ class DeterministicImageGenerator:
                 input_artifact_ids=request.source_artifact_ids,
             ),
             model=ModelMetadata(provider="example", model_id="image-1"),
+            usage=ImageUsage(),
         )
 
 
@@ -51,6 +55,23 @@ request = ImageGenerationRequest(
         prompt="Create a quiet landscape.",
         size=ImageSize(width=1024, height=1024),
     )
+)
+
+edit_base = ArtifactRef(
+    artifact_id=ArtifactId("edit-base"),
+    kind="image",
+    media_type="image/png",
+    producer_run_id=RunId("input-run"),
+    workspace_path="inputs/edit-base.png",
+)
+edit_request = ImageGenerationRequest(
+    specification=ImageSpecification(
+        prompt="Edit only the background.",
+        size=ImageSize(width=1024, height=1536),
+    ),
+    inputs=(
+        ImageInput(role=ImageInputRole.EDIT_BASE, artifact=edit_base),
+    ),
 )
 
 

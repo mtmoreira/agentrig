@@ -13,6 +13,13 @@ from agentrig.workflow.base import Workflow
 from agentrig.workflow.execution import execute_step
 from agentrig.workflow.functions import FunctionStep
 from agentrig.workflow.grading import GradeStep, GradeStepResult
+from agentrig.workflow.image_execution import (
+    ImageAttemptEvidence,
+    ImageExecution,
+    ImageExecutionPolicy,
+    ImageGenerationExecutor,
+    ImageRoute,
+)
 from agentrig.workflow.repair import (
     RepairBudget,
     RepairLoop,
@@ -35,6 +42,11 @@ __all__ = (
     "FunctionStep",
     "GradeStep",
     "GradeStepResult",
+    "ImageAttemptEvidence",
+    "ImageExecution",
+    "ImageExecutionPolicy",
+    "ImageGenerationExecutor",
+    "ImageRoute",
     "RepairBudget",
     "RepairLoop",
     "RepairLoopResult",

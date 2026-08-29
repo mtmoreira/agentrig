@@ -4,6 +4,7 @@ python_library(
     base_module = "agentrig.workflow",
     deps = [
         "//src/agentrig/agents:agents",
+        "//src/agentrig/capabilities:capabilities",
         "//src/agentrig/core:core",
     ],
     visibility = ["PUBLIC"],

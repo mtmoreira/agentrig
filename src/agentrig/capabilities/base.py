@@ -35,11 +35,13 @@ class CapabilityFeature(StrEnum):
     APPROVAL_REQUESTS = "approval_requests"
     TOOL_USE = "tool_use"
     REFERENCE_IMAGES = "reference_images"
+    IMAGE_EDITING = "image_editing"
     MASKS = "masks"
     REGIONS = "regions"
     CITATIONS = "citations"
     IDEMPOTENCY_KEYS = "idempotency_keys"
     USAGE_REPORTING = "usage_reporting"
+    COST_REPORTING = "cost_reporting"
 
 
 class CapabilityLimit(StrEnum):
@@ -49,6 +51,7 @@ class CapabilityLimit(StrEnum):
     MAX_CHANGED_FILES = "max_changed_files"
     MAX_OUTPUT_TOKENS = "max_output_tokens"
     MAX_REFERENCE_IMAGES = "max_reference_images"
+    MAX_IMAGE_INPUTS = "max_image_inputs"
     MAX_RESULTS = "max_results"
     MAX_TOOL_CALLS = "max_tool_calls"
 
