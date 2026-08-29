@@ -121,6 +121,19 @@ An integration may directly implement one capability. A shared client, runtime,
 or transport layer should be extracted only when multiple implementations use
 it. AgentRig does not require a wrapper around every vendor SDK.
 
+### 3.9 Image roles and routing are explicit
+
+An image edit distinguishes its edit base, edit mask, identity references,
+style references, and composition references in the portable request. Output
+lineage binds every input artifact ID. The bounded image executor invokes only
+the route ID selected by the caller and may retry only declared failure kinds
+on that same route; it does not rank providers or fall through to another one.
+
+Image usage fields remain `None` when an implementation cannot report them.
+Cost ceilings therefore require a route that advertises cost reporting and a
+result that supplies matching cost and currency. Provider SDK imports remain in
+optional integration bridge modules, never the base capability or workflow.
+
 ## 4. Vocabulary
 
 ### Capability

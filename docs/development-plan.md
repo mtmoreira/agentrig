@@ -392,6 +392,13 @@ Acceptance:
 - Unsupported feature requirements fail before provider invocation.
 - Live tests validate real request translation and response normalization.
 
+The first image slice uses explicit input roles and an application-selected
+route. Legacy `reference_images` and `mask` request fields remain accepted for
+0.2 compatibility, but new edits should use `ImageInput`. Unknown image usage
+is not converted to zero. Automatic provider ranking and fallback remain out of
+scope; retries repeat only the selected route under finite attempt,
+concurrency, deadline, cancellation, and optional cost bounds.
+
 ### Milestone 9A — Application-scoped runtime catalog
 
 StoryWorld now provides concrete evidence for explicit per-agent runtime

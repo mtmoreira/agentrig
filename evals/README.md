@@ -18,4 +18,5 @@ Run the deterministic suite with:
 
 ```sh
 ./buck2 test //evals:scripted_agent_eval
+./buck2 test //evals:image_runtime_eval
 ```

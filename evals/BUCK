@@ -22,3 +22,15 @@ agentrig_python_test(
     ],
     labels = ["deterministic"],
 )
+
+agentrig_python_test(
+    name = "image_runtime_eval",
+    scope = "eval",
+    srcs = ["suites/test_image_runtime_eval.py"],
+    base_module = "evals",
+    deps = [
+        "//examples/capabilities/bounded_image_edit:bounded_image_edit",
+        "//src:agentrig",
+    ],
+    labels = ["deterministic"],
+)

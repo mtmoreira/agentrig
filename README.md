@@ -4,6 +4,12 @@ AgentRig is a typed Python SDK for composing deterministic code, AI agents,
 model capabilities, retrieval systems, tools, graders, and evaluations into
 observable workflows.
 
+Image workflows can bind explicit edit-base, mask, identity, style, and
+composition-reference roles, retain ordered artifact lineage, and execute one
+application-selected route under finite retry, cancellation, deadline,
+concurrency, and optional cost policy. Provider SDKs remain optional integration
+dependencies; unknown usage is preserved as unknown.
+
 The project is pre-alpha. Its public API will emerge through small,
 test-supported vertical slices; empty future package trees are intentionally
 not scaffolded. Pre-alpha releases may nevertheless be artifact-stable: see

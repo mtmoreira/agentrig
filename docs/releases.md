@@ -39,6 +39,16 @@ private names, and package internals are not public APIs.
 Released versions and tags are never moved, deleted, or reused. A correction
 uses a new version.
 
+## Unreleased image runtime compatibility
+
+The next minor candidate adds explicit `ImageInput` roles, image-native usage,
+a bounded selected-route executor, and an optional OpenAI image client seam.
+Existing `ImageGenerationRequest(reference_images=..., mask=...)` construction
+and results without an explicit usage argument remain supported. New edits
+should migrate to role-bound `inputs`; callers must not mix legacy and explicit
+forms. No release version or immutable tag is assigned until separately
+authorized release preparation completes.
+
 ## AgentRig 0.2.2
 
 AgentRig 0.2.2 adds a backward-compatible production boundary for strict
