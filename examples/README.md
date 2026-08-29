@@ -34,6 +34,9 @@ live entry points and test targets instead of changing the deterministic path.
 - [`capabilities/bounded_coding`](capabilities/bounded_coding/README.md)
   adapts one autonomous runtime to the portable coding contract, enforces a
   one-file workspace bound, and offers an ephemeral workspace-write Codex run.
+- [`capabilities/bounded_image_edit`](capabilities/bounded_image_edit/README.md)
+  binds explicit image-input roles, bounded same-route retry, ordered lineage,
+  and unknown usage semantics without any live provider call.
 - [`evals/regression_gate`](evals/regression_gate/README.md)
   runs a versioned dataset, creates a default-private durable report, compares
   it with an approved baseline, and produces a release decision.
