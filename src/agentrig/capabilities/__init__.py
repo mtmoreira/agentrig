@@ -31,6 +31,7 @@ from agentrig.capabilities.image_generation import (
     ImageUsage,
 )
 from agentrig.capabilities.mcp import McpServerBinding, McpTransport, mcp_tool_id
+from agentrig.capabilities.backend_artifacts import BackendArtifact, BackendArtifactAudit, BackendArtifactManifest
 from agentrig.capabilities.backend_operations import (
     BackendOperation, BackendOperationJournal, BackendOperationWriter, JournaledLocalBackends,
 )
@@ -82,6 +83,9 @@ from agentrig.capabilities.tool import (
 )
 
 __all__ = (
+    "BackendArtifact",
+    "BackendArtifactAudit",
+    "BackendArtifactManifest",
     "BackendOperation",
     "BackendOperationJournal",
     "BackendOperationWriter",

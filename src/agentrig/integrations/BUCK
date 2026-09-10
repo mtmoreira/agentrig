@@ -4,6 +4,7 @@ python_library(
         "__init__.py",
         "bounded_process.py",
         "backend_journal.py",
+        "backend_artifacts.py",
         "backend_staging.py",
         "local_backends.py",
         "lima_lifecycle.py",

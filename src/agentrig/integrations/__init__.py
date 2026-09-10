@@ -1,5 +1,6 @@
 """Optional provider and executable integrations."""
 
+from agentrig.integrations.backend_artifacts import audit_backend_artifacts
 from agentrig.integrations.bounded_process import ProcessFailure, ProcessOutput, ProcessSpec, run_bounded_process
 from agentrig.integrations.backend_journal import LocalBackendJournal
 from agentrig.integrations.backend_staging import StagedWorkspace, WorkspaceStagePlan, stage_workspace
@@ -16,6 +17,7 @@ from agentrig.integrations.process import (
 )
 
 __all__ = (
+    "audit_backend_artifacts",
     "StagedWorkspace",
     "WorkspaceStagePlan",
     "stage_workspace",

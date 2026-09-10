@@ -1,6 +1,6 @@
 # Replaceable local backends
 
-The local SDK candidate `0.3.1.dev2` adds `LocalBackend` in `capabilities`,
+The local SDK candidate `0.3.1.dev3` adds `LocalBackend` in `capabilities`,
 separate from model-facing `AgentRuntime`. No Python dependency or runtime import
 is added. The published `0.3.0` artifact is unchanged.
 
@@ -95,6 +95,25 @@ still required before a workload can use it.
 Offline subprocess and filesystem integration tests exercise the real local
 process runner and journal. Lima command tests use an injected scripted process;
 they are **not** evidence that Lima, a VM, or a simulator was run.
+
+## Local artifact audit
+
+`BackendArtifactManifest` declares exact IDs, relative paths, SHA-256 hashes,
+sizes and executable flags. `audit_backend_artifacts` reads one caller-supplied,
+ancestor-verified private bundle directory with a mandatory finite deadline.
+It inventories the exact directory tree before opening payloads, rejects extra
+files, links, hardlinks and non-private modes, hashes in 64 KiB chunks, and checks
+file/directory identity before returning. Nothing is downloaded, extracted,
+executed, installed or written. Declare only reviewed public runtime artifacts;
+hidden/authentication filenames and private-key/certificate suffixes are refused.
+
+Limits are 128 files, depth 8, 4 GiB per file and 16 GiB total. Files must have
+mode 0600 (data) or 0700 (executable), with private directories. A result verifies
+the declared bytes at that point in time; it does not prove that the manifest
+contains all guest dependencies, that the executable is safe, or that an archive
+has safe members. Reverify before later use. The audit is deliberately not a
+`LimaArtifactVerifier`: clearing the lifecycle gate still needs semantic config,
+complete artifact/dependency closure, owned-instance and no-acquisition checks.
 
 ## Backend substitution
 
