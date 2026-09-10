@@ -1,6 +1,6 @@
 # Replaceable local backends
 
-The local SDK candidate `0.3.1.dev3` adds `LocalBackend` in `capabilities`,
+The local SDK candidate `0.3.1.dev4` adds `LocalBackend` in `capabilities`,
 separate from model-facing `AgentRuntime`. No Python dependency or runtime import
 is added. The published `0.3.0` artifact is unchanged.
 
@@ -114,6 +114,80 @@ contains all guest dependencies, that the executable is safe, or that an archive
 has safe members. Reverify before later use. The audit is deliberately not a
 `LimaArtifactVerifier`: clearing the lifecycle gate still needs semantic config,
 complete artifact/dependency closure, owned-instance and no-acquisition checks.
+
+## Guest workspace transfer candidate
+
+`copy_to_guest` connects once to a `GuestWorkspaceEndpoint` supplied by the
+selected backend. Approval binds the plan, instance, private directory and exact
+socket device/inode/owner. Only `workspace.sock` under that directory is allowed;
+it must be a 0600 socket owned by the current user, with one link. Directory and
+socket identity are checked before connection, before sending, and after the
+receipt. Missing or changed endpoints fail without reconnecting. Ancestor trust
+and VM forwarding authentication remain the backend's responsibility; local
+socket ownership alone is not proof of the guest peer's identity.
+
+`transfer_guest_workspace` and `receive_guest_workspace` implement the same
+`agentrig.guest-workspace.v1` framed protocol over a caller-supplied, connected
+Unix stream. A backend must first authenticate and bind that connection to its
+owned instance, journal fresh operation authority, and verify any VM socket
+forward. The functions consume and close the connection. They never discover an
+endpoint, start a listener or VM, execute collateral, or contact Docker.
+
+The sender requires the exact `WorkspaceStagePlan.digest`, sends a bounded JSON
+header and raw file bytes, then half-closes its write side. The receiver checks
+the instance, fixed guest root, unique operation, path allowlist, file sizes and
+hashes before acknowledging. Both require a context deadline; socket waits poll
+cancellation and have a 60-second wall-clock ceiling. Headers are at most 64 KiB;
+there are at most 128 files, 1 MiB per file, 16 MiB total. Files must be under
+explicit subdirectories; root files and known credential/key paths are refused.
+Only deliberately supplied bytes are transmitted; no host file is opened.
+
+The guest operation parent stays 0700. Its intent and completion records are
+0600 and contain only digests, counts and local filesystem identity. The copied
+subdirectories are 0755 and files 0644, inside that private parent, so an executor
+can bind only those subdirectories read-only into a differently mapped workload
+UID. Files are reopened and rehashed before completion. Existing operation
+directories always fail, including partial transfers. Disconnection or timeout
+may leave completed or partial state; callers must retain uncertainty and must
+not reconnect/replay automatically. A response is an observation, never authority.
+
+`workload_access_verified` is permanently false in this receipt. Local socket
+tests establish copy/validation behavior only. The functions are synchronous;
+an async adapter must own and join its worker through cancellation. Production
+service activation, peer authentication, endpoint forwarding, recovery inspection,
+and actual container mount/UID qualification remain activation gates. The default
+backend catalog does not register this candidate. No new Python dependency was
+added; candidate packaging is 0.3.1.dev4 and public 0.3.0 remains unchanged.
+
+The planned OpenRTL integration will map its reviewed `input/` and `control/`
+files to these guest subdirectories, preserving read-only binds, UID 65534, no network,
+resource limits and its existing evidence checks. Host staging can remain
+0700/0600. A replacement backend can supply the same authenticated stream without
+any Lima branch in the engineering state machine.
+
+## Guest dependency and activation checklist
+
+This source helper does not make a guest image a verified offline closure. Before
+activation, review immutable bytes and licensing for the guest OS, its Python
+interpreter/standard library, this exact SDK/helper build, the rootless engine
+and its required user-namespace/network/resource helpers, the simulation image,
+and the Lima host/guest agents and their execution dependencies. The bundle must
+also provide the reviewed service definition, dedicated user/private state,
+local Unix socket and exact forwarding configuration. No runtime acquisition is
+performed by either transfer function.
+
+The artifact audit verifies only declared files. A production verifier must also
+check the effective Lima configuration (including absence of global overrides),
+no stock-template fallback or implicit acquisition, exact local image and helper
+pins, no host-home mount, and only the owned socket forwards. Actual service peer
+identity, VM forwarding, rootless cgroups and workload read-only access need live
+qualification. Missing pins or observations keep readiness false.
+
+Lima 2.2.0's [shell implementation](https://github.com/lima-vm/lima/blob/v2.2.0/cmd/limactl/shell.go)
+constructs an SSH command invoking a guest login shell. This candidate does not
+use `limactl shell`, `--sync`, SSH argv, shell startup files or an installer hook
+as its file-transfer mechanism. The preinstalled guest helper and its owned
+forwarded socket must be separately reviewed before any real invocation.
 
 ## Backend substitution
 

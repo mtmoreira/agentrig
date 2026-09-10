@@ -1,6 +1,14 @@
 load("//build_defs:python_test.bzl", "agentrig_python_test")
 
 agentrig_python_test(
+    name = "guest_workspace",
+    scope = "integration",
+    srcs = ["__init__.py", "test_guest_workspace.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
     name = "backend_artifacts",
     scope = "integration",
     srcs = ["__init__.py", "test_backend_artifacts.py"],

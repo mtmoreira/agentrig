@@ -6,6 +6,7 @@ python_library(
         "backend_journal.py",
         "backend_artifacts.py",
         "backend_staging.py",
+        "guest_workspace.py",
         "local_backends.py",
         "lima_lifecycle.py",
         "process.py",
