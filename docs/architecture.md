@@ -25,6 +25,11 @@ The central design statement is:
 
 ## 2. Scope and non-goals
 
+The optional [local backend boundary](local-backends.md) separates host execution
+setup from model-facing `AgentRuntime`. Its explicit catalog uses portable
+capabilities and digest-bound, invocation-local authority. The first Lima adapter
+is a blocked preparation review, not a qualified VM lifecycle implementation.
+
 AgentRig should provide:
 
 - Typed inputs and outputs at orchestration boundaries.

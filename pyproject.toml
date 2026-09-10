@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "agentrig"
-version = "0.3.0"
+version = "0.3.1.dev1"
 description = "Typed infrastructure for composing heterogeneous AI agents and capabilities"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -73,6 +73,7 @@ files = [
   "tests/typing/valid_structured_generation.py",
   "tests/typing/valid_text_generation.py",
   "tests/typing/valid_tool_capability.py",
+  "tests/typing/valid_local_backend.py",
   "tests/typing/valid_workflow_agent.py",
 ]
 show_error_codes = true

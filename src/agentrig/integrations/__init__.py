@@ -1,5 +1,7 @@
 """Optional provider and executable integrations."""
 
+from agentrig.integrations.local_backends import ExistingRootlessDockerBackend, LimaBackend
+
 from agentrig.integrations.process import (
     CommandInput,
     CommandOutput,
@@ -9,6 +11,8 @@ from agentrig.integrations.process import (
 )
 
 __all__ = (
+    "ExistingRootlessDockerBackend",
+    "LimaBackend",
     "CommandInput",
     "CommandOutput",
     "CommandTool",

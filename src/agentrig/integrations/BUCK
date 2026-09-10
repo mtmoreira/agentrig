@@ -2,6 +2,7 @@ python_library(
     name = "integrations",
     srcs = [
         "__init__.py",
+        "local_backends.py",
         "process.py",
     ],
     base_module = "agentrig.integrations",
