@@ -175,7 +175,8 @@ class BackendFailure(RuntimeError):
     def __init__(self, code: str) -> None:
         allowed = {"backend_unavailable", "backend_incompatible", "backend_plan_changed",
                    "backend_plan_blocked", "backend_authority_required", "backend_invalid_result",
-                   "backend_execution_failed", "backend_reconciliation_required"}
+                   "backend_execution_failed", "backend_reconciliation_required", "backend_journal_invalid",
+                   "backend_journal_busy", "backend_operation_reused", "backend_staging_failed"}
         self.code = code if code in allowed else "backend_execution_failed"
         super().__init__(self.code)
 

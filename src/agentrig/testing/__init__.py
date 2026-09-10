@@ -1,5 +1,7 @@
 """Deterministic test doubles for AgentRig contracts."""
 
+from agentrig.testing.backend_operations import BackendJournalContractSuite, MemoryBackendJournal
+
 from agentrig.testing.local_backends import LocalBackendContractSuite, ScriptedLocalBackend
 
 from agentrig.testing.action_contracts import (
@@ -55,6 +57,8 @@ from agentrig.testing.scripted_tool import (
 from agentrig.testing.tool_contracts import ToolContractSuite
 
 __all__ = (
+    "BackendJournalContractSuite",
+    "MemoryBackendJournal",
     "LocalBackendContractSuite",
     "ScriptedLocalBackend",
     "CodingAgentContractSuite",

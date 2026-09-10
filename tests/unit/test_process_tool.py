@@ -7,8 +7,9 @@ from datetime import UTC, datetime
 from unittest.mock import patch
 
 from agentrig.capabilities import ToolInvocation
-from agentrig.core import CancellationSource, ExecutionStatus, RunContext, RunId
+from agentrig.core import Cancellation, CancellationSource, Deadline, DeadlineExceeded, ExecutionStatus, RunCancelled, RunContext, RunId
 from agentrig.integrations import CommandInput, CommandTool, DetachedCommandTool
+from agentrig.integrations import ProcessOutput
 
 
 @dataclass(frozen=True)
@@ -38,6 +39,17 @@ def context() -> RunContext:
 
 
 class CommandToolTest(unittest.IsolatedAsyncioTestCase):
+    async def test_late_cooperative_stop_preserves_tool_result_contract(self) -> None:
+        tool = self.tool()
+        invocation = ToolInvocation(invocation_id='late-stop', contract=tool.contract, input=CommandInput())
+        cases = [(RunCancelled(Cancellation('private-stop-reason')), 'command.cancelled'),
+                 (DeadlineExceeded(Deadline.after(0, FixedClock())), 'command.deadline_exceeded')]
+        for error, code in cases:
+            with patch('agentrig.integrations.process.run_bounded_process', side_effect=error):
+                result = await tool.invoke(invocation, context())
+            self.assertEqual(result.failure.code, code)
+            self.assertNotIn('private-stop-reason', repr(result))
+
     def tool(self, *, bound: int = 1000) -> CommandTool:
         return CommandTool(
             tool_id="process.printf",
@@ -56,19 +68,20 @@ class CommandToolTest(unittest.IsolatedAsyncioTestCase):
             input=CommandInput(arguments=("abcdef",)),
         )
 
-        process = FakeProcess(stdout=b"abcdef")
         with patch(
-            "agentrig.integrations.process.asyncio.create_subprocess_exec",
-            return_value=process,
-        ) as create_process:
+            "agentrig.integrations.process.run_bounded_process",
+            return_value=ProcessOutput(exit_code=0, stdout=b"abcd", stderr=b"", truncated=True),
+        ) as execute:
             result = await tool.invoke(invocation, context())
 
         self.assertEqual(result.status, ExecutionStatus.SUCCEEDED)
         self.assertEqual(result.unwrap().stdout, "abcd")
         self.assertTrue(result.unwrap().truncated)
-        self.assertEqual(create_process.call_args.args[:2], ("/usr/bin/printf", "abcdef"))
-        self.assertNotIn("shell", create_process.call_args.kwargs)
-        self.assertEqual(create_process.call_args.kwargs["env"], {})
+        spec = execute.call_args.args[0]
+        self.assertEqual(spec.argv, ("/usr/bin/printf", "abcdef"))
+        self.assertEqual(spec.environment, {})
+        self.assertEqual(spec.max_output_bytes, 4)
+        self.assertFalse(spec.reject_overflow)
 
     async def test_rejects_environment_outside_explicit_allowlist(self) -> None:
         tool = self.tool()

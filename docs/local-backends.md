@@ -1,6 +1,6 @@
 # Replaceable local backends
 
-The local SDK candidate `0.3.1.dev1` adds `LocalBackend` in `capabilities`,
+The local SDK candidate `0.3.1.dev2` adds `LocalBackend` in `capabilities`,
 separate from model-facing `AgentRuntime`. No Python dependency or runtime import
 is added. The published `0.3.0` artifact is unchanged.
 
@@ -41,9 +41,60 @@ passed to Lima as executable configuration. Still required:
   never automatically replay uncertain creation or startup.
 - Validate the real VM, isolation, resources and recovery with explicit authority.
 
-The existing `CommandTool` truncates captured output after collection; that is
-not a streaming memory bound suitable for VM lifecycle logs. This planning slice
-does not change or qualify its process behavior.
+`CommandTool` now uses `run_bounded_process` to drain output with fixed capture
+memory. Its compatible truncation mode retains at most two configured bounds
+while reading and returns one combined bound. `ProcessSpec` defaults to rejecting
+overflow, as required by the Lima lifecycle driver. Exact argv, private cwd,
+explicit environment, deadlines and cancellation apply without a shell or retries.
+An unreaped child anchors process-group cleanup even when its descendants hold
+pipes open. Native cancellation waits for worker cleanup. This is not an operating
+system sandbox: trusted executables can deliberately detach other processes.
+
+## Durable lifecycle candidate
+
+`JournaledLocalBackends` writes an uncertain intent before calling an adapter.
+Exceptions, cancellation and failed completion writes retain uncertainty. Each
+operation ID is single-use. Reconciliation only performs a fresh authorized
+`INSPECT` for the same backend, version, instance configuration and operation;
+it never replays create/start/stop or restores a saved grant.
+
+`LocalBackendJournal` uses a caller-supplied, ancestor-verified private directory,
+descriptor-relative bounded JSON, file and directory fsync, an exclusive writer
+lock, and local directory identity bindings. It rejects copied state, links,
+public files and concurrent writers. Interrupted staging files are preserved and
+block new writes; they require explicit repair, not automatic deletion. `inspect`
+is a read-only diagnostic snapshot. Execution uses the locked current state.
+
+`LimaLifecycleBackend` implements exact create/start/stop/list command sequences
+and journaled recovery. It is separate from the default review-only `LimaBackend`
+and is not registered automatically. It requires an injected **trusted application
+artifact verifier**, not a user-configurable readiness boolean. Before every
+command, that verifier must verify the approved complete local artifact closure,
+executable/configuration digests, private roots, absence of global overrides,
+owned instance identity and suppression of all implicit acquisition. Without it,
+every plan is blocked. No production verifier or approved guest bundle exists yet.
+
+The driver uses a private LIMA_HOME/HOME and exact instance name; never enumerate
+another account's runtime or use a default instance. VM observations must match
+that name, directory, architecture and VM type. Start requires observed stopped
+state; prepare requires local absence; stop requires observed running state.
+Unknown results leave uncertainty. Even a running VM result does not qualify
+rootless Docker, cgroups, guest-visible staging or simulation readiness.
+
+`WorkspaceStagePlan` snapshots bounded files and binds approval to exact host and
+guest roots, operation identity and file hashes. `stage_workspace` writes only a
+new private operation directory using exclusive descriptor-relative creation,
+fsync and intent/completion receipts. Existing directories, links, traversal,
+path conflicts and oversized input are refused; partial files are retained.
+`LimaLifecycleBackend.stage` fixes the mapping to its private staging root and
+`/mnt/agentrig`, and refuses staging while lifecycle recovery is unresolved.
+The returned guest path is a proposed mapping, **not verified guest visibility**.
+An approved configuration verifier and real mount/Unix-socket qualification are
+still required before a workload can use it.
+
+Offline subprocess and filesystem integration tests exercise the real local
+process runner and journal. Lima command tests use an injected scripted process;
+they are **not** evidence that Lima, a VM, or a simulator was run.
 
 ## Backend substitution
 
