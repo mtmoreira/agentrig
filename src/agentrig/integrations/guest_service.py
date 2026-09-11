@@ -16,6 +16,7 @@ import time
 from typing import Literal
 
 from agentrig.capabilities import BackendFailure
+from agentrig.capabilities.local_backend import backend_digest
 from agentrig.core import DeadlineExceeded, RunCancelled, RunContext
 from agentrig.integrations.backend_journal import _private
 from agentrig.integrations.backend_staging import WorkspaceStagePlan
@@ -194,6 +195,55 @@ def serve_guest_once(root: Path, socket_directory: Path, instance_id: str, conte
     requires separate review; an existing entry always blocks a new listener.
     The caller owns process isolation; this function does not daemonize or install.
     """
+    return serve_guest_requests(root, socket_directory, instance_id, context,
+        request_limit=1, service_authorized=service_authorized, verify_peer=verify_peer)[0]
+
+
+def _service_lock(directory: int, *, create: bool = True) -> int:
+    """Hold the persistent, empty lock inode; never remove or replace it."""
+    import fcntl
+    flags = os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK | (os.O_CREAT if create else 0)
+    fd = os.open('.service.lock', flags,
+                 0o600, dir_fd=directory)
+    try:
+        info = os.fstat(fd)
+        _private(info, directory=False)
+        if stat.S_IMODE(info.st_mode) != 0o600 or info.st_size != 0:
+            raise BackendFailure('backend_staging_failed')
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise BackendFailure('backend_journal_busy') from None
+        _check_service_lock(directory, fd)
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def _check_service_lock(directory: int, descriptor: int) -> None:
+    info = os.fstat(descriptor)
+    current = os.stat('.service.lock', dir_fd=directory, follow_symlinks=False)
+    for item in (info, current):
+        _private(item, directory=False)
+        if item.st_size != 0 or stat.S_IMODE(item.st_mode) != 0o600:
+            raise BackendFailure('backend_staging_failed')
+    if (info.st_dev, info.st_ino) != (current.st_dev, current.st_ino):
+        raise BackendFailure('backend_staging_failed')
+
+
+def serve_guest_requests(root: Path, socket_directory: Path, instance_id: str, context: RunContext, *,
+                         request_limit: int, service_authorized: bool = False,
+                         verify_peer: GuestPeerVerifier = verify_linux_guest_peer) -> tuple[GuestWorkspaceReceipt, ...]:
+    """Serve 1..64 sequential requests on one owned endpoint under a writer lease.
+
+    Each connection is independently authenticated. Stop on the first failed
+    request, cancellation or deadline. Admit requests for at most 60 seconds;
+    an in-flight request retains the transport's own bounded deadline. Neither
+    this function nor its one-request wrapper retries a failed request or adopts
+    an existing socket. Closing retains the socket and lock as local evidence.
+    A later retirement needs fresh backend quiescence verification and authority.
+    """
     opened: list[int] = []
     listener: socket.socket | None = None
     bound: os.stat_result | None = None
@@ -203,6 +253,8 @@ def serve_guest_once(root: Path, socket_directory: Path, instance_id: str, conte
         check.check()
         if service_authorized is not True:
             raise BackendFailure('backend_authority_required')
+        if type(request_limit) is not int or not 1 <= request_limit <= 64:
+            raise BackendFailure('backend_plan_changed')
         _instance(instance_id)
         if verify_peer is verify_linux_guest_peer:
             _linux_peer_available()
@@ -215,12 +267,21 @@ def serve_guest_once(root: Path, socket_directory: Path, instance_id: str, conte
         opened.append(socket_fd)
         root_identity = os.fstat(root_fd)
         socket_identity = os.fstat(socket_fd)
+        lease = _service_lock(socket_fd)
+        opened.append(lease)
 
         def directories_unchanged() -> None:
+            _check_service_lock(socket_fd, lease)
             for path, original in [(root, root_identity), (socket_directory, socket_identity)]:
                 current = path.lstat()
                 _private(current, directory=True)
                 if (current.st_dev, current.st_ino) != (original.st_dev, original.st_ino):
+                    raise BackendFailure('backend_staging_failed')
+            if bound is not None:
+                current = os.stat('workspace.sock', dir_fd=socket_fd, follow_symlinks=False)
+                if (not stat.S_ISSOCK(current.st_mode) or stat.S_IMODE(current.st_mode) != 0o600 or
+                        current.st_nlink != 1 or (current.st_dev, current.st_ino, current.st_uid) !=
+                        (bound.st_dev, bound.st_ino, bound.st_uid)):
                     raise BackendFailure('backend_staging_failed')
 
         directories_unchanged()
@@ -237,22 +298,27 @@ def serve_guest_once(root: Path, socket_directory: Path, instance_id: str, conte
         listener.listen(1)
         listener.settimeout(.05)
         expires = time.monotonic() + 60
-        while True:
+        results: list[GuestWorkspaceReceipt] = []
+        while len(results) < request_limit:
             check.check()
+            directories_unchanged()
             if time.monotonic() >= expires:
                 raise BackendFailure('backend_staging_failed')
             try:
                 connection, _ = listener.accept()
-                break
             except socket.timeout:
                 continue
-        try:
-            directories_unchanged()
-            result = handle_guest_request(connection, root, instance_id, context, verify_peer=verify_peer)
-            directories_unchanged()
-            return result
-        finally:
-            connection.close()
+            try:
+                directories_unchanged()
+                result = handle_guest_request(connection, root, instance_id, context, verify_peer=verify_peer)
+                directories_unchanged()
+                check.check()
+                if time.monotonic() >= expires:
+                    raise BackendFailure('backend_staging_failed')
+                results.append(result)
+            finally:
+                connection.close()
+        return tuple(results)
     except (BackendFailure, DeadlineExceeded, RunCancelled):
         raise
     except Exception:
@@ -260,5 +326,71 @@ def serve_guest_once(root: Path, socket_directory: Path, instance_id: str, conte
     finally:
         if listener is not None:
             listener.close()
+        for fd in reversed(opened):
+            os.close(fd)
+
+
+GuestServiceQuiescenceVerifier = Callable[[GuestWorkspaceEndpoint, RunContext], object]
+
+
+def guest_service_retirement_digest(endpoint: GuestWorkspaceEndpoint) -> str:
+    """Fresh cleanup review binding; a stored digest does not confer authority."""
+    return backend_digest({'schema': 'agentrig.guest-service-retirement.v1',
+        'root': str(endpoint.root), 'instance_id': endpoint.instance_id,
+        'device': endpoint.device, 'inode': endpoint.inode, 'uid': endpoint.uid})
+
+
+def retire_guest_service(endpoint: GuestWorkspaceEndpoint, approved_digest: str,
+                         context: RunContext, *,
+                         verify_quiescent: GuestServiceQuiescenceVerifier | None = None) -> None:
+    """Remove only the reviewed socket after authenticated backend quiescence.
+
+    The verifier is mandatory trusted backend code and must prove that the exact
+    service/forwarding is stopped and all clients completed their endpoint checks.
+    A free local lease alone is not proof. Never connect, signal a PID, delete the
+    lock, erase workspace evidence or infer authority from a saved record. Missing
+    or replaced sockets fail; a lost cleanup reply requires fresh reconciliation.
+    Backend operation journaling must persist uncertainty before calling this port.
+    """
+    opened: list[int] = []
+    try:
+        check = _Inspection(context)
+        check.check()
+        if approved_digest != guest_service_retirement_digest(endpoint):
+            raise BackendFailure('backend_authority_required')
+        if verify_quiescent is None:
+            raise BackendFailure('backend_plan_blocked')
+        directory = _service_directory(endpoint.root)
+        opened.append(directory)
+        original = os.fstat(directory)
+        # Retirement never creates a lock for an unrecognized endpoint.
+        lease = _service_lock(directory, create=False)
+        opened.append(lease)
+
+        def unchanged() -> None:
+            _check_service_lock(directory, lease)
+            current = endpoint.root.lstat()
+            _private(current, directory=True)
+            if (current.st_dev, current.st_ino) != (original.st_dev, original.st_ino):
+                raise BackendFailure('backend_staging_failed')
+            value = os.stat('workspace.sock', dir_fd=directory, follow_symlinks=False)
+            if (not stat.S_ISSOCK(value.st_mode) or stat.S_IMODE(value.st_mode) != 0o600 or value.st_nlink != 1 or value.st_uid != os.getuid() or
+                    (value.st_dev, value.st_ino, value.st_uid) != (endpoint.device, endpoint.inode, endpoint.uid)):
+                raise BackendFailure('backend_staging_failed')
+
+        unchanged()
+        check.check()
+        if verify_quiescent(endpoint, context) is not None:
+            raise BackendFailure('backend_invalid_result')
+        check.check()
+        unchanged()
+        os.unlink('workspace.sock', dir_fd=directory)
+        os.fsync(directory)
+        check.check()
+    except (BackendFailure, DeadlineExceeded, RunCancelled):
+        raise
+    except Exception:
+        raise BackendFailure('backend_staging_failed') from None
+    finally:
         for fd in reversed(opened):
             os.close(fd)

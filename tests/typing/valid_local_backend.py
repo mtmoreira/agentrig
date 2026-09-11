@@ -19,6 +19,7 @@ from pathlib import Path
 from agentrig.integrations import (
     copy_guest_service, inspect_guest_service, handle_guest_request,
     request_guest_service, serve_guest_once, verify_linux_guest_peer,
+    guest_service_retirement_digest, retire_guest_service, serve_guest_requests,
 )
 
 backend: LocalBackend = ScriptedLocalBackend(["running"])
@@ -28,6 +29,14 @@ lifecycle = JournaledLocalBackends(catalog=catalog, journal=journal)
 artifacts = BackendArtifactManifest(artifacts=(BackendArtifact(artifact_id='guest', path='guest.raw',
     sha256='sha256:' + '1' * 64, size_bytes=123),))
 service = JournaledGuestWorkspaces(journal=journal, copy=copy_guest_service, inspect=inspect_guest_service)
+
+
+def service_lifecycle(root: Path, sockets: Path, instance: str, endpoint: GuestWorkspaceEndpoint,
+                      context: RunContext) -> tuple[GuestWorkspaceReceipt, ...]:
+    results = serve_guest_requests(root, sockets, instance, context, request_limit=2,
+        service_authorized=True)
+    retire_guest_service(endpoint, guest_service_retirement_digest(endpoint), context)
+    return results
 
 
 def guest_service(connection: socket.socket, root: Path, sockets: Path, instance: str,

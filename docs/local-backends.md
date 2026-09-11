@@ -307,6 +307,39 @@ kernel authentication, VM forwarding, service deployment or container visibility
 No service, Lima backend or workload is activated by importing these APIs. Actual
 Linux peer checks and deployed service qualification remain acceptance gates.
 
+## Bounded service lifecycle and retirement
+
+The guest-service lifecycle now supports `serve_guest_requests` for 1..64
+sequential requests on one private endpoint. `serve_guest_once` delegates with
+a limit of one. Each connection is independently authenticated, and the first
+request failure stops the service. Admission lasts at most 60 seconds; an
+in-flight request keeps its transport deadline. A finite context deadline is
+always required. There is no automatic retry, restart, daemon or installation.
+
+A persistent empty `.service.lock` file holds an exclusive local lease across
+the listener lifetime. Its inode, mode and ownership are rechecked alongside the
+directories and socket. Concurrent cooperating service/retirement operations are
+blocked. Close, cancellation and failure release descriptors but retain the socket,
+lock and workspace evidence. A free lease does not prove a VM service is stopped.
+
+`guest_service_retirement_digest` binds a fresh cleanup review to the exact root,
+instance and socket identity. `retire_guest_service` requires that grant and a
+trusted backend quiescence verifier. The verifier must establish that the exact
+service and forwarding are stopped and clients have finished their final endpoint
+checks. Nothing selects this verifier from disk or request data. Under the lease,
+the function rechecks state after verification and removes only `workspace.sock`,
+then syncs the directory. The lock and all workspace artifacts remain. Missing,
+replaced or non-socket entries fail; old one-shot entries without the lock are
+not adopted. A verified retirement permits a later explicitly authorized bind.
+
+This is a low-level retirement port. The application must persist operation
+uncertainty before invocation through its backend coordinator. A lost reply or
+post-unlink failure requires fresh reconciliation; absence never restores cleanup
+or runtime authority. Crash recovery additionally requires backend proof of stopped
+service/forwarding and drained clients. The production quiescence verifier and
+coordinator wiring remain pending. Tests exercise local leases and listener
+copy/inspect/retire/rebind with synthetic authentication/quiescence, not a VM.
+
 ## Registering another backend
 
 Implement the protocol, register explicitly and run `LocalBackendContractSuite`

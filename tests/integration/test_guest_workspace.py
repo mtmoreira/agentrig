@@ -67,11 +67,14 @@ class GuestWorkspaceTests(unittest.TestCase):
     def send_raw(self, data, root=None):
         client, server = socket.socketpair()
         self.addCleanup(client.close)
+        # These bounded malformed fixtures fit in the socket buffer. Finish the
+        # write side before starting rejection, so the receiver may close early
+        # without racing this test's shutdown call (ENOTCONN on macOS).
+        client.sendall(data)
+        client.shutdown(socket.SHUT_WR)
         with ThreadPoolExecutor(max_workers=1) as pool:
             future = pool.submit(receive_guest_workspace, server, self.guest if root is None else root,
                                  self.instance, self.context)
-            client.sendall(data)
-            client.shutdown(socket.SHUT_WR)
             with self.assertRaisesRegex(BackendFailure, '^backend_staging_failed$'):
                 future.result(timeout=4)
         self.assertEqual(server.fileno(), -1)

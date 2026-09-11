@@ -16,6 +16,7 @@ from agentrig.integrations.guest_operations import JournaledGuestWorkspaces, gue
 from agentrig.integrations.guest_service import (
     copy_guest_service, handle_guest_request, inspect_guest_service,
     request_guest_service, serve_guest_once, verify_linux_guest_peer,
+    guest_service_retirement_digest, retire_guest_service, serve_guest_requests,
 )
 
 from agentrig.integrations.process import (
@@ -27,6 +28,9 @@ from agentrig.integrations.process import (
 )
 
 __all__ = (
+    "guest_service_retirement_digest",
+    "retire_guest_service",
+    "serve_guest_requests",
     "copy_guest_service",
     "handle_guest_request",
     "inspect_guest_service",
