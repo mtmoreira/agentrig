@@ -11,6 +11,7 @@ from agentrig.integrations.guest_workspace import (
 
 from agentrig.integrations.local_backends import ExistingRootlessDockerBackend, LimaBackend
 from agentrig.integrations.lima_lifecycle import LimaArtifactVerifier, LimaLifecycleBackend
+from agentrig.integrations.lima_configuration import LimaConfiguration, LimaConfigurationAudit, audit_lima_configuration
 
 from agentrig.integrations.process import (
     CommandInput,
@@ -21,6 +22,9 @@ from agentrig.integrations.process import (
 )
 
 __all__ = (
+    "LimaConfiguration",
+    "LimaConfigurationAudit",
+    "audit_lima_configuration",
     "GuestWorkspaceEndpoint",
     "copy_to_guest",
     "GuestWorkspaceReceipt",

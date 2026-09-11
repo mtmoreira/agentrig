@@ -13,6 +13,7 @@ from agentrig.integrations import (
     transfer_guest_workspace,
 )
 import socket
+from agentrig.integrations import LimaConfiguration, LimaConfigurationAudit, audit_lima_configuration
 
 backend: LocalBackend = ScriptedLocalBackend(["running"])
 catalog = LocalBackendCatalog([backend])
@@ -30,6 +31,10 @@ def transfer(connection: socket.socket, plan: WorkspaceStagePlan, instance_id: s
 def copy(endpoint: GuestWorkspaceEndpoint, plan: WorkspaceStagePlan,
          approved_digest: str, context: RunContext) -> GuestWorkspaceReceipt:
     return copy_to_guest(endpoint, plan, approved_digest, context)
+
+
+def audit_configuration(configuration: LimaConfiguration, context: RunContext) -> LimaConfigurationAudit:
+    return audit_lima_configuration(configuration, context)
 
 
 async def inspect(plan: BackendPlan, authority: BackendAuthority,

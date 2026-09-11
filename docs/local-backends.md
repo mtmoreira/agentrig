@@ -1,6 +1,6 @@
 # Replaceable local backends
 
-The local SDK candidate `0.3.1.dev4` adds `LocalBackend` in `capabilities`,
+The local SDK candidate `0.3.1.dev5` adds `LocalBackend` in `capabilities`,
 separate from model-facing `AgentRuntime`. No Python dependency or runtime import
 is added. The published `0.3.0` artifact is unchanged.
 
@@ -157,7 +157,7 @@ an async adapter must own and join its worker through cancellation. Production
 service activation, peer authentication, endpoint forwarding, recovery inspection,
 and actual container mount/UID qualification remain activation gates. The default
 backend catalog does not register this candidate. No new Python dependency was
-added; candidate packaging is 0.3.1.dev4 and public 0.3.0 remains unchanged.
+added; guest transfer was introduced in 0.3.1.dev4 and public 0.3.0 remains unchanged.
 
 The planned OpenRTL integration will map its reviewed `input/` and `control/`
 files to these guest subdirectories, preserving read-only binds, UID 65534, no network,
@@ -189,7 +189,49 @@ use `limactl shell`, `--sync`, SSH argv, shell startup files or an installer hoo
 as its file-transfer mechanism. The preinstalled guest helper and its owned
 forwarded socket must be separately reviewed before any real invocation.
 
-## Backend substitution
+## Restricted Lima input configuration
+
+`LimaConfiguration` renders one complete JSON input profile for Lima 2.2.0.
+It validates resource bounds, a literal private state root, dedicated guest UID,
+and the exact local guest image pin and size. `document()` returns a detached
+mapping; `validate()` accepts only that exact semantic profile, including JSON
+types. Unknown fields, duplicate keys, YAML, templates, fallback images, arbitrary
+provisioning and changes to forwarding, mounts or dependency policy fail closed.
+
+The profile disables containerd installation, host-home mounts, copying back to
+the host, proxy propagation, host resolver integration, Rosetta, package upgrades,
+ambient SSH keys and agent/X11 forwarding. It permits only the owned workspace
+and Docker Unix-socket forwards and ignores application TCP/UDP forwarding.
+The dedicated guest account retains Lima's passwordless-sudo boot assumption;
+that is not permission for an OpenRTL container to run as the guest account.
+The workload must still use UID 65534 and pass independent rootless/isolation
+checks. The VM's default NAT is not a network isolation guarantee.
+
+The single fixed dependency provision is a no-op with
+`skipDefaultDependencyResolution: true`. Lima's
+[2.2.0 dependency boot script](https://github.com/lima-vm/lima/blob/v2.2.0/pkg/cidata/cidata.TEMPLATE.d/boot.Linux/30-install-packages.sh)
+otherwise installs missing packages even with containerd disabled. This renderer
+does not execute that script. Preinstalled guest software and OS update services
+must be reviewed as part of the complete image; suppressing Lima's installer
+does not prove that the image has all dependencies or never acquires software.
+
+`audit_lima_configuration` checks existing private `configuration.json` and
+`artifacts/guest.raw`, the exact image bytes, and absence of global Lima
+configuration. `lima/_config` may be absent or empty/private; any entry is refused
+without opening it. It rechecks identities after reading, never reads instance
+keys or contacts a socket, and does not write or select a runtime. Its caller must
+verify root ancestors. Image files use the existing bounded artifact audit.
+
+This audit verifies input semantics and declared bytes. It deliberately leaves
+`effective_configuration_verified`, `dependency_closure_qualified` and
+`execution_authorized` false. Lima may materialize defaults and instance YAML;
+those effective settings, the host binaries/guest agent, the service/helper,
+license/dependency inventory and real forwarding remain separate gates. This
+function is not a complete `LimaArtifactVerifier` and is not registered as one.
+No Lima binary has parsed the profile yet. Candidate parser/runtime qualification
+needs the separately approved artifact acquisition and execution step.
+
+## Registering another backend
 
 Implement the protocol, register explicitly and run `LocalBackendContractSuite`
 with a fresh fixture and effect counter. `ScriptedLocalBackend` provides an
