@@ -1,0 +1,122 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-lima-socket-path-guard",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "4e8d897d0aa1e67787b4bff31f85ddee97f179ee",
+  "base_commit": "afe1b81a772cdc7da124ea656cc9edcf1b96da9a",
+  "qualification_lane": "managed-offline-source",
+  "review_state": "source-slice-validated-runtime-pending",
+  "qualification_scope": "Reject Lima state roots that cannot accommodate forwarded sockets or Lima's per-instance internal SSH control socket before configuration generation or lifecycle execution.",
+  "source_implementation_commits": {
+    "agentrig": "4e8d897d0aa1e67787b4bff31f85ddee97f179ee",
+    "openrtl": "da11c16775748ca378dfeb7edcf214826d29a047"
+  },
+  "source_hashes": {
+    "pyproject.toml": "700d76bf9fefc0ae49698baa3cb26f33604aeba93d93ae1ad92fabd72ed2f54c",
+    "src/agentrig/integrations/lima_configuration.py": "ee4972a3a115e7438679c2194a3270f318aceaaceaa9ffc1fdc0ce9d05e3682d",
+    "src/agentrig/integrations/lima_lifecycle.py": "e224977433fc8e4a477b1933bab5e807ac5f5b670bab0439d6277b1d852c30d8",
+    "tests/integration/test_lima_configuration.py": "b1afb8a088a0a6470e810b2ec9991ee66cf8323a4e3ba3aa72e5ea4ebfe7c72e",
+    "tests/unit/test_lima_configuration.py": "bbbcbda7dfe269c16a8c0a6d412591f4f5b0be309e8c7af9accc832bf361a0c4",
+    "tests/unit/test_lima_lifecycle.py": "135c5d6953d3167e1dd7e26ea2a79fad3aae9790bdef938a2af23ce8df933cf9",
+    "uv.lock": "c127760293dadca7055c85047e6cda21be8670b68b063138b2ff7c1a4e7e7bc3"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-lima-socket-path-guard.1",
+      "availability": "local-retained",
+      "evidence_lane": "managed-offline-source",
+      "locator": "build/retained-evidence/m42b-lima-socket-path-guard/report.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "sha256": "32833097dfaf66eb68b765360fdee1d37f2691c6e0ca8510d55e32cb75e98fd3",
+      "size_bytes": 1847
+    },
+    {
+      "artifact_id": "m42b-lima-socket-path-guard.2",
+      "availability": "owner-temporary",
+      "evidence_lane": "managed-offline-source",
+      "locator": "openrtl-m42b-dev11-dist/agentrig-0.3.1.dev11.tar.gz",
+      "locator_base": "private-tmp",
+      "media_type": "application/gzip",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "sha256": "0dd4b67b49bd00b612df8de4cf6d6a46a4ba2d06e8424f1a8e85f9a5f1dc099f",
+      "size_bytes": 150784
+    },
+    {
+      "artifact_id": "m42b-lima-socket-path-guard.3",
+      "availability": "owner-temporary",
+      "evidence_lane": "managed-offline-source",
+      "locator": "openrtl-m42b-dev11-dist/agentrig-0.3.1.dev11-py3-none-any.whl",
+      "locator_base": "private-tmp",
+      "media_type": "application/zip",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "sha256": "cdb619041f968e437425578dee2d9f31e6a9205aee1b178cb27c897c580b8fd0",
+      "size_bytes": 219287
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored validation collateral retained in the existing M42b milestone worktree."
+    },
+    "private-tmp": {
+      "kind": "declared-external-directory",
+      "path": "/private/tmp",
+      "resolution": "Managed offline build artifacts retained for the current local development session."
+    }
+  },
+  "validation": {
+    "agentrig_focused": {
+      "exit_code": 0,
+      "tests": 42
+    },
+    "agentrig_unit": {
+      "exit_code": 0,
+      "tests": 524
+    },
+    "sdk_typing": {
+      "exit_code": 0,
+      "negative_fixture_passed": true,
+      "source_files": 134
+    },
+    "lock_dependency_bridge_and_context": "passed",
+    "offline_build": "passed",
+    "candidate_import": "passed directly from wheel without installation",
+    "buck": "unavailable because dotslash is absent; no installation or download was authorized",
+    "openrtl_compatibility": "fixture aligned in milestone worktree; actual private audit remains owner-only because managed descriptor traversal returned EPERM"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": true,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": false
+  },
+  "qualification_limits": [
+    "The passing checks qualify source preflight and packaging behavior only.",
+    "No VM was created and no forwarding, Linux peer identity, container visibility or rootless Docker behavior was qualified.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "OpenRTL short-root fixture attestation",
+    "M42b live Lima short-root qualification",
+    "actual Linux peer authentication",
+    "container visibility and rootless Docker closure",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}
