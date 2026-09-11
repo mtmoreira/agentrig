@@ -337,8 +337,41 @@ uncertainty before invocation through its backend coordinator. A lost reply or
 post-unlink failure requires fresh reconciliation; absence never restores cleanup
 or runtime authority. Crash recovery additionally requires backend proof of stopped
 service/forwarding and drained clients. The production quiescence verifier and
-coordinator wiring remain pending. Tests exercise local leases and listener
+backend registration remain pending. Tests exercise local leases and listener
 copy/inspect/retire/rebind with synthetic authentication/quiescence, not a VM.
+
+## Journaled retirement recovery
+
+`JournaledGuestServiceRetirement` uses a dedicated per-instance journal separate
+from workspace copies and VM lifecycle operations. Review
+`guest_retirement_operation_digest(endpoint, operation_id, action)` with action
+`retire` or `inspect`; these approvals are distinct and bind the exact endpoint
+and operation. Explicit journal-write authority is also required. Neither stored
+intent nor a previous grant authorizes a new call.
+
+The replaceable `GuestServiceRetirementAdapter` owns backend authentication,
+shutdown verification and transport. Its `quiescent` context must authenticate
+the exact service generation, prove forwarding stopped and clients drained, and
+prevent restart/replacement throughout retirement and observation. A free local
+lease, saved PID or absent socket cannot establish this. `retire` uses the guarded
+socket-retirement port or its authenticated guest equivalent. `inspect_retired`
+must freshly verify the owned namespace and retained evidence for that exact
+endpoint; missing, unavailable or replaced state alone must fail. These trusted
+methods return exactly `None` on success and honor cancellation/deadlines.
+
+The coordinator persists uncertainty before entering that backend context, then
+performs removal, read-only verification and context exit before settling the
+journal. Lost replies, invalid results, context failures and failed publication
+leave uncertainty. A separately approved `inspect` call can reconcile only the
+exact original intent; it never invokes removal. Uncertain operations block new
+retirements, and reused operation IDs are rejected. Journal `stopped` refers only
+to the observed service retirement, never proof of VM shutdown or ongoing runtime
+authority. A successful record is a historical observation.
+
+No production adapter is selected by default, and this API installs or starts
+nothing. Tests exercise real durable journals with synthetic backend observations.
+Production Linux/VM authentication, restart exclusion and retirement observation
+still require independent qualification. Customer clone/run setup is unchanged.
 
 ## Registering another backend
 

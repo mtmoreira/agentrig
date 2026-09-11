@@ -9,6 +9,7 @@ python_library(
         "guest_workspace.py",
         "guest_operations.py",
         "guest_service.py",
+        "guest_retirement.py",
         "local_backends.py",
         "lima_lifecycle.py",
         "lima_configuration.py",

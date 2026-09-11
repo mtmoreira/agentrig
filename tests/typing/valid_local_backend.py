@@ -21,6 +21,11 @@ from agentrig.integrations import (
     request_guest_service, serve_guest_once, verify_linux_guest_peer,
     guest_service_retirement_digest, retire_guest_service, serve_guest_requests,
 )
+from agentrig.integrations import (
+    GuestServiceRetirementAdapter, JournaledGuestServiceRetirement,
+    guest_retirement_operation_digest,
+)
+from agentrig.capabilities import BackendOperation
 
 backend: LocalBackend = ScriptedLocalBackend(["running"])
 catalog = LocalBackendCatalog([backend])
@@ -29,6 +34,14 @@ lifecycle = JournaledLocalBackends(catalog=catalog, journal=journal)
 artifacts = BackendArtifactManifest(artifacts=(BackendArtifact(artifact_id='guest', path='guest.raw',
     sha256='sha256:' + '1' * 64, size_bytes=123),))
 service = JournaledGuestWorkspaces(journal=journal, copy=copy_guest_service, inspect=inspect_guest_service)
+
+
+def retirement(adapter: GuestServiceRetirementAdapter, endpoint: GuestWorkspaceEndpoint,
+               operation_id: str, context: RunContext) -> BackendOperation:
+    driver = JournaledGuestServiceRetirement(journal=journal, adapter=adapter)
+    return driver.apply(endpoint, operation_id,
+        guest_retirement_operation_digest(endpoint, operation_id, 'inspect'),
+        context, journal_write_authorized=True, action='inspect')
 
 
 def service_lifecycle(root: Path, sockets: Path, instance: str, endpoint: GuestWorkspaceEndpoint,

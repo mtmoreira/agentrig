@@ -234,7 +234,9 @@ class GuestWorkspaceTests(unittest.TestCase):
                     stream.send_header(receipt)
                     if mode == 'extra':
                         stream.write(b'extra')
-                    server.shutdown(socket.SHUT_WR)
+                    # The context closes the socket and supplies EOF. A separate
+                    # shutdown races a client that correctly rejects and closes
+                    # an invalid receipt early (ENOTCONN on macOS).
             with ThreadPoolExecutor(max_workers=1) as pool:
                 future = pool.submit(fake)
                 with self.assertRaises(BackendFailure):

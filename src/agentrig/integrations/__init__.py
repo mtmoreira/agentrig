@@ -13,6 +13,10 @@ from agentrig.integrations.local_backends import ExistingRootlessDockerBackend, 
 from agentrig.integrations.lima_lifecycle import LimaArtifactVerifier, LimaLifecycleBackend
 from agentrig.integrations.lima_configuration import LimaConfiguration, LimaConfigurationAudit, audit_lima_configuration
 from agentrig.integrations.guest_operations import JournaledGuestWorkspaces, guest_operation_digest, inspect_guest_workspace
+from agentrig.integrations.guest_retirement import (
+    GuestServiceRetirementAdapter, JournaledGuestServiceRetirement,
+    guest_retirement_operation_digest,
+)
 from agentrig.integrations.guest_service import (
     copy_guest_service, handle_guest_request, inspect_guest_service,
     request_guest_service, serve_guest_once, verify_linux_guest_peer,
@@ -28,6 +32,9 @@ from agentrig.integrations.process import (
 )
 
 __all__ = (
+    "GuestServiceRetirementAdapter",
+    "JournaledGuestServiceRetirement",
+    "guest_retirement_operation_digest",
     "guest_service_retirement_digest",
     "retire_guest_service",
     "serve_guest_requests",
