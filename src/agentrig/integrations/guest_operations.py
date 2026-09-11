@@ -14,7 +14,7 @@ from typing import Literal, cast
 from agentrig.capabilities import BackendAction, BackendFailure, BackendOperation
 from agentrig.capabilities.backend_operations import BackendOperationJournal
 from agentrig.capabilities.local_backend import backend_digest
-from agentrig.core import DeadlineExceeded, RunCancelled, RunContext
+from agentrig.core import DeadlineExceeded, JsonValue, RunCancelled, RunContext
 from agentrig.integrations.backend_artifacts import _identity
 from agentrig.integrations.backend_journal import _private
 from agentrig.integrations.backend_staging import WorkspaceStagePlan
@@ -52,25 +52,39 @@ def inspect_guest_workspace(root: Path, plan: WorkspaceStagePlan, instance_id: s
     must match. Missing/partial state is failure, never proof of safe absence.
     No socket is opened and no file, permission or receipt is changed.
     """
+    _Inspection(context).check()
+    if str(root) != plan.guest_root:
+        raise BackendFailure('backend_plan_changed')
+    try:
+        header = _request(plan, instance_id)
+    except (ValueError, TypeError, RecursionError):
+        raise BackendFailure('backend_staging_failed') from None
+    return _inspect_guest_request(root, header, context)
+
+
+def _inspect_guest_request(root: Path, header: dict[str, JsonValue],
+                           context: RunContext) -> GuestWorkspaceReceipt:
+    """Inspect using only a validated manifest; no source payload is required."""
     opened: list[int] = []
     check = _Inspection(context)
     try:
         check.check()
-        if str(root) != plan.guest_root:
-            raise BackendFailure('backend_plan_changed')
-        header = _request(plan, instance_id)
         manifest = _manifest(header)
+        if str(root) != header['guest_root']:
+            raise BackendFailure('backend_plan_changed')
+        operation_id = cast(str, header['operation_id'])
         root_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         opened.append(root_fd)
         root_info = os.fstat(root_fd)
         _private(root_info, directory=True)
-        operation = os.open(plan.operation_id, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root_fd)
+        operation = os.open(operation_id, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=root_fd)
         opened.append(operation)
         info = os.fstat(operation)
         _private(info, directory=True)
         record = _encode(dict(_receipt(header, manifest), device=info.st_dev, inode=info.st_ino, uid=info.st_uid))
         expected = {'.intent.json', '.complete.json'}
-        for name in plan.files:
+        for artifact in manifest.artifacts:
+            name = artifact.path
             expected.add(name)
             expected.update(str(p) for p in Path(name).parents if str(p) != '.')
 
@@ -113,9 +127,11 @@ def inspect_guest_workspace(root: Path, plan: WorkspaceStagePlan, instance_id: s
         _verify_copy(operation, manifest, check)
         check.check()
         if (inventory(operation) != before or _identity(root.lstat()) != _identity(root_info) or
-                _identity(os.stat(plan.operation_id, dir_fd=root_fd, follow_symlinks=False)) != _identity(info)):
+                _identity(os.stat(operation_id, dir_fd=root_fd, follow_symlinks=False)) != _identity(info)):
             raise BackendFailure('backend_staging_failed')
-        return _expected(plan, instance_id)
+        return GuestWorkspaceReceipt(request_digest=backend_digest(header),
+            plan_digest=cast(str, header['plan_digest']), operation_id=operation_id,
+            file_count=len(manifest.artifacts), total_bytes=sum(a.size_bytes for a in manifest.artifacts))
     except (BackendFailure, DeadlineExceeded, RunCancelled):
         raise
     except Exception:

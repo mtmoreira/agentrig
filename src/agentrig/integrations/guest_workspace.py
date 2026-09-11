@@ -6,6 +6,7 @@ endpoints, launches a service, executes collateral, or grants runtime readiness.
 """
 
 from dataclasses import dataclass, field
+from contextlib import contextmanager
 import hashlib
 import json
 import os
@@ -15,7 +16,7 @@ import socket
 import stat
 import struct
 import time
-from typing import Protocol, cast
+from typing import Iterator, Protocol, cast
 
 from agentrig.capabilities import BackendArtifact, BackendArtifactManifest, BackendFailure
 from agentrig.capabilities.local_backend import backend_digest, _digest
@@ -303,6 +304,23 @@ def copy_to_guest(endpoint: GuestWorkspaceEndpoint, plan: WorkspaceStagePlan,
     socket identity. The backend still owns VM peer/forwarding authentication and
     the durable operation journal. Any failure after sending is uncertain.
     """
+    context.cancellation.raise_if_cancelled()
+    if context.deadline is None:
+        raise BackendFailure('backend_staging_failed')
+    context.deadline.raise_if_expired(context.clock)
+    if approved_digest != endpoint.transfer_digest(plan):
+        raise BackendFailure('backend_authority_required')
+    try:
+        _request(plan, endpoint.instance_id)
+    except (ValueError, TypeError, RecursionError):
+        raise BackendFailure('backend_staging_failed') from None
+    with _guest_connection(endpoint, context) as connection:
+        return transfer_guest_workspace(connection, plan, endpoint.instance_id, plan.digest, context)
+
+
+@contextmanager
+def _guest_connection(endpoint: GuestWorkspaceEndpoint, context: RunContext) -> Iterator[socket.socket]:
+    """Owned endpoint transport, shared by explicitly authorized guest protocols."""
     descriptor: int | None = None
     connection: socket.socket | None = None
     try:
@@ -310,9 +328,6 @@ def copy_to_guest(endpoint: GuestWorkspaceEndpoint, plan: WorkspaceStagePlan,
         if context.deadline is None:
             raise ValueError('guest workspace deadline required')
         context.deadline.raise_if_expired(context.clock)
-        if approved_digest != endpoint.transfer_digest(plan):
-            raise BackendFailure('backend_authority_required')
-        _request(plan, endpoint.instance_id)
         descriptor = os.open(endpoint.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         bound = os.fstat(descriptor)
         _private(bound, directory=True)
@@ -336,9 +351,8 @@ def copy_to_guest(endpoint: GuestWorkspaceEndpoint, plan: WorkspaceStagePlan,
         connection.settimeout(min(.05, context.deadline.remaining_seconds(context.clock)))
         connection.connect(str(endpoint.root / 'workspace.sock'))
         check_endpoint()
-        result = transfer_guest_workspace(connection, plan, endpoint.instance_id, plan.digest, context)
+        yield connection
         check_endpoint()
-        return result
     except DeadlineExceeded:
         raise
     except (OSError, ValueError, TypeError, RecursionError):

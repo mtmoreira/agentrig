@@ -264,8 +264,48 @@ Missing state is not treated as safe absence. The method requires a finite deadl
 Tests exercise real local journals and socketpair copies with synthetic endpoint
 authentication. They do not validate a VM peer or a deployed service. No guest
 inspection RPC, listener, service activation, effective Lima parser or complete
-artifact verifier is registered yet. Those gates and actual rootless workload
+artifact verifier is registered by default. Those gates and actual rootless workload
 visibility remain pending; `workload_access_verified` stays false.
+
+## Bounded guest service candidate
+
+`handle_guest_request` consumes one authenticated Unix stream and closes it on
+every exit. The versioned dispatch frame selects only `copy` or `inspect` and
+binds the instance. Copy uses the existing bounded workspace protocol. Inspection
+sends only a manifest, requires EOF before reading guest files, and hashes the
+existing workspace and receipts without writes or replay. The client accepts only
+the exact expected receipt and EOF. Deadlines and cancellation remain mandatory.
+
+`copy_guest_service` and `inspect_guest_service` fit the journal's replaceable
+transport ports. The journal still requires a fresh action/endpoint-bound grant
+and backend verification before and after transport. `request_guest_service`
+is the lower-level owned-stream API; its plan digest alone does not authenticate
+the outer VM connection or authorize a journal action.
+
+The default peer verifier uses Linux `SO_PEERCRED` before any request reads,
+requiring the dedicated service account's UID and rejecting root, UID 65534,
+unsupported platforms and invalid kernel metadata. Per the
+[Linux Unix socket contract](https://man7.org/linux/man-pages/man7/unix.7.html),
+these credentials identify the connected guest-local process at connection time.
+They do not identify the original caller across forwarding. Kernel IDs are never
+retained. The VM and host-forwarding verifier remains a required backend adapter;
+an injected guest verifier is trusted application code, not request configuration.
+
+`serve_guest_once` is an explicit, one-request listener function, not an installed
+daemon or customer setup command. It anchors existing private directories, binds
+`workspace.sock` with mode 0600 at creation, verifies identities and closes after
+one request. Its temporary restrictive process umask requires caller-owned process
+isolation. Existing entries block activation and are never adopted or removed.
+The socket entry is deliberately retained after close for the client's final
+identity check and evidence. Reviewed backend-owned cleanup/reactivation and a
+long-lived service lifecycle remain pending. Waiting is bounded by the context
+and a 60-second wall-clock ceiling.
+
+Real local socketpair and filesystem-listener tests use synthetic peer verification;
+unit tests supply synthetic Linux credential metadata. Neither proves actual Linux
+kernel authentication, VM forwarding, service deployment or container visibility.
+No service, Lima backend or workload is activated by importing these APIs. Actual
+Linux peer checks and deployed service qualification remain acceptance gates.
 
 ## Registering another backend
 
