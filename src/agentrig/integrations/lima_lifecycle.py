@@ -21,6 +21,7 @@ from agentrig.core import JsonValue, RunContext
 from agentrig.integrations.bounded_process import ProcessOutput, ProcessSpec, run_bounded_process
 from agentrig.integrations.local_backends import _path, _pin
 from agentrig.integrations.backend_staging import StagedWorkspace, WorkspaceStagePlan, stage_workspace
+from agentrig.integrations.lima_configuration import _lima_state_root
 
 
 # True means this exact owned instance exists; False means verified local absence.
@@ -53,6 +54,7 @@ class LimaLifecycleBackend:
                 not isinstance(instance_id, str) or len(instance_id) != 32 or
                 any(char not in '0123456789abcdef' for char in instance_id)):
             raise ValueError('lima lifecycle scope invalid')
+        _lima_state_root(root, 'managed-' + instance_id)
         for key in ('executable_sha256', 'configuration_sha256', 'artifact_closure_sha256'):
             _pin(config[key])
         effects = {BackendEffect.RUNTIME_CONTACT, BackendEffect.LOCAL_WRITE}

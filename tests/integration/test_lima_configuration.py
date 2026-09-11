@@ -18,7 +18,7 @@ from agentrig.integrations.backend_artifacts import audit_backend_artifacts
 
 class LimaConfigurationAuditTests(unittest.TestCase):
     def setUp(self):
-        temporary = tempfile.TemporaryDirectory(prefix='agentrig-cfg-', dir='/tmp')
+        temporary = tempfile.TemporaryDirectory(prefix='al-', dir='/tmp')
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
         data = b'synthetic image bytes'

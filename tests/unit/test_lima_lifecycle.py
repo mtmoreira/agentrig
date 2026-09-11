@@ -108,6 +108,15 @@ class LimaLifecycleTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.calls, [])
         self.assertIsNone(self.journal.current())
 
+    def test_internal_control_socket_path_is_rejected_during_planning(self):
+        request = self.plan(BackendAction.PREPARE).request
+        root = '/private/tmp/openrtl-m42b-lima-live-v2/state'
+        changed = replace(request, configuration={**request.configuration,
+            'state_root': root, 'configuration_file': root + '/reviewed.yaml'})
+        with self.assertRaisesRegex(ValueError, 'root invalid'):
+            self.backend.plan(changed)
+        self.assertEqual(self.calls, [])
+
     async def test_unknown_or_changed_instance_cannot_be_stopped(self):
         self.state = 'Stopped'
         plan = self.plan(BackendAction.STOP)

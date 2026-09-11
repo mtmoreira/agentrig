@@ -19,6 +19,22 @@ from agentrig.integrations.backend_journal import _private
 from agentrig.integrations.local_backends import _integer, _path, _pin
 
 _SKIP_INSTALL = '#!/bin/sh\nexit 0\n'
+_LIMA_INSTANCE = 'managed-' + '0' * 32
+_LIMA_SOCKET_SUFFIX = '/ssh.sock.' + '0' * 16
+
+
+def _lima_state_root(value: str, instance: str = _LIMA_INSTANCE) -> str:
+    """Validate every fixed Unix-socket path before Lima sees the profile."""
+    root = _path(value)
+    paths = (
+        root + '/transport/workspace.sock',
+        root + '/transport/docker.sock',
+        root + '/lima/' + instance + _LIMA_SOCKET_SUFFIX,
+    )
+    if (root == '/' or any(c in root for c in ('{', '}', '$', '~')) or
+            any(len(path.encode()) > 103 for path in paths)):
+        raise ValueError('lima configuration root invalid')
+    return root
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -32,10 +48,9 @@ class LimaConfiguration:
     guest_uid: int = 1000
 
     def __post_init__(self) -> None:
-        root = _path(str(self.state_root))
-        # HostSocket is a Lima Go-template field. Accept literal paths only.
-        if root == '/' or any(c in root for c in ('{', '}', '$', '~')) or len((root + '/transport/workspace.sock').encode()) > 103:
-            raise ValueError('lima configuration root invalid')
+        # HostSocket is a Lima Go-template field. Accept literal paths only and
+        # reserve Lima's longest observed per-instance control-socket suffix.
+        _lima_state_root(str(self.state_root))
         _pin(self.guest_image_sha256)
         _integer(self.guest_image_size, 1, 4 * 1024**3)
         _integer(self.cpus, 1, 8)

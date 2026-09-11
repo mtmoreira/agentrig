@@ -24,7 +24,8 @@ class LimaConfigurationTests(unittest.TestCase):
     def test_resources_and_templated_roots_fail(self):
         for options in [{'cpus': True}, {'cpus': 0}, {'guest_uid': 65534}, {'guest_image_size': 0},
                         {'guest_image_sha256': 'none'}, {'state_root': Path('/tmp/{{.Home}}')},
-                        {'state_root': Path('/' + 'x' * 120)}]:
+                        {'state_root': Path('/' + 'x' * 120)},
+                        {'state_root': Path('/private/tmp/openrtl-m42b-lima-live-v2/state')}]:
             with self.assertRaises(ValueError):
                 replace(self.policy, **options)
 
