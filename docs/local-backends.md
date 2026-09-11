@@ -1,6 +1,6 @@
 # Replaceable local backends
 
-The local SDK candidate `0.3.1.dev5` adds `LocalBackend` in `capabilities`,
+The local SDK candidate `0.3.1.dev6` adds `LocalBackend` in `capabilities`,
 separate from model-facing `AgentRuntime`. No Python dependency or runtime import
 is added. The published `0.3.0` artifact is unchanged.
 
@@ -230,6 +230,42 @@ license/dependency inventory and real forwarding remain separate gates. This
 function is not a complete `LimaArtifactVerifier` and is not registered as one.
 No Lima binary has parsed the profile yet. Candidate parser/runtime qualification
 needs the separately approved artifact acquisition and execution step.
+
+## Journaled transfer recovery
+
+`JournaledGuestWorkspaces` coordinates one copy under a dedicated per-instance
+transfer journal, separate from the VM lifecycle journal. `guest_operation_digest`
+binds each fresh grant to copy versus inspection, the observed endpoint identity,
+instance, operation, paths and exact file bytes. Journal writes require explicit
+invocation authority. With no trusted endpoint verifier, execution is blocked.
+
+The coordinator holds an exclusive writer lease, persists uncertainty before
+calling the backend verifier or sending bytes, and repeats verification after
+the reply. The verifier must authenticate the exact VM peer and forwarding,
+honor the context, return `None` on success and raise on failure. It is an
+application-supplied adapter, never decoded from a readiness flag or saved state.
+The copier is replaceable; the default uses the existing private Unix connector.
+
+Failures, cancellation, bad receipts and completion-write failures retain
+uncertainty. The same operation cannot be resent. Recovery requires a fresh
+`inspect` grant and a separately supplied authenticated read-only guest inspector.
+The coordinator compares every receipt field before settling. The generic
+journal's `PREPARE`/`prepared` values mean workspace preparation in this dedicated
+namespace; they never describe VM state. Successful inspection settles a copy as
+completed and does not restore permission or enable workload execution.
+
+`inspect_guest_workspace` runs inside the guest service against its existing
+ancestor-verified root. It checks both private receipts, their local directory
+identity, the exact bounded inventory, file hashes, modes and link counts, then
+rechecks identities. Extra files, missing completion, corruption, copied receipts
+and changed roots fail. It performs no writes, repairs, cleanup, sockets or replay.
+Missing state is not treated as safe absence. The method requires a finite deadline.
+
+Tests exercise real local journals and socketpair copies with synthetic endpoint
+authentication. They do not validate a VM peer or a deployed service. No guest
+inspection RPC, listener, service activation, effective Lima parser or complete
+artifact verifier is registered yet. Those gates and actual rootless workload
+visibility remain pending; `workload_access_verified` stays false.
 
 ## Registering another backend
 

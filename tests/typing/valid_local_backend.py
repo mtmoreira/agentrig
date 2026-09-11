@@ -14,6 +14,8 @@ from agentrig.integrations import (
 )
 import socket
 from agentrig.integrations import LimaConfiguration, LimaConfigurationAudit, audit_lima_configuration
+from agentrig.integrations import JournaledGuestWorkspaces, guest_operation_digest, inspect_guest_workspace
+from pathlib import Path
 
 backend: LocalBackend = ScriptedLocalBackend(["running"])
 catalog = LocalBackendCatalog([backend])
@@ -35,6 +37,16 @@ def copy(endpoint: GuestWorkspaceEndpoint, plan: WorkspaceStagePlan,
 
 def audit_configuration(configuration: LimaConfiguration, context: RunContext) -> LimaConfigurationAudit:
     return audit_lima_configuration(configuration, context)
+
+
+def recover_copy(driver: JournaledGuestWorkspaces, endpoint: GuestWorkspaceEndpoint,
+                 plan: WorkspaceStagePlan, context: RunContext) -> GuestWorkspaceReceipt:
+    return driver.apply(endpoint, plan, guest_operation_digest(endpoint, plan, 'inspect'),
+        context, journal_write_authorized=True, action='inspect')
+
+
+def inspect_copy(root: Path, plan: WorkspaceStagePlan, instance: str, context: RunContext) -> GuestWorkspaceReceipt:
+    return inspect_guest_workspace(root, plan, instance, context)
 
 
 async def inspect(plan: BackendPlan, authority: BackendAuthority,

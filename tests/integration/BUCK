@@ -1,6 +1,14 @@
 load("//build_defs:python_test.bzl", "agentrig_python_test")
 
 agentrig_python_test(
+    name = "guest_operations",
+    scope = "integration",
+    srcs = ["__init__.py", "test_guest_operations.py", "test_guest_workspace.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
     name = "lima_configuration",
     scope = "integration",
     srcs = ["__init__.py", "test_lima_configuration.py"],

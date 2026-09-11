@@ -7,6 +7,7 @@ python_library(
         "backend_artifacts.py",
         "backend_staging.py",
         "guest_workspace.py",
+        "guest_operations.py",
         "local_backends.py",
         "lima_lifecycle.py",
         "lima_configuration.py",

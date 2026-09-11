@@ -15,7 +15,7 @@ import socket
 import stat
 import struct
 import time
-from typing import cast
+from typing import Protocol, cast
 
 from agentrig.capabilities import BackendArtifact, BackendArtifactManifest, BackendFailure
 from agentrig.capabilities.local_backend import backend_digest, _digest
@@ -214,7 +214,11 @@ def _receipt(header: dict[str, JsonValue], manifest: BackendArtifactManifest) ->
             'workload_access_verified': False}
 
 
-def _verify_copy(operation: int, manifest: BackendArtifactManifest, stream: _Stream) -> None:
+class _Check(Protocol):
+    def check(self) -> None: ...
+
+
+def _verify_copy(operation: int, manifest: BackendArtifactManifest, stream: _Check) -> None:
     """Reopen the exact copied paths before acknowledging; never follow links."""
     for artifact in manifest.artifacts:
         current = operation
