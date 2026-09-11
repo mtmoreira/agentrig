@@ -25,6 +25,7 @@ from agentrig.integrations import (
     GuestServiceRetirementAdapter, JournaledGuestServiceRetirement,
     guest_retirement_operation_digest,
 )
+from agentrig.integrations import LimaGuestServiceRetirementAdapter
 from agentrig.capabilities import BackendOperation
 
 backend: LocalBackend = ScriptedLocalBackend(["running"])
@@ -42,6 +43,10 @@ def retirement(adapter: GuestServiceRetirementAdapter, endpoint: GuestWorkspaceE
     return driver.apply(endpoint, operation_id,
         guest_retirement_operation_digest(endpoint, operation_id, 'inspect'),
         context, journal_write_authorized=True, action='inspect')
+
+
+def lima_retirement_adapter(adapter: LimaGuestServiceRetirementAdapter) -> GuestServiceRetirementAdapter:
+    return adapter
 
 
 def service_lifecycle(root: Path, sockets: Path, instance: str, endpoint: GuestWorkspaceEndpoint,

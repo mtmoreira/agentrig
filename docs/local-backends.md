@@ -373,6 +373,30 @@ nothing. Tests exercise real durable journals with synthetic backend observation
 Production Linux/VM authentication, restart exclusion and retirement observation
 still require independent qualification. Customer clone/run setup is unchanged.
 
+### Lima generation binding
+
+`bind_lima_guest_service_generation` accepts only an exact
+`LimaLifecycleBackend` inspect plan whose instance and private transport directory
+match the reviewed endpoint. It binds the backend/version, full configuration,
+endpoint identity and an opaque generation digest from a fresh authenticated
+backend observation. The digest is safe identity, not a credential or authority.
+
+`LimaGuestServiceRetirementAdapter` implements the generic retirement interface
+through three injected backend seams. The generation-fence context must return an
+exact bounded observation proving the reviewed VM stopped, its forwarding stopped,
+zero active clients and restart/replacement exclusion. The retirement function
+receives the endpoint-bound cleanup digest. The post-retirement observer must
+report the same generation with the socket absent and service-lock/workspace
+evidence retained. `decode_lima_service_observation` rejects extra fields,
+duplicate keys, numeric booleans, changed identities and payloads over 4096 bytes.
+
+The adapter makes no Lima command itself and is not registered in a default
+catalog. Applications may implement these seams with an authenticated local
+control channel after independent runtime qualification. Other backends continue
+to implement `GuestServiceRetirementAdapter` directly; no Lima type enters the
+generic journal coordinator. Scripted observations prove translation and failure
+handling only, not a real VM generation, forwarding path or drained client set.
+
 ## Registering another backend
 
 Implement the protocol, register explicitly and run `LocalBackendContractSuite`

@@ -12,6 +12,7 @@ python_library(
         "guest_retirement.py",
         "local_backends.py",
         "lima_lifecycle.py",
+        "lima_retirement.py",
         "lima_configuration.py",
         "process.py",
     ],
