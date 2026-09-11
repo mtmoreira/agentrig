@@ -1,0 +1,201 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "m42b-lima-retirement.1",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1-work/run-89c77a8966f4422984d5ab2aaa440b59/report.json",
+      "locator_base": "private-tmp",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "187710df7c3e7d1cc21acf4ac4688c334881704889898c46ec9f72b1acdcf0ec",
+      "size_bytes": 2093
+    },
+    {
+      "artifact_id": "m42b-lima-retirement.2",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1-work/run-89c77a8966f4422984d5ab2aaa440b59/before.json",
+      "locator_base": "private-tmp",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "dda9bd5a42b495031a2dff7bf893b6b884514f991ccccc122e804b0c9a01621d",
+      "size_bytes": 14879
+    },
+    {
+      "artifact_id": "m42b-lima-retirement.3",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1-work/run-89c77a8966f4422984d5ab2aaa440b59/after.json",
+      "locator_base": "private-tmp",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "dda9bd5a42b495031a2dff7bf893b6b884514f991ccccc122e804b0c9a01621d",
+      "size_bytes": 14879
+    },
+    {
+      "artifact_id": "m42b-lima-retirement.4",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1-work/run-89c77a8966f4422984d5ab2aaa440b59/agentrig-offline-integration-owner.log",
+      "locator_base": "private-tmp",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "1e1af3354938e36f636dd322070b30ae219c4302fe2cc1628f48110faf01f71b",
+      "size_bytes": 188
+    },
+    {
+      "artifact_id": "m42b-lima-retirement.5",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1-work/run-89c77a8966f4422984d5ab2aaa440b59/openrtl-full-owner.log",
+      "locator_base": "private-tmp",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "f894ce732b5893150867a637f024642c887a45d8f9ae55750e9d6a1e099a5af7",
+      "size_bytes": 1263
+    },
+    {
+      "artifact_id": "m42b-lima-retirement.6",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1.report.txt",
+      "locator_base": "private-tmp",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "5b76724b53cb70baeaffb792d1d00dd3d37efc6b28810b5e130afc6349fa70b4",
+      "size_bytes": 391
+    },
+    {
+      "artifact_id": "m42b-lima-retirement.7",
+      "availability": "owner-temporary",
+      "evidence_lane": "offline-lima-retirement",
+      "locator": "openrtl-m42b-lima-retirement-validation-v1.zsh",
+      "locator_base": "private-tmp",
+      "media_type": "text/x-shellscript",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "schema": "openrtl.local-validation-collateral.v1",
+      "sha256": "1cc683a30902f7b5492463bb25e32ffecc59e0f3e75c9c487d82af9b837fec31",
+      "size_bytes": 15308
+    }
+  ],
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": true,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": false
+  },
+  "base_commit": "05e0bbdf37067f7ce1a433b53be9c888bce25e4d",
+  "implementation_slice_complete": true,
+  "locator_roots": {
+    "private-tmp": {
+      "kind": "declared-external-directory",
+      "path": "/private/tmp",
+      "resolution": "Owner and managed validation collateral retained for the current local development session; artifacts are not distributed with a clone."
+    }
+  },
+  "milestone_complete": false,
+  "milestone_id": "m42b-lima-retirement",
+  "pending": [
+    "authenticated Lima generation-fence implementation",
+    "authenticated Lima retirement observer implementation",
+    "actual Linux peer authentication",
+    "complete pinned guest bundle",
+    "M42b real runtime qualification",
+    "M41b clean-user/Linux",
+    "M43b/M44b live engineering",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ],
+  "qualification_lane": "offline-lima-retirement",
+  "qualification_limits": [
+    "Scripted observations prove the Lima translation contract and failure handling only.",
+    "No production generation fence, retirement observer, VM forwarding or Linux peer authentication is registered or qualified.",
+    "No VM, Docker service, provider, credential, installation, download or publication was contacted.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "qualification_scope": "A Lima-specific adapter binds reviewed inspect plans and endpoint identity to a fresh opaque generation digest, validates exact bounded quiescence and retirement observations, and implements the generic replaceable retirement protocol through injected seams.",
+  "qualified_commit": "bb9b0ef757c9bc3807145d0971ed479da7e602bf",
+  "review_state": "source-slice-validated-runtime-pending",
+  "schema": "agentrig.milestone-evidence.v1",
+  "source_hashes": {
+    "docs/local-backends.md": "58731aa63eac75bb80380a703ae678851d163d4137ca544819104b19b238959f",
+    "pyproject.toml": "061fdf0aeb528bf556b5128288cec744717df739c9a8c3eda863799920c8369f",
+    "src/agentrig/integrations/BUCK": "127033efcb050a9cc74cad383ac004eaed629c0db884776964a1b178e9a6a18e",
+    "src/agentrig/integrations/__init__.py": "d37d1e07d65a4be767e28795eadaa0f340176f29ff301c7e5d0e0a85b243d4d7",
+    "src/agentrig/integrations/lima_retirement.py": "918d1505855c0d59023930cc76bb62aad4be98178fbbe71ce1a29caba8929e94",
+    "tests/typing/valid_local_backend.py": "1af68804140aabbe3df8270a0d2e549c7356fda56c534ea4a413d1ff2581acc8",
+    "tests/unit/test_lima_retirement.py": "0662fd470ca636ab1364fb95000912d85a862a2357b210b86777a7d21f1346f0",
+    "uv.lock": "af25cd63715644b92db724501191dbe562873290c96d64582933b446951443ae"
+  },
+  "source_implementation_commits": {
+    "agentrig": "bb9b0ef757c9bc3807145d0971ed479da7e602bf",
+    "openrtl": "da11c16775748ca378dfeb7edcf214826d29a047"
+  },
+  "validation": {
+    "agentrig_focused": {
+      "exit_code": 0,
+      "tests": 18
+    },
+    "agentrig_integration_managed": {
+      "exit_code": 0,
+      "tests": 53
+    },
+    "agentrig_unit": {
+      "exit_code": 0,
+      "tests": 523
+    },
+    "candidate_import": "passed directly from wheel without installation",
+    "offline_build_lock_bridge_context": "passed",
+    "openrtl_compatibility_managed": {
+      "exit_code": 0,
+      "tests": 9
+    },
+    "openrtl_full_owner": {
+      "exit_code": 0,
+      "fifo_model_tests": 3,
+      "skid_model_tests": 3,
+      "tests": 455
+    },
+    "owner_sdk_current_source": {
+      "authentication": "synthetic; actual Linux/VM pending",
+      "exit_code": 0,
+      "tests": 89
+    },
+    "protected_repository_snapshot": {
+      "before_after_byte_identical": true,
+      "sha256": "dda9bd5a42b495031a2dff7bf893b6b884514f991ccccc122e804b0c9a01621d"
+    },
+    "sdk_typing": {
+      "negative_fixture_passed": true,
+      "source_files": 134
+    },
+    "verilator_cocotb_canary": "not selected"
+  }
+}
