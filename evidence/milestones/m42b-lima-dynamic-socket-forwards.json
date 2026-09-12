@@ -1,0 +1,119 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-lima-dynamic-socket-forwards",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "5568e2085baae9a09ff0cb51752d877f1a50f5c5",
+  "base_commit": "25513b24f8ed1c9b6bebe3ec512e693a495241e9",
+  "qualification_lane": "managed-offline-source-plus-owner-runtime-failure",
+  "review_state": "source-fix-validated-owner-runtime-retry-pending",
+  "qualification_scope": "Keep Lima 2.2.0 Unix-socket rules on its dynamic Unix-forward path; reject the silently skipped static form in the exact configuration contract.",
+  "source_implementation_commits": {
+    "agentrig": "5568e2085baae9a09ff0cb51752d877f1a50f5c5",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "source_hashes": {
+    "pyproject.toml": "ee7e5247c3b64841e36184130fbca79f8479996a82a0f4a7cc09ca96be9b2de6",
+    "src/agentrig/integrations/lima_configuration.py": "3dcdf6bdaad0f421ef819e98391b7b870d52d6342363be3dec4c5f7111fb2f18",
+    "tests/unit/test_lima_configuration.py": "665b283d37dc85e83f78e9cb1e30c5f6812ea22ce758e805c397c2c70ae54d37",
+    "uv.lock": "5d790ca75f9094a66ed906b156275f6f3c6566196d58e21ce1de72c8fb46e1cd"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-lima-dynamic-socket-forwards.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-runtime-failure",
+      "locator": "build/retained-evidence/m42b-lima-dynamic-sockets/report-v7.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "sha256": "50018a857ffff90cfc0847ecc1dc31500f549249e9b06d96ee83268c06183ae4",
+      "size_bytes": 9249
+    },
+    {
+      "artifact_id": "m42b-lima-dynamic-socket-forwards.2",
+      "availability": "owner-temporary",
+      "evidence_lane": "managed-offline-source",
+      "locator": "openrtl-m42b-agentrig-dev12-dist/agentrig-0.3.1.dev12.tar.gz",
+      "locator_base": "private-tmp",
+      "media_type": "application/gzip",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "sha256": "dbaa9f679c716ce37660fd72eb95a2d0a0d938d476d857c24814561729b0f0ef",
+      "size_bytes": 150862
+    },
+    {
+      "artifact_id": "m42b-lima-dynamic-socket-forwards.3",
+      "availability": "owner-temporary",
+      "evidence_lane": "managed-offline-source",
+      "locator": "openrtl-m42b-agentrig-dev12-dist/agentrig-0.3.1.dev12-py3-none-any.whl",
+      "locator_base": "private-tmp",
+      "media_type": "application/zip",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "hash-size-and-source-binding-verified",
+      "sha256": "de39b9143a3b4f94daa0b270e5da1a8900521b1b9cc5d02bd9c2afe12f8c257d",
+      "size_bytes": 219328
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored validation collateral retained in the existing M42b milestone worktree."
+    },
+    "private-tmp": {
+      "kind": "declared-external-directory",
+      "path": "/private/tmp",
+      "resolution": "Managed offline build artifacts retained for the current local development session."
+    }
+  },
+  "validation": {
+    "agentrig_lima_configuration": {
+      "exit_code": 0,
+      "tests": 13
+    },
+    "agentrig_unit": {
+      "exit_code": 0,
+      "tests": 525
+    },
+    "sdk_typing": {
+      "exit_code": 0,
+      "negative_fixture_passed": true,
+      "source_files": 134
+    },
+    "lock_dependency_bridge_and_context": "passed",
+    "offline_build": "passed",
+    "candidate_import": "passed directly from the dev12 wheel without installation",
+    "buck": "unavailable because dotslash is absent; no installation or download was authorized",
+    "openrtl_compatibility": "three managed-safe tests passed; actual private audit remains owner-only because managed descriptor traversal returned EPERM",
+    "runtime_observation": "v7 proved the guest-local service and two exact Unix rules healthy, then Lima 2.2.0 logged both as static and created no host socket"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": true,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "The passing checks qualify the configuration correction and package bytes; the corrected runtime has not yet completed an owner-shell generation.",
+    "The retained v7 report is failure evidence: it does not qualify host forwarding, Docker, simulator visibility or production control.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "owner runtime validation of corrected dynamic Unix forwarding",
+    "container visibility and rootless Docker closure",
+    "production control and retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}
