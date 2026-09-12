@@ -21,6 +21,13 @@ class LimaConfigurationTests(unittest.TestCase):
         self.assertEqual(self.policy.document()['mounts'], [])
         self.assertNotIn('/private/owned', repr(self.policy))
 
+    def test_unix_socket_forwards_use_lima_dynamic_path(self):
+        forwards = self.policy.document()['portForwards']
+        self.assertNotIn('static', forwards[0])
+        self.assertNotIn('static', forwards[1])
+        self.assertFalse(forwards[0]['reverse'])
+        self.assertFalse(forwards[1]['reverse'])
+
     def test_resources_and_templated_roots_fail(self):
         for options in [{'cpus': True}, {'cpus': 0}, {'guest_uid': 65534}, {'guest_image_size': 0},
                         {'guest_image_sha256': 'none'}, {'state_root': Path('/tmp/{{.Home}}')},
@@ -43,6 +50,7 @@ class LimaConfigurationTests(unittest.TestCase):
                        lambda d: d['images'].append(d['images'][0]),
                        lambda d: d['portForwards'][0].update(hostSocket='/tmp/foreign.sock'),
                        lambda d: d['portForwards'][1].update(reverse=True),
+                       lambda d: d['portForwards'][0].update(static=True),
                        lambda d: d['portForwards'][2].update(ignore=False),
                        lambda d: d['ssh'].update(forwardAgent=True),
                        lambda d: d['provision'][0].update(script='unreviewed installer'),

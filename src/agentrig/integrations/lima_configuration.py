@@ -86,16 +86,18 @@ class LimaConfiguration:
             'vmOpts': {'vz': {'diskImageFormat': 'raw', 'rosetta': {'enabled': False, 'binfmt': False}}},
             'audio': {'device': ''}, 'video': {'display': 'none'},
             'portForwards': [
+                # Lima 2.2.0 removes static rules before its Unix-forward loop;
+                # its separate static path handles TCP only.
                 {'guestSocket': user_run + '/agentrig/workspace.sock',
-                 'hostSocket': root + '/transport/workspace.sock', 'static': True, 'reverse': False},
+                 'hostSocket': root + '/transport/workspace.sock', 'reverse': False},
                 {'guestSocket': user_run + '/docker.sock',
-                 'hostSocket': root + '/transport/docker.sock', 'static': True, 'reverse': False},
+                 'hostSocket': root + '/transport/docker.sock', 'reverse': False},
                 {'guestIP': '0.0.0.0', 'guestIPMustBeZero': False, 'guestPortRange': [1, 65535],
                  'proto': 'any', 'ignore': True}]}
 
     @property
     def digest(self) -> str:
-        return backend_digest({'schema': 'agentrig.lima-configuration-policy.v1',
+        return backend_digest({'schema': 'agentrig.lima-configuration-policy.v2',
             'configuration': self.document(), 'image_manifest': self.image_manifest.digest})
 
     def json_bytes(self) -> bytes:
