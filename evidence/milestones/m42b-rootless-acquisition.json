@@ -1,0 +1,159 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-rootless-acquisition",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "dd199638a88e6193fe7c800cdb377f10c8e07168",
+  "qualification_lane": "owner-bounded-acquisition-plus-managed-byte-review",
+  "review_state": "acquisition-complete-package-payload-audit-pending",
+  "qualification_scope": "Acquire fixed Docker 29.8.0 arm64 archives and the signed Ubuntu Noble rootless prerequisite closure without installation or downloaded-binary execution, then independently reverify all recorded hashes and archive members.",
+  "source_implementation_commits": {
+    "agentrig": "dd199638a88e6193fe7c800cdb377f10c8e07168",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "runtime_identity": {
+    "architecture": "aarch64",
+    "configuration_sha256": "115e2b541f43c2aabf9ef16f58d9db939fd6d131c546370e8974b2f51e655ce4",
+    "guest_uid": 1000,
+    "instance": "managed-42b20000000000000000000000000005",
+    "state_root": "/private/tmp/or42b5",
+    "vm_type": "vz"
+  },
+  "dependency_bundle": {
+    "docker_engine": {
+      "archive": "docker-29.8.0.tgz",
+      "member_count": 9,
+      "sha256": "1462a696be6029bd478d7d60d7f3c31cdd15affd1178a4a278aaf4a1d1b7f8b5",
+      "size_bytes": 77727467
+    },
+    "docker_rootless_extras": {
+      "archive": "docker-rootless-extras-29.8.0.tgz",
+      "member_count": 4,
+      "sha256": "8e568a023a9319a34b2436e3eeb7b446b8ecb43f665a1c27bfa88ead6ba95832",
+      "size_bytes": 11105229
+    },
+    "ubuntu_noble_prerequisites": {
+      "archive": "ubuntu-noble-rootless-prerequisites.tar",
+      "package_count": 5,
+      "packages": [
+        "fuse-overlayfs=1.13-1",
+        "libslirp0=4.7.0-1ubuntu3.1",
+        "libsubid4=1:4.13+dfsg1-4ubuntu3.2",
+        "slirp4netns=1.2.1-1build2",
+        "uidmap=1:4.13+dfsg1-4ubuntu3.2"
+      ],
+      "sha256": "62528b217b7164765daa3bb00429bc745cee770742a1d322db3cac2223eabc88",
+      "size_bytes": 204800
+    }
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-rootless-acquisition.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-acquisition",
+      "locator": "build/retained-evidence/m42b-rootless-acquisition-v2/report.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-final-status-and-checkpoints-verified",
+      "sha256": "376f92436c96465d6f2ea9d4fc5110eb8b784c5d26078c750258b82f7305a46c",
+      "size_bytes": 14237
+    },
+    {
+      "artifact_id": "m42b-rootless-acquisition.2",
+      "availability": "local-retained",
+      "evidence_lane": "managed-byte-review",
+      "locator": "build/retained-evidence/m42b-rootless-acquisition-v2/docker-29.8.0.inventory.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "archive-and-member-hashes-independently-recomputed",
+      "sha256": "4edb7e84101a31a4a8faa665ccfc6bbc21b9066d368c0ea7675e5eac1c532513",
+      "size_bytes": 1783
+    },
+    {
+      "artifact_id": "m42b-rootless-acquisition.3",
+      "availability": "local-retained",
+      "evidence_lane": "managed-byte-review",
+      "locator": "build/retained-evidence/m42b-rootless-acquisition-v2/docker-rootless-extras-29.8.0.inventory.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "archive-and-member-hashes-independently-recomputed",
+      "sha256": "25e24c5bd3fa5d31c498fd4b947411583506d5abfaa6268d4c4d3b0bc9fce542",
+      "size_bytes": 996
+    },
+    {
+      "artifact_id": "m42b-rootless-acquisition.4",
+      "availability": "local-retained",
+      "evidence_lane": "managed-byte-review",
+      "locator": "build/retained-evidence/m42b-rootless-acquisition-v2/ubuntu-noble-rootless-prerequisites.inventory.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "bundle-and-five-package-hashes-independently-recomputed",
+      "sha256": "98d21260a8f4794d382390bf38dbae8c582193480fe8b51fb6231de3360764f5",
+      "size_bytes": 2276
+    },
+    {
+      "artifact_id": "m42b-rootless-acquisition.5",
+      "availability": "local-retained",
+      "evidence_lane": "managed-byte-review",
+      "locator": "build/retained-evidence/m42b-rootless-acquisition-v2/artifact-review.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-hash-size-verified",
+      "sha256": "20bff10aacd69cf2cad5b51c2cd50ec991d287ea880c216b764897e31f37de3d",
+      "size_bytes": 3696
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored acquisition collateral retained in the existing M42b milestone worktree."
+    }
+  },
+  "validation": {
+    "archive_and_member_hashes": "recomputed from both raw Docker archives and matched both inventories",
+    "apt_bundle_and_package_hashes": "recomputed from the raw bundle and all five embedded deb archives",
+    "architecture": "all downloaded ELF executables are little-endian ELF64 AArch64 machine 183",
+    "package_state": "owner acquisition verified all requested packages remained uninstalled",
+    "runtime_stop": "exact instance independently observed Stopped after owner acquisition",
+    "forward_teardown": "both exact host socket paths independently observed absent after stop",
+    "downloaded_execution": "no downloaded binary or script was executed"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": true,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": false,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "Docker does not publish a checksum file for these static archives; the retained hashes bind the acquired bytes but are not publisher signatures.",
+    "The upstream dockerd-rootless-setuptool.sh is retained for inventory only and will not be installed or executed.",
+    "The Ubuntu package payloads, maintainer scripts and copyright files require exact guest-parser audit before installation review can complete.",
+    "Acquisition does not qualify installation, a rootless daemon, container visibility, production control or retirement recovery.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "read-only guest package payload and maintainer-script audit",
+    "reviewed rootless runtime installation",
+    "simulator image acquisition and visibility",
+    "production control channel and retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}
