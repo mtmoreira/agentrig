@@ -56,6 +56,13 @@ and results without an explicit usage argument remain supported. New edits
 should migrate to role-bound `inputs`; callers must not mix legacy and explicit
 forms.
 
+The next unreleased compatible image-contract increment adds optional typed
+operation/model/quality/input-fidelity settings. Existing callers retain the
+0.3.0 behavior when settings are absent. New reference-conditioned requests use
+explicit roles, preserve their order at the SDK boundary, and fail before
+dispatch when requested controls are unsupported. No release or publication is
+implied by this local development note.
+
 ## AgentRig 0.2.2
 
 AgentRig 0.2.2 adds a backward-compatible production boundary for strict

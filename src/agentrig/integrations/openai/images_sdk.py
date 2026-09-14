@@ -93,7 +93,10 @@ def _resolve_api_key(source: OpenAIResponsesAuthenticationSource) -> str:
 def _default_raw_client_builder(api_key: str) -> _RawAsyncClient:
     from openai import AsyncOpenAI
 
-    return cast(_RawAsyncClient, AsyncOpenAI(api_key=api_key))
+    return cast(
+        _RawAsyncClient,
+        AsyncOpenAI(api_key=api_key, max_retries=0, timeout=300.0),
+    )
 
 
 class _SdkImageClient:
@@ -108,6 +111,7 @@ class _SdkImageClient:
                 "n": 1,
                 "size": f"{request.width}x{request.height}",
                 "output_format": _output_format(request.output_media_type),
+                "quality": request.quality.value,
             }
             if request.idempotency_key is not None:
                 common["extra_headers"] = {
@@ -129,6 +133,8 @@ class _SdkImageClient:
                     ),
                     None,
                 )
+                if request.input_fidelity is not None:
+                    common["input_fidelity"] = request.input_fidelity.value
                 response = await self._raw.images.edit(
                     **common,
                     image=images[0] if len(images) == 1 else images,

@@ -86,6 +86,54 @@ class ImageInputRole(StrEnum):
     COMPOSITION_REFERENCE = "composition_reference"
 
 
+class ImageOperation(StrEnum):
+    """Portable semantic operation, independent of a provider endpoint name."""
+
+    GENERATE = "generate"
+    REFERENCE_GENERATE = "reference_generate"
+    EDIT = "edit"
+
+
+class ImageQuality(StrEnum):
+    AUTO = "auto"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class ImageInputFidelity(StrEnum):
+    LOW = "low"
+    HIGH = "high"
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ImageGenerationSettings:
+    """Explicit execution controls bound by the caller's durable request identity."""
+
+    operation: ImageOperation
+    model: str
+    quality: ImageQuality = ImageQuality.AUTO
+    input_fidelity: ImageInputFidelity | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.operation, ImageOperation):
+            raise TypeError("image operation must be an ImageOperation")
+        require_trimmed_string("image model", self.model)
+        if not isinstance(self.quality, ImageQuality):
+            raise TypeError("image quality must be an ImageQuality")
+        if self.input_fidelity is not None and not isinstance(
+            self.input_fidelity, ImageInputFidelity
+        ):
+            raise TypeError(
+                "image input fidelity must be an ImageInputFidelity or None"
+            )
+        if (
+            self.operation is ImageOperation.GENERATE
+            and self.input_fidelity is not None
+        ):
+            raise ValueError("source-free image generation cannot set input fidelity")
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ImageInput:
     """One explicitly role-bound image input."""
@@ -152,6 +200,7 @@ class ImageGenerationRequest:
     mask: ArtifactRef | None = field(default=None, repr=False)
     regions: tuple[ImageRegion, ...] = ()
     idempotency_key: str | None = field(default=None, repr=False)
+    settings: ImageGenerationSettings | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         if not isinstance(self.specification, ImageSpecification):
@@ -194,6 +243,31 @@ class ImageGenerationRequest:
             raise ValueError("image generation requires at most one edit mask")
         if ImageInputRole.EDIT_MASK in roles and ImageInputRole.EDIT_BASE not in roles:
             raise ValueError("image edit mask requires an explicit edit base")
+
+        if self.settings is not None:
+            if not isinstance(self.settings, ImageGenerationSettings):
+                raise TypeError(
+                    "image generation settings must be ImageGenerationSettings or None"
+                )
+            if self.settings.operation is ImageOperation.GENERATE and source_artifacts:
+                raise ValueError("source-free image generation cannot contain inputs")
+            if self.settings.operation is ImageOperation.REFERENCE_GENERATE:
+                if not copied_inputs:
+                    raise ValueError(
+                        "reference-conditioned generation requires explicit inputs"
+                    )
+                if any(
+                    role in (ImageInputRole.EDIT_BASE, ImageInputRole.EDIT_MASK)
+                    for role in roles
+                ):
+                    raise ValueError(
+                        "reference-conditioned generation cannot contain edit roles"
+                    )
+            if self.settings.operation is ImageOperation.EDIT:
+                if copied_inputs and ImageInputRole.EDIT_BASE not in roles:
+                    raise ValueError("image editing requires an explicit edit base")
+                if not copied_inputs and not copied_references:
+                    raise ValueError("image editing requires source images")
 
         copied_regions = tuple(self.regions)
         if any(not isinstance(item, ImageRegion) for item in copied_regions):
@@ -264,6 +338,15 @@ class ImageGenerationRequest:
             features.append(CapabilityFeature.REGIONS)
         if self.idempotency_key is not None:
             features.append(CapabilityFeature.IDEMPOTENCY_KEYS)
+        if self.settings is not None:
+            features.extend(
+                (
+                    CapabilityFeature.IMAGE_MODEL_SELECTION,
+                    CapabilityFeature.IMAGE_QUALITY,
+                )
+            )
+            if self.settings.input_fidelity is not None:
+                features.append(CapabilityFeature.IMAGE_INPUT_FIDELITY)
         return CapabilityRequirements(
             kind=CapabilityKind.IMAGE_GENERATION,
             features=frozenset(features),

@@ -13,7 +13,13 @@ from agentrig.capabilities import (
     DataRetention,
     ImageGenerationRequest,
     ImageGenerationResult,
+    ImageGenerationSettings,
     ImageGenerator,
+    ImageInput,
+    ImageInputFidelity,
+    ImageInputRole,
+    ImageOperation,
+    ImageQuality,
     ImageRegion,
     ImageSize,
     ImageSpecification,
@@ -235,6 +241,81 @@ class ImageGeometryTest(unittest.TestCase):
 
 
 class ImageGenerationRequestTest(unittest.TestCase):
+    def test_reference_generation_settings_are_explicit_requirements(self) -> None:
+        reference = create_artifact("reference")
+        request = ImageGenerationRequest(
+            specification=create_specification(),
+            inputs=(
+                ImageInput(
+                    role=ImageInputRole.IDENTITY_REFERENCE,
+                    artifact=reference,
+                ),
+            ),
+            settings=ImageGenerationSettings(
+                operation=ImageOperation.REFERENCE_GENERATE,
+                model="gpt-image-1.5",
+                quality=ImageQuality.HIGH,
+                input_fidelity=ImageInputFidelity.HIGH,
+            ),
+        )
+
+        self.assertEqual(request.source_artifact_ids, (reference.artifact_id,))
+        self.assertEqual(
+            request.requirements.features,
+            frozenset(
+                {
+                    CapabilityFeature.REFERENCE_IMAGES,
+                    CapabilityFeature.IMAGE_MODEL_SELECTION,
+                    CapabilityFeature.IMAGE_QUALITY,
+                    CapabilityFeature.IMAGE_INPUT_FIDELITY,
+                }
+            ),
+        )
+        self.assertNotIn("gpt-image-1.5", repr(request))
+
+    def test_rejects_operation_and_source_mismatches(self) -> None:
+        reference = create_artifact("reference")
+        spec = create_specification()
+        with self.assertRaisesRegex(ValueError, "requires explicit inputs"):
+            ImageGenerationRequest(
+                specification=spec,
+                settings=ImageGenerationSettings(
+                    operation=ImageOperation.REFERENCE_GENERATE,
+                    model="image-model",
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "cannot contain edit roles"):
+            ImageGenerationRequest(
+                specification=spec,
+                inputs=(
+                    ImageInput(role=ImageInputRole.EDIT_BASE, artifact=reference),
+                ),
+                settings=ImageGenerationSettings(
+                    operation=ImageOperation.REFERENCE_GENERATE,
+                    model="image-model",
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "cannot contain inputs"):
+            ImageGenerationRequest(
+                specification=spec,
+                inputs=(
+                    ImageInput(
+                        role=ImageInputRole.IDENTITY_REFERENCE,
+                        artifact=reference,
+                    ),
+                ),
+                settings=ImageGenerationSettings(
+                    operation=ImageOperation.GENERATE,
+                    model="image-model",
+                ),
+            )
+        with self.assertRaisesRegex(ValueError, "cannot set input fidelity"):
+            ImageGenerationSettings(
+                operation=ImageOperation.GENERATE,
+                model="image-model",
+                input_fidelity=ImageInputFidelity.HIGH,
+            )
+
     def test_copies_inputs_and_derives_edit_requirements(self) -> None:
         references = [
             create_artifact("reference-1"),

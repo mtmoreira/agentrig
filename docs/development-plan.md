@@ -399,6 +399,26 @@ is not converted to zero. Automatic provider ranking and fallback remain out of
 scope; retries repeat only the selected route under finite attempt,
 concurrency, deadline, cancellation, and optional cost bounds.
 
+M23.4 adds an explicit reference-conditioned generation operation alongside
+source-free generation and edit-base editing. Callers bind the image model,
+quality and input fidelity in a typed settings value. The OpenAI adapter maps
+reference conditioning to the provider's multi-image edit transport while
+preserving every ordered semantic role and never inventing an edit base. It
+rejects unsupported size/model/fidelity combinations before artifact resolution
+or client construction and disables SDK-level automatic retries. These are
+transport and lineage guarantees; visual identity quality remains an
+application-owned, separately authorized acceptance decision.
+
+This is AgentRig's part of the cross-repository identity-consistency correction.
+Cupidoodle owns executable art direction and owner review; StoryWorld owns source,
+candidate, selection, authority, retention, replay, and per-surface bindings.
+AgentRig preserves their ordered generic roles and effective controls at the SDK
+boundary. It never invents an edit base, silently downgrades a setting, or treats a
+reference as identity proof. Follow-on M24 targeted revision and M25 roster/page
+expansion reuse this route; M26 documents end-to-end parity. Offline byte-routing
+evidence is structural. Live likeness and visual consistency require separate
+authorization and human review.
+
 ### Milestone 9A — Application-scoped runtime catalog
 
 StoryWorld now provides concrete evidence for explicit per-agent runtime

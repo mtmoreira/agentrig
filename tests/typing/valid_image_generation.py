@@ -7,9 +7,13 @@ from agentrig.capabilities import (
     CapabilityKind,
     ImageGenerationRequest,
     ImageGenerationResult,
+    ImageGenerationSettings,
     ImageGenerator,
     ImageInput,
+    ImageInputFidelity,
     ImageInputRole,
+    ImageOperation,
+    ImageQuality,
     ImageSize,
     ImageSpecification,
     ImageUsage,
@@ -71,6 +75,22 @@ edit_request = ImageGenerationRequest(
     ),
     inputs=(
         ImageInput(role=ImageInputRole.EDIT_BASE, artifact=edit_base),
+    ),
+)
+
+reference_request = ImageGenerationRequest(
+    specification=ImageSpecification(
+        prompt="Use the ordered references in a new composition.",
+        size=ImageSize(width=1024, height=1536),
+    ),
+    inputs=(
+        ImageInput(role=ImageInputRole.IDENTITY_REFERENCE, artifact=edit_base),
+    ),
+    settings=ImageGenerationSettings(
+        operation=ImageOperation.REFERENCE_GENERATE,
+        model="image-1",
+        quality=ImageQuality.HIGH,
+        input_fidelity=ImageInputFidelity.HIGH,
     ),
 )
 

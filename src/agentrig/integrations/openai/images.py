@@ -15,7 +15,10 @@ from agentrig.capabilities import (
     DataRetention,
     ImageGenerationRequest,
     ImageGenerationResult,
+    ImageInputFidelity,
     ImageInputRole,
+    ImageOperation,
+    ImageQuality,
     ImageUsage,
     ModelMetadata,
 )
@@ -26,10 +29,12 @@ from agentrig.core.errors import AgentRigError, Failure, FailureKind
 
 OPENAI_IMAGE_SDK_VERSION = "2.47.0"
 OPENAI_IMAGE_MAX_INPUTS = 16
+OPENAI_IMAGE_SIZES = frozenset({(1024, 1024), (1024, 1536), (1536, 1024)})
 
 
 class OpenAIImageOperation(StrEnum):
     GENERATE = "generate"
+    REFERENCE_GENERATE = "reference_generate"
     EDIT = "edit"
 
 
@@ -57,6 +62,8 @@ class OpenAIImageRequest:
     width: int
     height: int
     output_media_type: str
+    quality: ImageQuality = ImageQuality.AUTO
+    input_fidelity: ImageInputFidelity | None = None
     sources: tuple[OpenAIImageSource, ...] = field(default=(), repr=False)
     idempotency_key: str | None = field(default=None, repr=False)
 
@@ -80,12 +87,31 @@ class OpenAIImageRequest:
         roles = tuple(item.role for item in sources)
         if self.operation is OpenAIImageOperation.GENERATE and sources:
             raise ValueError("OpenAI image generation cannot contain edit sources")
+        if self.operation is OpenAIImageOperation.REFERENCE_GENERATE:
+            if not sources or any(
+                role in (ImageInputRole.EDIT_BASE, ImageInputRole.EDIT_MASK)
+                for role in roles
+            ):
+                raise ValueError(
+                    "OpenAI reference generation requires only reference sources"
+                )
         if self.operation is OpenAIImageOperation.EDIT:
             if roles.count(ImageInputRole.EDIT_BASE) != 1:
                 raise ValueError("OpenAI image edit requires exactly one edit base")
             if roles.count(ImageInputRole.EDIT_MASK) > 1:
                 raise ValueError("OpenAI image edit accepts at most one edit mask")
         object.__setattr__(self, "sources", sources)
+        if not isinstance(self.quality, ImageQuality):
+            raise TypeError("OpenAI image quality is invalid")
+        if self.input_fidelity is not None and not isinstance(
+            self.input_fidelity, ImageInputFidelity
+        ):
+            raise TypeError("OpenAI image input fidelity is invalid")
+        if (
+            self.operation is OpenAIImageOperation.GENERATE
+            and self.input_fidelity is not None
+        ):
+            raise ValueError("OpenAI source-free generation cannot set input fidelity")
         if self.idempotency_key is not None:
             require_trimmed_string(
                 "OpenAI image idempotency key", self.idempotency_key
@@ -141,6 +167,9 @@ OPENAI_IMAGE_CAPABILITY = CapabilityDescriptor(
         {
             CapabilityFeature.REFERENCE_IMAGES,
             CapabilityFeature.IMAGE_EDITING,
+            CapabilityFeature.IMAGE_MODEL_SELECTION,
+            CapabilityFeature.IMAGE_QUALITY,
+            CapabilityFeature.IMAGE_INPUT_FIDELITY,
             CapabilityFeature.MASKS,
             CapabilityFeature.IDEMPOTENCY_KEYS,
         }
@@ -188,18 +217,22 @@ class OpenAIImageGenerator:
         if not isinstance(context, RunContext):
             raise TypeError("OpenAI image context must be RunContext")
         request.require_supported_by(self.descriptor)
+        _validate_settings(request)
         _check_constraints(context)
         sources = await self._resolve_sources(request, context)
-        operation = (
-            OpenAIImageOperation.EDIT if sources else OpenAIImageOperation.GENERATE
-        )
+        operation = _operation(request, sources)
+        settings = request.settings
         translated = OpenAIImageRequest(
             operation=operation,
-            model=self._model,
-            prompt=request.specification.prompt,
+            model=settings.model if settings is not None else self._model,
+            prompt=_role_bound_prompt(request.specification.prompt, sources),
             width=request.specification.size.width,
             height=request.specification.size.height,
             output_media_type=request.specification.output_media_type,
+            quality=settings.quality if settings is not None else ImageQuality.AUTO,
+            input_fidelity=(
+                settings.input_fidelity if settings is not None else None
+            ),
             sources=sources,
             idempotency_key=request.idempotency_key,
         )
@@ -292,7 +325,7 @@ def _role_artifacts(
 ) -> tuple[tuple[ImageInputRole, ArtifactRef], ...]:
     if request.inputs:
         roles = tuple(item.role for item in request.inputs)
-        if ImageInputRole.EDIT_BASE not in roles:
+        if request.settings is None and ImageInputRole.EDIT_BASE not in roles:
             raise AgentRigError(
                 Failure(
                     kind=FailureKind.INVALID_INPUT,
@@ -313,6 +346,55 @@ def _role_artifacts(
     if request.mask is not None:
         result.append((ImageInputRole.EDIT_MASK, request.mask))
     return tuple(result)
+
+
+def _operation(
+    request: ImageGenerationRequest,
+    sources: tuple[OpenAIImageSource, ...],
+) -> OpenAIImageOperation:
+    if request.settings is None:
+        return OpenAIImageOperation.EDIT if sources else OpenAIImageOperation.GENERATE
+    return OpenAIImageOperation(request.settings.operation.value)
+
+
+def _validate_settings(request: ImageGenerationRequest) -> None:
+    size = request.specification.size
+    if (size.width, size.height) not in OPENAI_IMAGE_SIZES:
+        raise AgentRigError(
+            Failure(
+                kind=FailureKind.INVALID_INPUT,
+                message="OpenAI image size is unsupported",
+                code="openai.image.size_unsupported",
+            )
+        )
+    settings = request.settings
+    if settings is None:
+        return
+    if (
+        settings.input_fidelity is not None
+        and settings.model not in {"gpt-image-1", "gpt-image-1.5"}
+    ):
+        raise AgentRigError(
+            Failure(
+                kind=FailureKind.INVALID_INPUT,
+                message="OpenAI image model does not support input fidelity",
+                code="openai.image.input_fidelity_unsupported",
+            )
+        )
+
+
+def _role_bound_prompt(
+    prompt: str, sources: tuple[OpenAIImageSource, ...]
+) -> str:
+    if not sources:
+        return prompt
+    declarations = "\n".join(
+        f"{index}. {source.role.value}" for index, source in enumerate(sources, 1)
+    )
+    return (
+        "Ordered source-image roles (the provider receives images in this exact "
+        f"order):\n{declarations}\n\n{prompt}"
+    )
 
 
 def _check_constraints(context: RunContext) -> None:

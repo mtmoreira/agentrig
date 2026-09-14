@@ -7,8 +7,12 @@ import unittest
 
 from agentrig.capabilities import (
     ImageGenerationRequest,
+    ImageGenerationSettings,
     ImageInput,
+    ImageInputFidelity,
     ImageInputRole,
+    ImageOperation,
+    ImageQuality,
     ImageSize,
     ImageSpecification,
     ImageUsage,
@@ -142,6 +146,73 @@ class FailingPublisher:
 
 
 class OpenAIImageGeneratorTest(unittest.TestCase):
+    def test_reference_generation_preserves_order_settings_and_bytes(self) -> None:
+        nia, tomas = artifact("nia"), artifact("tomas")
+        request = ImageGenerationRequest(
+            specification=ImageSpecification(
+                prompt="Draw the two fictional characters flying a kite.",
+                size=ImageSize(width=1024, height=1536),
+            ),
+            inputs=(
+                ImageInput(role=ImageInputRole.IDENTITY_REFERENCE, artifact=tomas),
+                ImageInput(role=ImageInputRole.IDENTITY_REFERENCE, artifact=nia),
+            ),
+            settings=ImageGenerationSettings(
+                operation=ImageOperation.REFERENCE_GENERATE,
+                model="gpt-image-1.5",
+                quality=ImageQuality.HIGH,
+                input_fidelity=ImageInputFidelity.HIGH,
+            ),
+            idempotency_key="reference-scene-v1",
+        )
+        resolver, client, publisher = Resolver(), Client(), Publisher()
+        generator = OpenAIImageGenerator(
+            client_factory=Factory(client),
+            artifact_resolver=resolver,
+            artifact_publisher=publisher,
+            model="legacy-fallback",
+        )
+
+        result = asyncio.run(generator.generate(request, context()))
+
+        translated = client.requests[0]
+        self.assertEqual(translated.operation, OpenAIImageOperation.REFERENCE_GENERATE)
+        self.assertEqual(translated.model, "gpt-image-1.5")
+        self.assertEqual(translated.quality, ImageQuality.HIGH)
+        self.assertEqual(translated.input_fidelity, ImageInputFidelity.HIGH)
+        self.assertEqual([item.content for item in translated.sources], [b"tomas", b"nia"])
+        self.assertIn("1. identity_reference", translated.prompt)
+        self.assertIn("2. identity_reference", translated.prompt)
+        self.assertNotIn("edit_base", translated.prompt)
+        self.assertEqual(result.image.input_artifact_ids, (tomas.artifact_id, nia.artifact_id))
+
+    def test_unsupported_settings_fail_before_resolution_or_client(self) -> None:
+        reference = artifact("reference")
+        resolver, factory = Resolver(), Factory(Client())
+        request = ImageGenerationRequest(
+            specification=ImageSpecification(
+                prompt="Draw one fictional character.",
+                size=ImageSize(width=1024, height=1536),
+            ),
+            inputs=(ImageInput(role=ImageInputRole.IDENTITY_REFERENCE, artifact=reference),),
+            settings=ImageGenerationSettings(
+                operation=ImageOperation.REFERENCE_GENERATE,
+                model="gpt-image-1-mini",
+                input_fidelity=ImageInputFidelity.HIGH,
+            ),
+        )
+        generator = OpenAIImageGenerator(
+            client_factory=factory,
+            artifact_resolver=resolver,
+            artifact_publisher=Publisher(),
+            model="unused",
+        )
+
+        with self.assertRaisesRegex(Exception, "does not support input fidelity"):
+            asyncio.run(generator.generate(request, context()))
+        self.assertEqual(resolver.calls, [])
+        self.assertEqual(factory.calls, 0)
+
     def test_translates_explicit_roles_without_leaking_storage(self) -> None:
         base, identity, mask = artifact("base"), artifact("identity"), artifact("mask")
         request = ImageGenerationRequest(
