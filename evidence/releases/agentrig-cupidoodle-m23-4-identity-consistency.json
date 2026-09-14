@@ -1,0 +1,108 @@
+{
+  "digest_algorithm": "sha256(canonical-json(payload))",
+  "evidence_digest": "sha256:d2795105743139e4f0c74e86bda1af048856794c569c92d5cef511b372b91d7c",
+  "payload": {
+    "accepted_scope": [
+      "typed provider image settings and ordered identity references",
+      "content-bound StoryWorld presentation and candidate selection",
+      "Cupidoodle owner-plan authority, candidate succession, selective invalidation and real CLI",
+      "synthetic structural walkthrough and portable unapproved-draft export"
+    ],
+    "artifacts": [
+      {
+        "artifact_id": "full-offline-validation",
+        "availability": "local_ignored_build",
+        "locator": "build/cupidoodle-m23-4-identity-consistency/validation/full-offline.txt",
+        "media_type": "text/plain",
+        "retention": "milestone_review",
+        "review_state": "accepted",
+        "sha256": "e8905368b84af39a876efc7e25f536206fb733be7fc4d2e019de4486fb7c27e5",
+        "size_bytes": 991117
+      },
+      {
+        "artifact_id": "precommit-audit",
+        "availability": "local_ignored_build",
+        "locator": "build/cupidoodle-m23-4-identity-consistency/validation/precommit-audit.txt",
+        "media_type": "text/plain",
+        "retention": "milestone_review",
+        "review_state": "accepted",
+        "sha256": "88dc0434121d56bd40ab186689856a1c044333a5782b5e380370daa3ef45a3c6",
+        "size_bytes": 9274
+      },
+      {
+        "artifact_id": "implementation-commit-report",
+        "availability": "local_ignored_build",
+        "locator": "build/cupidoodle-m23-4-identity-consistency/validation/implementation-commits.txt",
+        "media_type": "text/plain",
+        "retention": "milestone_review",
+        "review_state": "accepted",
+        "sha256": "480716c3a4e03e0a206e7d35bc0deddc3a70006116515b9bb37d8238e370f753",
+        "size_bytes": 4388
+      }
+    ],
+    "authorization_boundaries": {
+      "deploy_authorized": false,
+      "live_acceptance_authorized": false,
+      "network_calls": 0,
+      "production_authorized": false,
+      "provider_calls": 0,
+      "publication_authorized": false,
+      "push_authorized": false,
+      "release_authorized": false,
+      "tag_authorized": false
+    },
+    "dependencies": [
+      {
+        "commit": "31b2ecae0605f0d6b63b5f060c929ca567ae16f2",
+        "relationship": "implementation_base",
+        "repository_id": "agentrig"
+      }
+    ],
+    "implementation": {
+      "commit": "b030e140bb1386dab4be8513a118740a61f43751",
+      "staged_manifest_sha256": "0493e8d3eca5f7d09e1032a478b368cb2a20206fc497717d556ff32c1ce78693",
+      "staged_patch_sha256": "dcf1b2f55293ab25e12fb8649b48337b666e37bc2cb132a3c6148f5048122606",
+      "subject": "feat(images): bind identity generation settings"
+    },
+    "live_acceptance_plan": {
+      "authorized": false,
+      "automatic_retries": 0,
+      "current_pricing_verified": false,
+      "image_size": "1024x1536",
+      "initial_calls": {
+        "image": 7,
+        "text": 1
+      },
+      "input_fidelity": "high",
+      "job_ceiling": {
+        "image": 12,
+        "text": 1
+      },
+      "model": "gpt-image-1.5",
+      "quality": "high",
+      "reference_transmission": "two private source crops for candidate generation; selected participating candidate PNGs only, in exact roster order, for each surface",
+      "request_timeout_seconds": 300
+    },
+    "milestone": "M23.4",
+    "owning_repository": "AgentRig",
+    "qualification_lane": "offline-scripted",
+    "qualified_parent": "b030e140bb1386dab4be8513a118740a61f43751",
+    "schema_id": "cupidoodle.m23-4-identity-consistency-evidence.v1",
+    "structural_evidence": {
+      "chibi_adherence_qualified": false,
+      "cross_scene_visual_consistency_qualified": false,
+      "fake_images": true,
+      "likeness_qualified": false,
+      "synthetic": true
+    },
+    "validation": {
+      "buck_targets": 39,
+      "outcome": "passed",
+      "package_and_extras": true,
+      "report_sha256": "e8905368b84af39a876efc7e25f536206fb733be7fc4d2e019de4486fb7c27e5",
+      "report_size_bytes": 991117,
+      "strict_typecheck": true,
+      "unit_tests": 450
+    }
+  }
+}
