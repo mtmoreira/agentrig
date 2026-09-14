@@ -1,0 +1,171 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-rootless-live",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "5f6559474ed60f3e4ec79978d53466f66294d72d",
+  "qualification_lane": "owner-live-rootless-runtime-plus-managed-evidence-review",
+  "review_state": "rootless-daemon-and-forwarded-api-qualified-image-visibility-pending",
+  "qualification_scope": "Execute the exact installed Docker 29.8.0 arm64 rootless runtime in the task-owned Lima guest, verify guest and forwarded API identity, observe the bounded local image inventory, and prove disabled-service and clean-stop behavior without registry contact.",
+  "source_implementation_commits": {
+    "agentrig": "5f6559474ed60f3e4ec79978d53466f66294d72d",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "runtime_identity": {
+    "runtime_id": "docker-29.8.0-arm64",
+    "architecture": "aarch64",
+    "configuration_sha256": "115e2b541f43c2aabf9ef16f58d9db939fd6d131c546370e8974b2f51e655ce4",
+    "guest_uid": 1000,
+    "instance": "managed-42b20000000000000000000000000005",
+    "state_root": "/private/tmp/or42b5",
+    "vm_type": "vz"
+  },
+  "daemon_identity": {
+    "server_version": "29.8.0",
+    "api_version": "1.56",
+    "minimum_api_version": "1.40",
+    "operating_system": "linux",
+    "architecture": "arm64",
+    "rootless": true,
+    "cgroup_version": "2",
+    "storage_driver": "fuse-overlayfs",
+    "docker_root_dir": "/home/agentrig/.local/share/openrtl/docker",
+    "image_count": 0
+  },
+  "transport_identity": {
+    "guest_socket": {
+      "path": "/run/user/1000/docker.sock",
+      "uid": 1000,
+      "gid": 1000,
+      "mode": "1660",
+      "parent_path": "/run/user/1000",
+      "parent_mode": "0700"
+    },
+    "host_forward": {
+      "uid": 501,
+      "mode": "0600"
+    }
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-rootless-live.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-rootless-runtime",
+      "locator": "build/retained-evidence/m42b-rootless-live-v3/report.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-final-status-and-checkpoints-verified",
+      "sha256": "119b96f04fa0820a61c26d460519010ea32cd439ce2899164e747ef19fa442b7",
+      "size_bytes": 5532
+    },
+    {
+      "artifact_id": "m42b-rootless-live.2",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-rootless-runtime",
+      "locator": "build/retained-evidence/m42b-rootless-live-v3/qualification.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-cross-bound-to-install-guest-socket-client-and-api-artifacts",
+      "sha256": "32c67bccc23fbb2caa50eb19de5b0de9c7f0c108b934cf23cbdc39330d02c9d6",
+      "size_bytes": 1674
+    },
+    {
+      "artifact_id": "m42b-rootless-live.3",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-rootless-runtime",
+      "locator": "build/retained-evidence/m42b-rootless-live-v3/guest-socket.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-isolation-identity-verified",
+      "sha256": "771cfdd3b0406f3defa8626756a4a7c45f84a591e1f9b3978ba94a43128d1125",
+      "size_bytes": 333
+    },
+    {
+      "artifact_id": "m42b-rootless-live.4",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-rootless-runtime",
+      "locator": "build/retained-evidence/m42b-rootless-live-v3/guest-version.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-server-identity-verified",
+      "sha256": "64e05f1d6c059fea9d1506775697efed19873423fb2ce70457d5886a28ed5f3b",
+      "size_bytes": 1159
+    },
+    {
+      "artifact_id": "m42b-rootless-live.5",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-rootless-runtime",
+      "locator": "build/retained-evidence/m42b-rootless-live-v3/api-observation.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-bounded-daemon-and-image-fields-verified",
+      "sha256": "a08a8c987dfa90aba56228e957cdb41e661883a3c1b06cd642106731b3f161ca",
+      "size_bytes": 627
+    },
+    {
+      "artifact_id": "m42b-rootless-live.6",
+      "availability": "local-retained",
+      "evidence_lane": "managed-evidence-review",
+      "locator": "build/retained-evidence/m42b-rootless-live-v3/managed-review.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "report-and-all-receipt-identities-independently-verified",
+      "sha256": "74ddab2da5dbecc670751446861a8ac9d1d4b90c25c703b7795283e9d5197baf",
+      "size_bytes": 2149
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored owner-runtime collateral retained in the existing M42b milestone worktree."
+    }
+  },
+  "validation": {
+    "installed_closure": "guest preflight remained byte-identical to the installation receipt",
+    "guest_transport": "socket UID/GID 1000 and no world or execute access under same-owner mode-0700 runtime directory",
+    "guest_client": "installed Docker client observed server 29.8.0 on Linux arm64",
+    "forwarded_api": "private mode-0600 host socket returned ping, version, info and zero-image inventory",
+    "rootless_security": "daemon reported rootless, seccomp and cgroup namespace security options",
+    "service_lifecycle": "disabled service reached active, stopped to exact inactive and removed its guest socket",
+    "runtime_stop": "owner report recorded exact VZ instance shutdown",
+    "forward_teardown": "both exact host socket paths independently observed absent after the run",
+    "network": "no image pull or registry contact occurred"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": false,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "The observed local image inventory was empty; no simulator image was acquired or qualified.",
+    "The live lane qualifies the task-owned rootless daemon and local forwarded API, not production control or retirement recovery.",
+    "The managed session could not independently execute limactl to re-read final VM state; the owner report records shutdown and both host forwards were independently absent.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "simulator image acquisition and visibility",
+    "production control channel and retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}
