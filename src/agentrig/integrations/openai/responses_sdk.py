@@ -84,7 +84,10 @@ def _resolve_api_key(source: OpenAIResponsesAuthenticationSource) -> str:
 def _default_raw_client_builder(api_key: str) -> _RawAsyncClient:
     from openai import AsyncOpenAI
 
-    return cast(_RawAsyncClient, AsyncOpenAI(api_key=api_key))
+    return cast(
+        _RawAsyncClient,
+        AsyncOpenAI(api_key=api_key, max_retries=0, timeout=300.0),
+    )
 
 
 class _SdkClient:

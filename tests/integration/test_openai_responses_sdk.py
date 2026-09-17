@@ -5,6 +5,7 @@ import unittest
 from dataclasses import dataclass
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import Mock, patch
 
 from agentrig.core import AgentRigError, FailureKind
 from agentrig.integrations.openai import (
@@ -74,6 +75,52 @@ def request() -> OpenAIResponsesRequest:
 
 
 class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
+    def test_default_sdk_client_has_one_bounded_attempt_and_late_authentication(
+        self,
+    ) -> None:
+        raw = RawClient(
+            response=SimpleNamespace(
+                status="completed",
+                output_text='{"description":"synthetic scene"}',
+                model="vision-model",
+                usage=SimpleNamespace(input_tokens=20, output_tokens=5),
+            )
+        )
+        sdk = Mock()
+        sdk.AsyncOpenAI.return_value = raw
+
+        class Source:
+            calls = 0
+
+            def resolve_api_key(self) -> str:
+                self.calls += 1
+                return "test-only-key"
+
+        source = Source()
+        with patch.dict("sys.modules", {"openai": sdk}):
+            factory = OpenAIResponsesSdkClientFactory(authentication_source=source)
+            self.assertEqual(source.calls, 0)
+            sdk.AsyncOpenAI.assert_not_called()
+            client = factory.create()
+            sdk.AsyncOpenAI.assert_called_once_with(
+                api_key="test-only-key", max_retries=0, timeout=300.0
+            )
+            self.assertEqual(source.calls, 1)
+            self.assertEqual(raw.calls, [])
+            self.assertFalse(raw.closed)
+            try:
+                result = asyncio.run(client.create(request()))
+            finally:
+                asyncio.run(client.close())
+
+        self.assertEqual(result.status, OpenAIResponsesStatus.COMPLETED)
+        self.assertEqual(len(raw.calls), 1)
+        self.assertEqual(raw.calls[0]["model"], "vision-model")
+        self.assertEqual(raw.calls[0]["max_output_tokens"], 100)
+        self.assertTrue(raw.closed)
+        self.assertNotIn("test-only-key", repr(factory))
+        self.assertNotIn("test-only-key", repr(client))
+
     def test_resolves_authentication_only_at_creation(self) -> None:
         private_key = "private-api-key"
         captured: list[str] = []

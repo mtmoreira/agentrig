@@ -419,6 +419,15 @@ expansion reuse this route; M26 documents end-to-end parity. Offline byte-routin
 evidence is structural. Live likeness and visual consistency require separate
 authorization and human review.
 
+For StoryWorld M27 visual inspection, the default OpenAI Responses SDK client
+also disables SDK retries and uses the image bridge's 300-second request timeout.
+An application dispatch therefore does not silently expand into SDK retry
+attempts; application-owned budgets and reconciliation still govern any later
+dispatch. The existing structured multimodal transport carries the versioned
+inspection schema and ordered image references. Scene, identity, eye-style and
+acceptance rules remain application-owned, and offline transport tests do not
+establish visual quality.
+
 ### Milestone 9A — Application-scoped runtime catalog
 
 StoryWorld now provides concrete evidence for explicit per-agent runtime
