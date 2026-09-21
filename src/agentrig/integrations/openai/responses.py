@@ -29,10 +29,12 @@ from agentrig.core import (
     DeadlineExceeded,
     ResolvedArtifact,
     RunContext,
+    Event,
+    EventKind,
 )
 from agentrig.core._json import JsonValue, freeze_json_object
 from agentrig.core._validation import require_trimmed_string
-from agentrig.core.errors import AgentRigError, Failure, FailureKind
+from agentrig.core.errors import AgentRigError, Failure, FailureKind, normalize_exception
 
 OPENAI_RESPONSES_SDK_VERSION = "2.47.0"
 OPENAI_RESPONSES_MAX_INPUT_IMAGES = 10
@@ -62,6 +64,7 @@ OPENAI_RESPONSES_STRUCTURED_CAPABILITY = CapabilityDescriptor(
 OutputT = TypeVar("OutputT")
 _SCHEMA_NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
 _IMAGE_MEDIA_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})
+_CLIENT_CLOSE_GRACE_SECONDS = 1.0
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -112,8 +115,11 @@ class OpenAIResponsesRequest:
     schema_name: str
     output_schema: Mapping[str, JsonValue] = field(repr=False)
     max_output_tokens: int | None = None
+    capture_reasoning: bool = False
 
     def __post_init__(self) -> None:
+        if type(self.capture_reasoning) is not bool:
+            raise TypeError("OpenAI Responses capture reasoning choice must be boolean")
         require_trimmed_string("OpenAI Responses model", self.model)
         messages = tuple(self.messages)
         if not messages:
@@ -154,9 +160,16 @@ class OpenAIResponsesResult:
     status: OpenAIResponsesStatus
     input_tokens: int
     output_tokens: int
+    cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    reasoning_summary: str | None = field(default=None, repr=False)
+    response_id: str | None = None
+    created_at: int | None = None
+    service_tier: str | None = None
 
     def __post_init__(self) -> None:
-        require_trimmed_string("OpenAI Responses output", self.output_text)
+        if not isinstance(self.output_text, str):
+            raise TypeError("OpenAI Responses output must be text")
         require_trimmed_string("OpenAI Responses response model", self.model)
         if not isinstance(self.status, OpenAIResponsesStatus):
             raise TypeError("OpenAI Responses status is invalid")
@@ -166,6 +179,19 @@ class OpenAIResponsesResult:
         ):
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise ValueError(f"OpenAI Responses {name} tokens are invalid")
+        GenerationUsage(input_tokens=self.input_tokens, output_tokens=self.output_tokens,
+                        cached_input_tokens=self.cached_input_tokens,
+                        reasoning_tokens=self.reasoning_tokens)
+        if self.reasoning_summary is not None and not isinstance(self.reasoning_summary, str):
+            raise TypeError("OpenAI Responses reasoning summary must be text or unavailable")
+        if self.response_id is not None and (not isinstance(self.response_id, str) or
+            re.fullmatch(r"[A-Za-z0-9_-]{1,256}", self.response_id) is None):
+            raise ValueError("OpenAI Responses response identity is invalid")
+        if self.created_at is not None and (type(self.created_at) is not int or self.created_at < 0):
+            raise ValueError("OpenAI Responses creation timestamp is invalid")
+        if self.service_tier is not None and (not isinstance(self.service_tier, str) or
+            re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", self.service_tier) is None):
+            raise ValueError("OpenAI Responses service tier is invalid")
 
 
 @runtime_checkable
@@ -230,8 +256,27 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
         request.require_supported_by(self.descriptor)
         messages = await self._resolve_messages(request, context)
         _check_constraints(context)
-        client = self._client_factory.create()
+        capture = context.private_trace_capture
+        if capture is not None:
+            capture.record(context, kind="provider.request", metadata={
+                "provider": "openai", "model": self._model,
+                "output_schema": request.output_schema.schema_id,
+            }, content={
+                "messages": [{"role": message.role.value, "text": message.text,
+                              "images": [{"media_type": image.media_type,
+                                          "size_bytes": len(image.content)}
+                                         for image in message.images]}
+                             for message in messages],
+                "output_schema": dict(request.output_schema.json_schema),
+                "max_output_tokens": request.input.max_output_tokens,
+                "store": False, "stream": False, "tools": [], "truncation": "disabled",
+            })
+        started_at = context.clock.monotonic()
+        _emit_provider(context, EventKind.PROVIDER_CALL_STARTED, {"model": self._model})
+        client: OpenAIResponsesClient | None = None
+        cleanup_failure: Failure | None = None
         try:
+            client = self._client_factory.create()
             response = await _call_with_constraints(
                 client,
                 OpenAIResponsesRequest(
@@ -240,22 +285,78 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                     schema_name=_schema_name(request.output_schema.schema_id),
                     output_schema=dict(request.output_schema.json_schema),
                     max_output_tokens=request.input.max_output_tokens,
+                    capture_reasoning=capture is not None and capture.include_reasoning,
                 ),
                 context,
             )
+            if capture is not None:
+                capture.record(context, kind="provider.response", metadata={
+                    "provider": "openai", "model": self._model,
+                }, content={
+                    "output_text": response.output_text, "status": response.status.value,
+                    "reported_model": response.model,
+                    "response_id": response.response_id, "created_at": response.created_at,
+                    "service_tier": response.service_tier,
+                    "input_tokens": response.input_tokens, "output_tokens": response.output_tokens,
+                    "cached_input_tokens": response.cached_input_tokens,
+                    "reasoning_tokens": response.reasoning_tokens,
+                    "reasoning_summary": response.reasoning_summary if capture.include_reasoning else None,
+                    "reasoning_capture": "requested" if capture.include_reasoning else "disabled",
+                    "elapsed_ms": max(0, int((context.clock.monotonic() - started_at) * 1000)),
+                })
+        except (Exception, asyncio.CancelledError) as error:
+            failure = normalize_exception(error)
+            _emit_provider(context, EventKind.PROVIDER_CALL_COMPLETED, {
+                "model": self._model,
+                "status": "cancelled" if failure.kind is FailureKind.CANCELLED else "failed",
+                "failure_kind": failure.kind.value, "failure_code": failure.code,
+                "elapsed_ms": max(0, int((context.clock.monotonic() - started_at) * 1000)),
+            })
+            raise
         finally:
-            try:
-                await client.close()
-            except Exception:
-                pass
+            if client is not None:
+                try:
+                    await asyncio.wait_for(client.close(), timeout=_CLIENT_CLOSE_GRACE_SECONDS)
+                except asyncio.TimeoutError:
+                    cleanup_failure = Failure(
+                        kind=FailureKind.DEADLINE_EXCEEDED,
+                        code="openai.responses.client_close_timeout",
+                        message="OpenAI Responses cleanup did not finish within its bound",
+                        metadata={"cleanup_status": "timeout"},
+                    )
+                except Exception:
+                    cleanup_failure = Failure(
+                        kind=FailureKind.TRANSIENT_PROVIDER,
+                        code="openai.responses.client_close_failed",
+                        message="OpenAI Responses cleanup did not complete",
+                        metadata={"cleanup_status": "failed"},
+                    )
+        if cleanup_failure is not None:
+            _emit_provider(context, EventKind.PROVIDER_CALL_COMPLETED, {
+                "model": self._model, "status": "failed",
+                "failure_kind": cleanup_failure.kind.value, "failure_code": cleanup_failure.code,
+                "cleanup_status": cleanup_failure.metadata["cleanup_status"],
+                "input_tokens": response.input_tokens, "output_tokens": response.output_tokens,
+                "cached_input_tokens": response.cached_input_tokens, "reasoning_tokens": response.reasoning_tokens,
+                "elapsed_ms": max(0, int((context.clock.monotonic() - started_at) * 1000)),
+            })
+            raise AgentRigError(cleanup_failure)
         try:
+            elapsed_ms = max(0, int((context.clock.monotonic() - started_at) * 1000))
+            provider_metadata = {"elapsed_ms": str(elapsed_ms)}
+            for name in ("response_id", "created_at", "service_tier"):
+                value = getattr(response, name)
+                if value is not None:
+                    provider_metadata[name] = str(value)
             encoded = json.loads(response.output_text)
-            return StructuredGenerationResult(
+            result = StructuredGenerationResult(
                 encoded_output=encoded,
                 output_schema=request.output_schema,
                 usage=GenerationUsage(
                     input_tokens=response.input_tokens,
                     output_tokens=response.output_tokens,
+                    cached_input_tokens=response.cached_input_tokens,
+                    reasoning_tokens=response.reasoning_tokens,
                 ),
                 model=ModelMetadata(provider="openai", model_id=response.model),
                 finish_reason=(
@@ -263,8 +364,16 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                     if response.status is OpenAIResponsesStatus.COMPLETED
                     else TextGenerationFinishReason.LENGTH
                 ),
+                provider_metadata=provider_metadata,
             )
         except (json.JSONDecodeError, TypeError, ValueError):
+            _emit_provider(context, EventKind.PROVIDER_CALL_COMPLETED, {
+                "model": self._model, "status": "failed",
+                "failure_kind": FailureKind.PERMANENT_PROVIDER.value,
+                "failure_code": "openai.responses.invalid_output", "elapsed_ms": elapsed_ms,
+                "input_tokens": response.input_tokens, "output_tokens": response.output_tokens,
+                "cached_input_tokens": response.cached_input_tokens, "reasoning_tokens": response.reasoning_tokens,
+            })
             raise AgentRigError(
                 Failure(
                     kind=FailureKind.PERMANENT_PROVIDER,
@@ -272,6 +381,17 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                     code="openai.responses.invalid_output",
                 )
             ) from None
+        _emit_provider(context, EventKind.USAGE_REPORTED, {
+            "model": self._model, "input_tokens": response.input_tokens,
+            "output_tokens": response.output_tokens, "cached_input_tokens": response.cached_input_tokens,
+            "reasoning_tokens": response.reasoning_tokens,
+        })
+        _emit_provider(context, EventKind.PROVIDER_CALL_COMPLETED, {
+            "model": self._model, "status": "succeeded", "elapsed_ms": elapsed_ms,
+            "response_id": response.response_id, "created_at": response.created_at,
+            "service_tier": response.service_tier,
+        })
+        return result
 
     async def _resolve_messages(
         self,
@@ -339,6 +459,14 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                 )
             )
         return tuple(images)
+
+
+def _emit_provider(context: RunContext, kind: EventKind,
+                   attributes: Mapping[str, JsonValue]) -> None:
+    context.event_sink.emit(Event.from_context(
+        event_id=context.event_id_generator.generate(), kind=kind, context=context,
+        attributes={"provider": "openai", **attributes},
+    ))
 
 
 def _schema_name(schema_id: str) -> str:

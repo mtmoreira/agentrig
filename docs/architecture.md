@@ -907,6 +907,35 @@ Every supported integration requires:
 - Human approval is explicit and scoped to a proposed action.
 - AgentRig does not weaken provider or operating-system sandboxing.
 
+Explicit private execution capture is a separate boundary from ordinary events.
+An application can attach `PrivateTraceCapture` to `RunContext`; the default is
+`None`, and children inherit the same application-owned recorder. Each immutable
+`PrivateTraceRecord` has lineage, a timestamp, a version, and bounded JSON text
+excluded from its representation. Credential-key and credential-shaped content
+redaction remains mandatory. Applications own private storage permissions,
+retention, deletion, and access control; capture must not be sent to public logs.
+
+The Ollama and OpenAI Responses adapters capture submitted text, schema and model
+settings, then returned output before application schema validation. Image bytes,
+authentication headers, credentials and raw transport exceptions are excluded.
+`include_reasoning=True` permits only reasoning text actually returned by Ollama
+or a returned OpenAI reasoning summary; it does not enable model thinking, request
+hidden reasoning, or fabricate unavailable content. Optional token details and
+Ollama native nanosecond durations remain unavailable when the provider does not
+report them. Cached and reasoning token counts are subsets of input and output
+totals and must not be added a second time.
+
+`include_process=True` additionally records actual bounded-process argv, working
+directory, output, exit status and elapsed time. Environment values are excluded;
+recognized credential flags and credential-shaped output are redacted. Capture
+does not grant tool or process authority. Detached processes and arbitrary tool
+implementations are not automatically instrumented. Timeout/cancellation output
+is unavailable when the underlying runner did not return a captured result.
+Content exceeding `max_content_bytes` is explicitly marked truncated; a truncated
+UTF-8 JSON prefix is display text, not a parseable or replayable request. Capture
+does not automatically retry any operation and recorder errors are normalized
+without their private exception text.
+
 ## 15. Build and packaging strategy
 
 ### 15.1 Use Buck2, not legacy Buck

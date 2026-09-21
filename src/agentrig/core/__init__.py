@@ -52,6 +52,10 @@ from agentrig.core.observability import (
     RedactingEventSink,
 )
 from agentrig.core.outcomes import ExecutionOutcome, ExecutionStatus
+from agentrig.core.private_trace import (
+    PrivateTraceCapture, PrivateTraceRecord, PrivateTraceRecorder,
+    redact_private_trace_arguments, redact_private_trace_content,
+)
 from agentrig.core.policy import (
     CompositeGradePolicy,
     GradeDecision,
@@ -116,6 +120,9 @@ __all__ = (
     "NOOP_EVENT_SINK",
     "NoOpEventSink",
     "NoOpRedactionPolicy",
+    "PrivateTraceCapture",
+    "PrivateTraceRecord",
+    "PrivateTraceRecorder",
     "REDACTED_VALUE",
     "RedactionPolicy",
     "RedactingEventSink",
@@ -129,4 +136,6 @@ __all__ = (
     "ThresholdGradePolicy",
     "Uuid4IdGenerator",
     "normalize_exception",
+    "redact_private_trace_arguments",
+    "redact_private_trace_content",
 )

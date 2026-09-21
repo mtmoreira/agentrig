@@ -15,7 +15,7 @@ from threading import Event
 import time
 from types import MappingProxyType
 
-from agentrig.core import RunContext
+from agentrig.core import DeadlineExceeded, JsonValue, RunCancelled, RunContext, redact_private_trace_arguments
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -183,6 +183,14 @@ async def run_bounded_process(spec: ProcessSpec, context: RunContext) -> Process
         context.deadline.raise_if_expired(context.clock)
     if os.name != 'posix':
         raise ProcessFailure('process_failed')
+    capture = context.private_trace_capture
+    if capture is not None and capture.include_process:
+        capture.record(context, kind='process.request', metadata={}, content={
+            'argv': _trace_argv(spec.argv), 'cwd': spec.cwd,
+            'environment': 'not_captured', 'timeout_seconds': spec.timeout_seconds,
+            'max_output_bytes': spec.max_output_bytes, 'shell': False,
+        })
+    started_at = context.clock.monotonic()
     stop = Event()
     worker = asyncio.create_task(asyncio.to_thread(_collect, spec, stop))
     cancelled = asyncio.create_task(context.cancellation.wait_cancelled())
@@ -224,9 +232,32 @@ async def run_bounded_process(spec: ProcessSpec, context: RunContext) -> Process
         if context.deadline is not None:
             worker.exception()
             context.deadline.raise_if_expired(context.clock)
-        return worker.result()
+        result = worker.result()
+        if capture is not None and capture.include_process:
+            capture.record(context, kind='process.response', metadata={}, content={
+                'exit_code': result.exit_code,
+                'stdout': result.stdout.decode('utf-8', errors='replace'),
+                'stderr': result.stderr.decode('utf-8', errors='replace'),
+                'output_truncated': result.truncated,
+                'elapsed_ms': max(0, int((context.clock.monotonic() - started_at) * 1000)),
+            })
+        return result
+    except (ProcessFailure, RunCancelled, DeadlineExceeded, asyncio.CancelledError) as error:
+        if capture is not None and capture.include_process:
+            code = (error.code if isinstance(error, ProcessFailure) else
+                    'deadline_exceeded' if isinstance(error, DeadlineExceeded) else 'cancelled')
+            capture.record(context, kind='process.response', metadata={}, content={
+                'error_code': code, 'exit_code': None, 'stdout': None, 'stderr': None,
+                'elapsed_ms': max(0, int((context.clock.monotonic() - started_at) * 1000)),
+            })
+        raise
     finally:
         cancelled.cancel()
         # No awaited cleanup after this point: a second cancellation must not
         # replace the already completed worker's native cancellation identity.
         await asyncio.gather(cancelled, return_exceptions=True)
+
+
+def _trace_argv(argv: tuple[str, ...]) -> list[JsonValue]:
+    """Redact recognizable credential flags as well as credential-shaped text."""
+    return list(redact_private_trace_arguments(argv))

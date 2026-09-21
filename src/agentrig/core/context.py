@@ -15,6 +15,7 @@ from agentrig.core.identity import IdGenerator, RunId
 if TYPE_CHECKING:
     from agentrig.core.events import EventId
     from agentrig.core.observability import EventSink
+    from agentrig.core.private_trace import PrivateTraceCapture
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -33,8 +34,13 @@ class RunContext:
     deadline: Deadline | None = None
     labels: Mapping[str, str] = field(default_factory=dict)
     correlation: Mapping[str, str] = field(default_factory=dict)
+    private_trace_capture: PrivateTraceCapture | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
+        if self.private_trace_capture is not None:
+            from agentrig.core.private_trace import PrivateTraceCapture
+            if not isinstance(self.private_trace_capture, PrivateTraceCapture):
+                raise TypeError("private trace capture is invalid")
         object.__setattr__(
             self,
             "labels",
@@ -58,6 +64,7 @@ class RunContext:
         deadline: Deadline | None = None,
         labels: Mapping[str, str] | None = None,
         correlation: Mapping[str, str] | None = None,
+        private_trace_capture: PrivateTraceCapture | None = None,
     ) -> RunContext:
         """Create a root context from explicitly owned runtime dependencies."""
         return cls(
@@ -77,6 +84,7 @@ class RunContext:
             deadline=deadline,
             labels=labels if labels is not None else {},
             correlation=correlation if correlation is not None else {},
+            private_trace_capture=private_trace_capture,
         )
 
     def derive_child(
@@ -125,6 +133,7 @@ class RunContext:
             deadline=child_deadline,
             labels=child_labels,
             correlation=child_correlation,
+            private_trace_capture=self.private_trace_capture,
         )
 
 

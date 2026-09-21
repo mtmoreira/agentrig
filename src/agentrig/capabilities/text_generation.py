@@ -141,6 +141,8 @@ class GenerationUsage:
 
     input_tokens: int | None = None
     output_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
 
     def __post_init__(self) -> None:
         _require_optional_count("text generation input_tokens", self.input_tokens)
@@ -148,6 +150,12 @@ class GenerationUsage:
             "text generation output_tokens",
             self.output_tokens,
         )
+        _require_optional_count("text generation cached_input_tokens", self.cached_input_tokens)
+        _require_optional_count("text generation reasoning_tokens", self.reasoning_tokens)
+        for part, total in ((self.cached_input_tokens, self.input_tokens),
+                            (self.reasoning_tokens, self.output_tokens)):
+            if part is not None and (total is None or part > total):
+                raise ValueError("text generation token detail exceeds its reported total")
 
     @property
     def total_tokens(self) -> int | None:

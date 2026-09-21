@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 import unittest
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 from agentrig.agents import (
     AgentContract,
@@ -27,6 +29,10 @@ from agentrig.core import (
     FailureKind,
     InMemoryEventSink,
     NoOpRedactionPolicy,
+    PrivateTraceCapture,
+    PrivateTraceRecord,
+    AgentRigError,
+    Failure,
     RunContext,
     RunId,
 )
@@ -310,6 +316,7 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
                 "provider": "ollama",
                 "model": "gemma-test",
                 "finish_reason": "stop",
+                "elapsed_ms": "0",
             },
         )
         request = client.requests[0]
@@ -371,6 +378,78 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
                 self.assertEqual(sink.events, ())
 
         self.assertEqual(factory.calls, 0)
+
+    def test_private_capture_retains_invalid_response_and_native_timings(self) -> None:
+        records: list[PrivateTraceRecord] = []
+
+        class Recorder:
+            def record(self, record: PrivateTraceRecord) -> None:
+                records.append(record)
+
+        client = successful_client("synthetic invalid JSON")
+        assert client.response is not None
+        client.response = replace(client.response, thinking="synthetic provider-emitted thought",
+                                  total_duration_ns=900, load_duration_ns=200,
+                                  prompt_eval_duration_ns=300, eval_duration_ns=400)
+        runtime, _ = create_runtime(client)
+        context, sink = create_context()
+        context = replace(context, private_trace_capture=PrivateTraceCapture(
+            recorder=Recorder(), include_reasoning=True))
+        result = asyncio.run(runtime.execute(create_request(), context))
+        self.assertEqual(result.result.failure.code, "ollama.invalid_output")  # type: ignore[union-attr]
+        self.assertEqual(result.provider_metadata["eval_duration_ns"], "400")
+        self.assertEqual(result.usage.input_tokens, 12)
+        self.assertEqual([record.kind for record in records], ["provider.request", "provider.response"])
+        self.assertEqual(json.loads(records[1].content)["content"], "synthetic invalid JSON")
+        self.assertEqual(json.loads(records[1].content)["thinking"], "synthetic provider-emitted thought")
+        self.assertFalse(client.requests[0].think)
+        self.assertTrue(client.requests[0].capture_reasoning)
+        self.assertNotIn("synthetic", repr(sink.events))
+
+    def test_missing_usage_is_unavailable_and_capture_is_disabled_by_default(self) -> None:
+        client = successful_client()
+        assert client.response is not None
+        client.response = replace(client.response, input_tokens=None, output_tokens=None)
+        runtime, _ = create_runtime(client)
+        context, _ = create_context()
+        result = asyncio.run(runtime.execute(create_request(), context))
+        self.assertFalse(result.usage.is_reported)
+        self.assertIsNone(result.usage.total_tokens)
+        self.assertFalse(client.requests[0].capture_reasoning)
+
+    def test_json_whitespace_is_valid_and_empty_text_is_a_structured_output_failure(self) -> None:
+        for text, success in ((" \n{\"result\":\"complete\"}\n", True), ("", False)):
+            runtime, _ = create_runtime(successful_client(text))
+            context, _ = create_context()
+            result = asyncio.run(runtime.execute(create_request(), context))
+            self.assertEqual(result.result.is_success, success)
+            if not success:
+                self.assertEqual(result.result.failure.code, "ollama.invalid_output")  # type: ignore[union-attr]
+
+    def test_hanging_close_is_bounded_and_keeps_usage_or_primary_cancellation(self) -> None:
+        class HangingCloseClient(FakeClient):
+            close_cancelled = False
+
+            async def close(self) -> None:
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    self.close_cancelled = True
+
+        for primary in (None, AgentRigError(Failure(kind=FailureKind.CANCELLED, message="caller stopped"))):
+            client = HangingCloseClient(response=successful_client().response, error=primary)
+            runtime, _ = create_runtime(client)
+            context, sink = create_context()
+            with patch('agentrig.integrations.ollama.runtime._CLIENT_CLOSE_GRACE_SECONDS', 0.001):
+                result = asyncio.run(runtime.execute(create_request(), context))
+            self.assertTrue(client.close_cancelled)
+            self.assertEqual(result.provider_metadata['cleanup_status'], 'timeout')
+            self.assertEqual(sink.events[-1].attributes['cleanup_status'], 'timeout')
+            if primary is None:
+                self.assertEqual(result.result.failure.code, 'ollama.client_close_timeout')  # type: ignore[union-attr]
+                self.assertEqual(result.usage.total_tokens, 16)
+            else:
+                self.assertEqual(result.result.failure.kind, FailureKind.CANCELLED)  # type: ignore[union-attr]
 
     def test_invalid_output_and_transport_errors_are_sanitized(self) -> None:
         invalid_runtime, _ = create_runtime(successful_client("private prose"))

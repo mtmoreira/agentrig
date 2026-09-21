@@ -21,6 +21,7 @@ class AgentRuntimeUsage:
     input_tokens: int | None = None
     cached_input_tokens: int | None = None
     output_tokens: int | None = None
+    reasoning_tokens: int | None = None
 
     def __post_init__(self) -> None:
         _require_optional_token_count(
@@ -35,6 +36,11 @@ class AgentRuntimeUsage:
             "agent runtime output_tokens",
             self.output_tokens,
         )
+        _require_optional_token_count("agent runtime reasoning_tokens", self.reasoning_tokens)
+        if self.reasoning_tokens is not None and (
+            self.output_tokens is None or self.reasoning_tokens > self.output_tokens
+        ):
+            raise ValueError("agent runtime reasoning_tokens require sufficient output_tokens")
         if self.cached_input_tokens is not None:
             if self.input_tokens is None:
                 raise ValueError(
@@ -61,6 +67,7 @@ class AgentRuntimeUsage:
                 self.input_tokens,
                 self.cached_input_tokens,
                 self.output_tokens,
+                self.reasoning_tokens,
             )
         )
 

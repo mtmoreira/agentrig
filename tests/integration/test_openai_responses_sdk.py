@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import unittest
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import SimpleNamespace
 from typing import Any
 
@@ -74,6 +74,30 @@ def request() -> OpenAIResponsesRequest:
 
 
 class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
+    def test_usage_details_and_only_returned_reasoning_summary_are_retained(self) -> None:
+        raw = RawClient(response=SimpleNamespace(
+            status="completed", output_text='{"description":"fixture"}', model="vision-model",
+            usage=SimpleNamespace(input_tokens=20, output_tokens=10,
+                input_tokens_details=SimpleNamespace(cached_tokens=4),
+                output_tokens_details=SimpleNamespace(reasoning_tokens=6)),
+            output=[SimpleNamespace(type="reasoning", summary=[
+                SimpleNamespace(type="summary_text", text="synthetic returned summary")])],
+            id="resp_fixture", created_at=1789819200, service_tier="default",
+        ))
+        client = OpenAIResponsesSdkClientFactory(authentication_source=_Source(),
+            raw_client_builder=lambda key: raw).create()
+        default = asyncio.run(client.create(request()))
+        captured = asyncio.run(client.create(replace(request(), capture_reasoning=True)))
+        self.assertEqual(default.cached_input_tokens, 4)
+        self.assertEqual(default.reasoning_tokens, 6)
+        self.assertIsNone(default.reasoning_summary)
+        self.assertEqual(captured.reasoning_summary, "synthetic returned summary")
+        self.assertEqual(captured.response_id, "resp_fixture")
+        self.assertEqual(captured.created_at, 1789819200)
+        self.assertEqual(captured.service_tier, "default")
+        self.assertNotIn("synthetic returned summary", repr(captured))
+        self.assertEqual(raw.calls[0], raw.calls[1])
+
     def test_resolves_authentication_only_at_creation(self) -> None:
         private_key = "private-api-key"
         captured: list[str] = []

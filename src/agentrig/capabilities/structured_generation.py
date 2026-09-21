@@ -23,7 +23,7 @@ from agentrig.core._json import (
     freeze_json_object,
     freeze_json_value,
 )
-from agentrig.core._validation import require_trimmed_string
+from agentrig.core._validation import freeze_string_map, require_trimmed_string
 from agentrig.core.context import RunContext
 
 OutputT = TypeVar("OutputT")
@@ -107,6 +107,7 @@ class StructuredGenerationResult(Generic[OutputT]):
     usage: GenerationUsage
     model: ModelMetadata
     finish_reason: TextGenerationFinishReason
+    provider_metadata: Mapping[str, str]
 
     def __init__(
         self,
@@ -116,6 +117,7 @@ class StructuredGenerationResult(Generic[OutputT]):
         usage: GenerationUsage,
         model: ModelMetadata,
         finish_reason: TextGenerationFinishReason,
+        provider_metadata: Mapping[str, str] | None = None,
     ) -> None:
         if not isinstance(output_schema, StructuredOutputSchema):
             raise TypeError(
@@ -147,6 +149,8 @@ class StructuredGenerationResult(Generic[OutputT]):
         object.__setattr__(self, "usage", usage)
         object.__setattr__(self, "model", model)
         object.__setattr__(self, "finish_reason", finish_reason)
+        object.__setattr__(self, "provider_metadata", freeze_string_map(
+            "structured generation provider metadata", provider_metadata or {}))
 
 
 @runtime_checkable

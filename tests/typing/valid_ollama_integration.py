@@ -10,7 +10,7 @@ from agentrig.capabilities import (
     CapabilityKind,
     CapabilityRequirements,
 )
-from agentrig.core import EffectProfile
+from agentrig.core import EffectProfile, PrivateTraceCapture, PrivateTraceRecord, PrivateTraceRecorder
 from agentrig.integrations.ollama import (
     OLLAMA_AGENT_RUNTIME_CAPABILITY,
     OllamaAgentRuntime,
@@ -47,6 +47,16 @@ class FakeFactory:
 class ExampleAuthenticationSource:
     def resolve_headers(self) -> dict[str, str]:
         return {"X-Application-Auth": "resolved-at-runtime"}
+
+
+class ExamplePrivateRecorder:
+    def record(self, record: PrivateTraceRecord) -> None:
+        # Application-owned private storage is deliberately outside this fixture.
+        del record
+
+
+private_recorder: PrivateTraceRecorder = ExamplePrivateRecorder()
+private_capture = PrivateTraceCapture(recorder=private_recorder, include_reasoning=True)
 
 
 factory: OllamaClientFactory = FakeFactory()

@@ -5,7 +5,7 @@ import gc
 import unittest
 import warnings
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import SimpleNamespace
 from typing import Any
 
@@ -59,6 +59,29 @@ def request() -> OllamaChatRequest:
 
 
 class OllamaSdkBridgeTest(unittest.TestCase):
+    def test_optional_usage_timings_and_reasoning_are_preserved_only_when_requested(self) -> None:
+        raw = FakeRawClient(response=SimpleNamespace(
+            message=SimpleNamespace(content='{"value":"complete"}', thinking="synthetic returned thinking"),
+            model="qwen3:8b", done_reason="stop", prompt_eval_count=None, eval_count=None,
+            total_duration=900, load_duration=100, prompt_eval_duration=200, eval_duration=600,
+            created_at="2026-09-19T12:00:00Z",
+        ))
+        client = OllamaSdkClientFactory(host="http://127.0.0.1:11434",
+            raw_client_builder=lambda host, headers: raw).create()
+        default = asyncio.run(client.chat(request()))
+        captured = asyncio.run(client.chat(replace(request(), capture_reasoning=True)))
+        self.assertIsNone(default.thinking)
+        self.assertIsNone(default.input_tokens)
+        self.assertIsNone(default.output_tokens)
+        self.assertEqual(captured.thinking, "synthetic returned thinking")
+        self.assertNotIn("synthetic returned thinking", repr(captured))
+        self.assertEqual(captured.total_duration_ns, 900)
+        self.assertEqual(captured.load_duration_ns, 100)
+        self.assertEqual(captured.prompt_eval_duration_ns, 200)
+        self.assertEqual(captured.eval_duration_ns, 600)
+        self.assertEqual(captured.created_at, "2026-09-19T12:00:00Z")
+        self.assertEqual(raw.calls[0], raw.calls[1])
+
     def test_host_is_exact_and_rejects_embedded_credentials(self) -> None:
         captured: list[tuple[str, Mapping[str, str]]] = []
 

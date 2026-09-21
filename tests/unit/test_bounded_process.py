@@ -1,11 +1,13 @@
 """No subprocesses: input and preflight boundaries for the process adapter."""
 
 from dataclasses import replace
+import json
 import unittest
 from unittest.mock import patch
 
-from agentrig.core import CancellationSource, Deadline, DeadlineExceeded, RunCancelled
+from agentrig.core import CancellationSource, Deadline, DeadlineExceeded, RunCancelled, PrivateTraceCapture
 from agentrig.integrations import ProcessSpec, run_bounded_process
+from agentrig.integrations.bounded_process import ProcessOutput
 from tests.unit.test_process_tool import context
 
 
@@ -42,6 +44,32 @@ class ProcessSpecTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(DeadlineExceeded):
                 await run_bounded_process(self.spec(), expired)
             worker.assert_not_called()
+
+    async def test_private_process_capture_is_explicit_and_excludes_environment(self):
+        records = []
+
+        class Recorder:
+            def record(self, record):
+                records.append(record)
+
+        async def completed_worker(*args):
+            return ProcessOutput(exit_code=3, stdout=b'synthetic stdout', stderr=b'synthetic stderr', truncated=True)
+
+        run = replace(context(), private_trace_capture=PrivateTraceCapture(
+            recorder=Recorder(), include_process=True))
+        with patch('agentrig.integrations.bounded_process.asyncio.to_thread', completed_worker):
+            result = await run_bounded_process(self.spec(), run)
+        self.assertEqual(result.exit_code, 3)
+        self.assertEqual([record.kind for record in records], ['process.request', 'process.response'])
+        self.assertNotIn('private-value', records[0].content)
+        self.assertEqual(json.loads(records[1].content)['stdout'], 'synthetic stdout')
+        self.assertTrue(json.loads(records[1].content)['output_truncated'])
+
+        records.clear()
+        run = replace(run, private_trace_capture=PrivateTraceCapture(recorder=Recorder()))
+        with patch('agentrig.integrations.bounded_process.asyncio.to_thread', completed_worker):
+            await run_bounded_process(self.spec(), run)
+        self.assertEqual(records, [])
 
 
 if __name__ == '__main__':
