@@ -1,0 +1,31 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "persistent_session",
+    srcs = [
+        "__init__.py",
+        "scripted.py",
+        "worker.py",
+    ],
+    base_module = "examples.fundamentals.persistent_session",
+    deps = [
+        "//examples:package",
+        "//src:agentrig",
+    ],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.fundamentals.persistent_session.scripted",
+    deps = [":persistent_session"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.fundamentals.persistent_session",
+    deps = [":persistent_session"],
+    labels = ["deterministic"],
+)
