@@ -52,9 +52,12 @@ class OllamaChatMessage:
     content: str = field(repr=False)
 
     def __post_init__(self) -> None:
-        if self.role not in {"system", "user"}:
-            raise ValueError("Ollama message role must be system or user")
-        require_trimmed_string("Ollama message content", self.content)
+        if self.role not in {"system", "user", "assistant"}:
+            raise ValueError("Ollama message role must be system, user, or assistant")
+        if not isinstance(self.content, str) or (
+            self.role != "assistant" and not self.content.strip()
+        ):
+            raise ValueError("Ollama message content is invalid")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

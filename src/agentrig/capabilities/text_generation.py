@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
@@ -14,6 +14,7 @@ from agentrig.capabilities.base import (
     CapabilityLimit,
     CapabilityRequirements,
 )
+from agentrig.core._json import JsonValue, freeze_json_object
 from agentrig.core._validation import require_trimmed_string
 from agentrig.core.artifacts import ArtifactRef
 from agentrig.core.context import RunContext
@@ -48,7 +49,11 @@ class TextMessage:
         if not isinstance(self.role, TextMessageRole):
             raise TypeError("text message role must be a TextMessageRole")
         if self.text is not None:
-            _require_content_text("text message text", self.text)
+            if self.role is TextMessageRole.ASSISTANT:
+                if not isinstance(self.text, str):
+                    raise TypeError("assistant text must be a string")
+            else:
+                _require_content_text("text message text", self.text)
         copied_artifacts = _copy_artifacts(
             "text message artifacts",
             self.artifacts,
@@ -67,6 +72,7 @@ class TextGenerationRequest:
     input_artifacts: tuple[ArtifactRef, ...] = field(default=(), repr=False)
     max_output_tokens: int | None = None
     idempotency_key: str | None = field(default=None, repr=False)
+    output_schema: Mapping[str, JsonValue] | None = field(default=None, repr=False)
 
     def __post_init__(self) -> None:
         copied_messages = tuple(self.messages)
@@ -104,6 +110,11 @@ class TextGenerationRequest:
                 "text generation idempotency key",
                 self.idempotency_key,
             )
+        if self.output_schema is not None:
+            schema = freeze_json_object("text generation output schema", self.output_schema)
+            if not schema:
+                raise ValueError("text generation output schema must not be empty")
+            object.__setattr__(self, "output_schema", schema)
 
     @property
     def requirements(self) -> CapabilityRequirements:
@@ -124,6 +135,8 @@ class TextGenerationRequest:
             ] = self.max_output_tokens
         if self.idempotency_key is not None:
             features.append(CapabilityFeature.IDEMPOTENCY_KEYS)
+        if self.output_schema is not None:
+            features.append(CapabilityFeature.STRUCTURED_OUTPUT)
         return CapabilityRequirements(
             kind=CapabilityKind.TEXT_GENERATION,
             features=frozenset(features),

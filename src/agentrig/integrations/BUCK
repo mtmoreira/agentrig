@@ -3,6 +3,7 @@ python_library(
     srcs = [
         "__init__.py",
         "bounded_process.py",
+        "persistent_session.py",
         "backend_journal.py",
         "backend_artifacts.py",
         "backend_staging.py",

@@ -480,11 +480,37 @@ class Retriever(Protocol):
     ) -> RetrievalResult: ...
 ```
 
+`TextGenerationRequest.output_schema` is an optional structural constraint for
+callers that must retain the provider's raw text and perform their own decode,
+validation, or repair loop. It requires the `structured_output` feature but
+does not turn `TextGenerator` into `StructuredGenerator`: the result remains
+verbatim text, including malformed or empty assistant repair content. The
+Ollama text adapter makes one non-streaming call, returns that content without
+parsing or retrying, and keeps application semantics outside AgentRig.
+
+### 7.1 Persistent local process sessions
+
+`PersistentProcessSession` extends the trusted, no-shell `ProcessSpec` boundary
+when process startup cost must be amortized across serial requests. Its JSONL
+wire envelope is versioned and generic: readiness, health, request/response,
+shutdown, and correlation are AgentRig-owned; every payload is opaque JSON.
+The session applies one whole-operation bound from `RunContext` and
+`ProcessSpec`, bounds stdin/stdout/stderr, treats banners or malformed output as
+protocol failures, and reaps the owned process group before returning from any
+terminal path. It never retries or replays a request. A failed session requires
+an explicit `recover`, which always creates a fresh process.
+
+This is lifecycle containment for trusted adapters, not a sandbox. Application
+protocol meanings, business transactions, model schemas, scheduling, and
+prepare/activate/restore semantics remain outside AgentRig. Private process
+capture reuses `PrivateTraceCapture(include_process=True)`; ordinary events and
+exceptions remain content-free.
+
 These contracts intentionally differ. A coding result may contain a worktree
 change and validations; an image result contains image artifacts and generation
 metadata; a search result contains citations and retrieval metadata.
 
-### 7.1 Capability descriptors
+### 7.2 Capability descriptors
 
 Portable APIs must not imply that all implementations support every feature.
 Each implementation exposes a descriptor covering relevant facts such as:

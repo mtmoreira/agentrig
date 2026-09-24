@@ -4,6 +4,7 @@ python_library(
         "__init__.py",
         "ollama.py",
         "runtime.py",
+        "text_generation.py",
     ],
     base_module = "agentrig.integrations.ollama",
     deps = [

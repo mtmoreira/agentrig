@@ -81,6 +81,14 @@ agentrig_python_test(
 )
 
 agentrig_python_test(
+    name = "persistent_session",
+    scope = "integration",
+    srcs = ["__init__.py", "test_persistent_session.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
     name = "codex_dependency",
     scope = "integration",
     srcs = [

@@ -13,10 +13,15 @@ from agentrig.integrations.ollama.ollama import (
     OllamaRuntimeOptions,
 )
 from agentrig.integrations.ollama.runtime import OllamaAgentRuntime
+from agentrig.integrations.ollama.text_generation import (
+    OLLAMA_TEXT_GENERATION_CAPABILITY,
+    OllamaTextGenerator,
+)
 
 __all__ = (
     "OLLAMA_AGENT_RUNTIME_CAPABILITY",
     "OLLAMA_CLIENT_VERSION",
+    "OLLAMA_TEXT_GENERATION_CAPABILITY",
     "OllamaAgentRuntime",
     "OllamaAuthenticationSource",
     "OllamaChatMessage",
@@ -26,4 +31,5 @@ __all__ = (
     "OllamaClientFactory",
     "OllamaFinishReason",
     "OllamaRuntimeOptions",
+    "OllamaTextGenerator",
 )
