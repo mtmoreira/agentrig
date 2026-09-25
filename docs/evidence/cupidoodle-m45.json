@@ -1,0 +1,75 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "m45-full-validation",
+      "availability": "present-and-hash-verified",
+      "location_kind": "declared-external",
+      "locator": "/private/tmp/cupidoodle-m45-full-validation.report.txt",
+      "media_type": "text/plain",
+      "retention_class": "owner-local-unpublished",
+      "sha256": "724e500ae23e1f7d22e81c5f9149a5e6c36dc5812da6f846798f04d29a8ab388",
+      "size_bytes": 921824,
+      "validation_outcome": "passed"
+    },
+    {
+      "artifact_id": "m45-storyworld-draft-walkthrough",
+      "availability": "present-and-hash-verified",
+      "location_kind": "declared-external",
+      "locator": "/private/tmp/cupidoodle-m45-draft-walkthrough.json",
+      "media_type": "application/json",
+      "retention_class": "owner-local-unpublished",
+      "sha256": "03443eef88448911b3d3db884d61219ef9e8f859726f36b1976f0f354f0899c1",
+      "size_bytes": 3292,
+      "validation_outcome": "passed"
+    },
+    {
+      "artifact_id": "m45-cupidoodle-profile-report",
+      "availability": "present-and-hash-verified",
+      "location_kind": "declared-external",
+      "locator": "/private/tmp/cupidoodle-m45-profile-report.json",
+      "media_type": "application/json",
+      "retention_class": "owner-local-unpublished",
+      "sha256": "89ce3ede96f4d6e2da6ef80d2b15ff552c4b543a1f76d9523f991db0e8c05874",
+      "size_bytes": 355,
+      "validation_outcome": "passed"
+    }
+  ],
+  "authorization_boundary": {
+    "credential_reads": false,
+    "live_provider_calls": false,
+    "private_book_runs_accessed": false,
+    "publication_or_deployment": false,
+    "remote_mutations": false
+  },
+  "dependency_implementation_commits": {
+    "agentrig": "615900863dd6ed043045b136c251f5159ed7738b",
+    "cupidoodle": "c31d53db5c461cbdfac7167f2131b559cf00fa0d",
+    "storyworld": "231f1b8ee0dff4e3366930041c59f087c812a461"
+  },
+  "limitations": [
+    "The current interview is deterministic and performs zero language-model chat turns; gpt-6-luna is configured at StoryWorld's bounded generation seam.",
+    "Image cost is an output-only estimate based on the checked-in profile price and excludes input-token or future provider pricing changes.",
+    "Offline validation establishes configuration and request translation, not live-provider visual quality or human visual acceptance."
+  ],
+  "milestone": "cupidoodle-m45-economy-profile",
+  "observed_behavior": [
+    "The named economy profile selects gpt-6-luna for bounded text generation and gpt-image-2 at medium quality for image generation.",
+    "The profile estimates seven medium image outputs at USD 0.287 and exposes the effective settings in the web state.",
+    "AgentRig preserves high-fidelity reference intent while omitting the unsupported legacy input_fidelity field for gpt-image-2.",
+    "The StoryWorld developer walkthrough records effective text and image models without provider or network calls."
+  ],
+  "qualification_lane": "full-offline",
+  "qualified_parent": "615900863dd6ed043045b136c251f5159ed7738b",
+  "repository": "agentrig",
+  "schema_id": "codex.milestone-evidence.v1",
+  "validation_outcomes": {
+    "agentrig_affected_buck_target": "passed",
+    "agentrig_build": "passed",
+    "agentrig_unit_tests": 451,
+    "cupidoodle_full_offline_gate": "passed",
+    "network_calls": 0,
+    "production_effects": false,
+    "provider_calls": 0,
+    "storyworld_full_offline_gate": "passed"
+  }
+}
