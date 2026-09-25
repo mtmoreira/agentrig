@@ -213,6 +213,41 @@ class OpenAIImageGeneratorTest(unittest.TestCase):
         self.assertEqual(resolver.calls, [])
         self.assertEqual(factory.calls, 0)
 
+    def test_gpt_image_2_omits_legacy_fidelity_parameter(self) -> None:
+        reference = artifact("reference")
+        request = ImageGenerationRequest(
+            specification=ImageSpecification(
+                prompt="Draw one fictional character.",
+                size=ImageSize(width=1024, height=1536),
+            ),
+            inputs=(
+                ImageInput(
+                    role=ImageInputRole.IDENTITY_REFERENCE,
+                    artifact=reference,
+                ),
+            ),
+            settings=ImageGenerationSettings(
+                operation=ImageOperation.REFERENCE_GENERATE,
+                model="gpt-image-2",
+                quality=ImageQuality.MEDIUM,
+                input_fidelity=ImageInputFidelity.HIGH,
+            ),
+        )
+        resolver, client, publisher = Resolver(), Client(), Publisher()
+        generator = OpenAIImageGenerator(
+            client_factory=Factory(client),
+            artifact_resolver=resolver,
+            artifact_publisher=publisher,
+            model="unused",
+        )
+
+        asyncio.run(generator.generate(request, context()))
+
+        translated = client.requests[0]
+        self.assertEqual(translated.model, "gpt-image-2")
+        self.assertEqual(translated.quality, ImageQuality.MEDIUM)
+        self.assertIsNone(translated.input_fidelity)
+
     def test_translates_explicit_roles_without_leaking_storage(self) -> None:
         base, identity, mask = artifact("base"), artifact("identity"), artifact("mask")
         request = ImageGenerationRequest(

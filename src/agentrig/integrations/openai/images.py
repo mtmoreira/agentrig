@@ -15,6 +15,7 @@ from agentrig.capabilities import (
     DataRetention,
     ImageGenerationRequest,
     ImageGenerationResult,
+    ImageGenerationSettings,
     ImageInputFidelity,
     ImageInputRole,
     ImageOperation,
@@ -230,9 +231,7 @@ class OpenAIImageGenerator:
             height=request.specification.size.height,
             output_media_type=request.specification.output_media_type,
             quality=settings.quality if settings is not None else ImageQuality.AUTO,
-            input_fidelity=(
-                settings.input_fidelity if settings is not None else None
-            ),
+            input_fidelity=_provider_input_fidelity(settings),
             sources=sources,
             idempotency_key=request.idempotency_key,
         )
@@ -372,7 +371,7 @@ def _validate_settings(request: ImageGenerationRequest) -> None:
         return
     if (
         settings.input_fidelity is not None
-        and settings.model not in {"gpt-image-1", "gpt-image-1.5"}
+        and settings.model not in {"gpt-image-1", "gpt-image-1.5", "gpt-image-2"}
     ):
         raise AgentRigError(
             Failure(
@@ -381,6 +380,20 @@ def _validate_settings(request: ImageGenerationRequest) -> None:
                 code="openai.image.input_fidelity_unsupported",
             )
         )
+
+
+def _provider_input_fidelity(
+    settings: ImageGenerationSettings | None,
+) -> ImageInputFidelity | None:
+    """Translate portable fidelity without sending unsupported provider flags.
+
+    GPT Image 2 applies high-fidelity reference handling automatically and rejects
+    the legacy ``input_fidelity`` request parameter. Retain the portable intent at
+    the AgentRig boundary while omitting only that provider-specific field.
+    """
+    if settings is None or settings.model == "gpt-image-2":
+        return None
+    return settings.input_fidelity
 
 
 def _role_bound_prompt(
