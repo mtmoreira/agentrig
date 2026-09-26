@@ -1,0 +1,159 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-rootless-package-audit",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "c5060a4ca350cd1fcce7316b50219800075b176a",
+  "qualification_lane": "owner-guest-package-parser-plus-managed-raw-tar-review",
+  "review_state": "exact-package-closure-reviewed-installation-pending",
+  "qualification_scope": "Audit the exact five acquired Ubuntu arm64 package archives through the guest's preinstalled dpkg-deb, retain decompressed control and payload streams, and independently review paths, permissions, scripts, triggers, links and copyright files before installation.",
+  "source_implementation_commits": {
+    "agentrig": "c5060a4ca350cd1fcce7316b50219800075b176a",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "runtime_identity": {
+    "architecture": "aarch64",
+    "configuration_sha256": "115e2b541f43c2aabf9ef16f58d9db939fd6d131c546370e8974b2f51e655ce4",
+    "guest_uid": 1000,
+    "instance": "managed-42b20000000000000000000000000005",
+    "state_root": "/private/tmp/or42b5",
+    "vm_type": "vz"
+  },
+  "reviewed_packages": [
+    {
+      "package": "fuse-overlayfs",
+      "version": "1.13-1",
+      "architecture": "arm64",
+      "maintainer_scripts": [],
+      "copyright_sha256": "cef09940b19fe97fe1633aefedda3747f9e641602c59a30061a69206a4cd11d4"
+    },
+    {
+      "package": "libslirp0",
+      "version": "4.7.0-1ubuntu3.1",
+      "architecture": "arm64",
+      "maintainer_scripts": [],
+      "triggers": ["activate-noawait ldconfig"],
+      "copyright_sha256": "72bbbaf2539f2ad3a568da80758a6417b119bee5b19b988f8d99e2b3b80ae4a3"
+    },
+    {
+      "package": "libsubid4",
+      "version": "1:4.13+dfsg1-4ubuntu3.2",
+      "architecture": "arm64",
+      "maintainer_scripts": [],
+      "triggers": ["activate-noawait ldconfig"],
+      "copyright_sha256": "a4c3e5b19700dd3cc5961663d204bd7150f65f913314682aede5931548c436d5"
+    },
+    {
+      "package": "slirp4netns",
+      "version": "1.2.1-1build2",
+      "architecture": "arm64",
+      "maintainer_scripts": [],
+      "copyright_sha256": "f72a3eff88cf0c297493eee881838cffc8eb0bca8a9d18b7744f8eee6f032e69"
+    },
+    {
+      "package": "uidmap",
+      "version": "1:4.13+dfsg1-4ubuntu3.2",
+      "architecture": "arm64",
+      "maintainer_scripts": [],
+      "copyright_sha256": "a4c3e5b19700dd3cc5961663d204bd7150f65f913314682aede5931548c436d5",
+      "setuid_files": [
+        {
+          "path": "usr/bin/newgidmap",
+          "mode": "4755",
+          "sha256": "2a14299af81868cb93f646ed490a7ded72b8289ee5bbed4b9f5767471880c89a"
+        },
+        {
+          "path": "usr/bin/newuidmap",
+          "mode": "4755",
+          "sha256": "b666fae0b2cf79b1db18db8f75f856c66271426900705df110fce053f6288631"
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "artifact_id": "m42b-rootless-package-audit.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-read-only-guest-parser",
+      "locator": "build/retained-evidence/m42b-rootless-package-audit-v1/report.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-final-status-and-checkpoints-verified",
+      "sha256": "88792b790d1cf5915662a728f1c2de4c94d2c34ff794e893a54597426917f705",
+      "size_bytes": 5191
+    },
+    {
+      "artifact_id": "m42b-rootless-package-audit.2",
+      "availability": "local-retained",
+      "evidence_lane": "owner-read-only-guest-parser",
+      "locator": "build/retained-evidence/m42b-rootless-package-audit-v1/audit.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-hash-size-verified",
+      "sha256": "cd92031b0568bf6c22909a8a5d911edaca7cd32bf31a7901f3dac325e7c51a30",
+      "size_bytes": 48346
+    },
+    {
+      "artifact_id": "m42b-rootless-package-audit.3",
+      "availability": "local-retained",
+      "evidence_lane": "managed-raw-tar-review",
+      "locator": "build/retained-evidence/m42b-rootless-package-audit-v1/managed-review.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "validated-against-all-raw-control-and-payload-tars",
+      "sha256": "40c15861219048056d26f860e5a658f4907b4eb9d8f85d3874301b90792b6b1a",
+      "size_bytes": 4429
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored package-audit collateral retained in the existing M42b milestone worktree."
+    }
+  },
+  "validation": {
+    "package_identity": "all five package names, exact versions, arm64 architecture and archive hashes matched acquisition",
+    "archive_safety": "all decompressed paths, types, links, sizes and member counts were bounded and independently reviewed",
+    "maintainer_scripts": "none present in any package",
+    "package_triggers": "only the shared-library ldconfig trigger is declared by libslirp0 and libsubid4",
+    "setuid_scope": "only newuidmap and newgidmap carry mode 4755; their exact payload hashes are recorded",
+    "copyrights": "all five packages include reviewed copyright files with recorded hashes",
+    "package_state": "all packages remained uninstalled throughout the audit",
+    "runtime_stop": "exact instance independently observed Stopped after the owner audit",
+    "forward_teardown": "both exact host socket paths independently observed absent after stop"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": false,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "Package audit does not authorize or prove installation.",
+    "The audited setuid scope is required for rootless subordinate-ID mapping but becomes an installed privileged-file effect only after separate approval.",
+    "The upstream dockerd-rootless-setuptool.sh remains excluded from installation and execution.",
+    "No downloaded Docker binary or runtime script has been executed.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "reviewed rootless runtime installation",
+    "rootless daemon live qualification",
+    "simulator image acquisition and visibility",
+    "production control channel and retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}

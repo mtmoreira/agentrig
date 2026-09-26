@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 import unittest
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 from agentrig.agents import (
     AgentContract,
@@ -17,6 +19,10 @@ from agentrig.capabilities import (
     CapabilityKind,
     CapabilityRequirements,
     DataRetention,
+    TextGenerationRequest,
+    TextGenerator,
+    TextMessage,
+    TextMessageRole,
 )
 from agentrig.core import (
     CancellationSource,
@@ -27,12 +33,17 @@ from agentrig.core import (
     FailureKind,
     InMemoryEventSink,
     NoOpRedactionPolicy,
+    PrivateTraceCapture,
+    PrivateTraceRecord,
+    AgentRigError,
+    Failure,
     RunContext,
     RunId,
 )
 from agentrig.integrations.ollama import (
     OLLAMA_AGENT_RUNTIME_CAPABILITY,
     OLLAMA_CLIENT_VERSION,
+    OLLAMA_TEXT_GENERATION_CAPABILITY,
     OllamaAgentRuntime,
     OllamaAuthenticationSource,
     OllamaChatMessage,
@@ -41,6 +52,7 @@ from agentrig.integrations.ollama import (
     OllamaClient,
     OllamaFinishReason,
     OllamaRuntimeOptions,
+    OllamaTextGenerator,
 )
 
 
@@ -201,6 +213,13 @@ def create_runtime(
 
 
 class OllamaContractTest(unittest.TestCase):
+    def test_assistant_messages_preserve_raw_repair_content(self) -> None:
+        message = OllamaChatMessage(role="assistant", content="  {bad\n")
+        self.assertEqual(message.content, "  {bad\n")
+        self.assertNotIn("{bad", repr(message))
+        with self.assertRaises(ValueError):
+            OllamaChatMessage(role="user", content="  ")
+
     def test_declares_conservative_structured_runtime_capability(self) -> None:
         descriptor = OLLAMA_AGENT_RUNTIME_CAPABILITY
 
@@ -280,6 +299,125 @@ class OllamaContractTest(unittest.TestCase):
         self.assertNotIn("private prompt", repr(request))
 
 
+class OllamaTextGeneratorTest(unittest.TestCase):
+    def test_private_capture_retains_raw_content_before_caller_decode(self) -> None:
+        records: list[PrivateTraceRecord] = []
+
+        class Recorder:
+            def record(self, record: PrivateTraceRecord) -> None:
+                records.append(record)
+
+        client = successful_client("  {not-json\n")
+        assert client.response is not None
+        client.response = replace(client.response, thinking="returned reasoning")
+        generator = OllamaTextGenerator(
+            client_factory=FakeFactory(client),
+            model="gemma-test",
+        )
+        context, _ = create_context()
+        context = replace(context, private_trace_capture=PrivateTraceCapture(
+            recorder=Recorder(), include_reasoning=True,
+        ))
+
+        result = asyncio.run(generator.generate(TextGenerationRequest(
+            prompt="Return JSON.",
+            output_schema={"type": "object"},
+        ), context))
+
+        self.assertEqual(result.text, "  {not-json\n")
+        self.assertEqual(
+            [record.kind for record in records],
+            ["provider.request", "provider.response"],
+        )
+        self.assertEqual(json.loads(records[1].content)["content"], "  {not-json\n")
+        self.assertEqual(json.loads(records[1].content)["thinking"], "returned reasoning")
+        self.assertTrue(client.requests[0].capture_reasoning)
+
+    def test_raw_schema_response_and_repair_history_are_not_decoded(self) -> None:
+        raw_content = "  {not-json\n"
+        client = successful_client(raw_content)
+        factory = FakeFactory(client)
+        generator = OllamaTextGenerator(
+            client_factory=factory,
+            model="gemma-test",
+            options=OllamaRuntimeOptions(temperature=0, think=False),
+        )
+        context, _ = create_context()
+        request = TextGenerationRequest(
+            messages=(
+                TextMessage(role=TextMessageRole.SYSTEM, text="Return JSON."),
+                TextMessage(role=TextMessageRole.USER, text="First try."),
+                TextMessage(role=TextMessageRole.ASSISTANT, text="  {bad\n"),
+                TextMessage(role=TextMessageRole.USER, text="Repair it."),
+            ),
+            output_schema={"type": "object"},
+            max_output_tokens=1536,
+        )
+
+        result = asyncio.run(generator.generate(request, context))
+
+        self.assertIsInstance(generator, TextGenerator)
+        self.assertEqual(generator.descriptor, OLLAMA_TEXT_GENERATION_CAPABILITY)
+        self.assertEqual(factory.calls, 1)
+        self.assertEqual(result.text, raw_content)
+        self.assertEqual(result.usage.input_tokens, 12)
+        self.assertEqual(client.closes, 1)
+        chat = client.requests[0]
+        self.assertEqual(
+            [(item.role, item.content) for item in chat.messages],
+            [("system", "Return JSON."), ("user", "First try."),
+             ("assistant", "  {bad\n"), ("user", "Repair it.")],
+        )
+        self.assertEqual(chat.output_schema, {"type": "object"})
+        self.assertEqual(chat.options, {"temperature": 0.0, "num_predict": 1536})
+        self.assertIs(chat.think, False)
+
+    def test_preflight_and_provider_failure_never_retry(self) -> None:
+        client = FakeClient(error=AgentRigError(Failure(
+            kind=FailureKind.TRANSIENT_PROVIDER,
+            code="ollama.request_failed",
+            message="Ollama request failed",
+        )))
+        factory = FakeFactory(client)
+        generator = OllamaTextGenerator(client_factory=factory, model="gemma-test")
+        context, _ = create_context()
+
+        with self.assertRaises(AgentRigError) as missing_schema:
+            asyncio.run(generator.generate(TextGenerationRequest(prompt="hello"), context))
+        self.assertEqual(missing_schema.exception.failure.code, "ollama.output_schema_required")
+        self.assertEqual(factory.calls, 0)
+
+        request = TextGenerationRequest(prompt="hello", output_schema={"type": "object"})
+        with self.assertRaises(AgentRigError) as failed:
+            asyncio.run(generator.generate(request, context))
+        self.assertEqual(failed.exception.failure.code, "ollama.request_failed")
+        self.assertEqual(factory.calls, 1)
+        self.assertEqual(len(client.requests), 1)
+        self.assertEqual(client.closes, 1)
+
+    def test_inflight_cancellation_is_typed_and_closes_client(self) -> None:
+        source = CancellationSource()
+        client = FakeClient(block=True)
+        factory = FakeFactory(client)
+        generator = OllamaTextGenerator(client_factory=factory, model="gemma-test")
+        context, _ = create_context(source=source)
+        request = TextGenerationRequest(prompt="hello", output_schema={"type": "object"})
+
+        async def run_and_cancel() -> None:
+            task = asyncio.create_task(generator.generate(request, context))
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            source.cancel("caller stopped")
+            with self.assertRaises(AgentRigError) as stopped:
+                await task
+            self.assertEqual(stopped.exception.failure.kind, FailureKind.CANCELLED)
+
+        asyncio.run(run_and_cancel())
+        self.assertEqual(factory.calls, 1)
+        self.assertTrue(client.cancelled)
+        self.assertEqual(client.closes, 1)
+
+
 class OllamaAgentRuntimeTest(unittest.TestCase):
     def test_executes_exact_structured_request_and_emits_safe_usage(self) -> None:
         client = successful_client()
@@ -310,6 +448,7 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
                 "provider": "ollama",
                 "model": "gemma-test",
                 "finish_reason": "stop",
+                "elapsed_ms": "0",
             },
         )
         request = client.requests[0]
@@ -371,6 +510,78 @@ class OllamaAgentRuntimeTest(unittest.TestCase):
                 self.assertEqual(sink.events, ())
 
         self.assertEqual(factory.calls, 0)
+
+    def test_private_capture_retains_invalid_response_and_native_timings(self) -> None:
+        records: list[PrivateTraceRecord] = []
+
+        class Recorder:
+            def record(self, record: PrivateTraceRecord) -> None:
+                records.append(record)
+
+        client = successful_client("synthetic invalid JSON")
+        assert client.response is not None
+        client.response = replace(client.response, thinking="synthetic provider-emitted thought",
+                                  total_duration_ns=900, load_duration_ns=200,
+                                  prompt_eval_duration_ns=300, eval_duration_ns=400)
+        runtime, _ = create_runtime(client)
+        context, sink = create_context()
+        context = replace(context, private_trace_capture=PrivateTraceCapture(
+            recorder=Recorder(), include_reasoning=True))
+        result = asyncio.run(runtime.execute(create_request(), context))
+        self.assertEqual(result.result.failure.code, "ollama.invalid_output")  # type: ignore[union-attr]
+        self.assertEqual(result.provider_metadata["eval_duration_ns"], "400")
+        self.assertEqual(result.usage.input_tokens, 12)
+        self.assertEqual([record.kind for record in records], ["provider.request", "provider.response"])
+        self.assertEqual(json.loads(records[1].content)["content"], "synthetic invalid JSON")
+        self.assertEqual(json.loads(records[1].content)["thinking"], "synthetic provider-emitted thought")
+        self.assertFalse(client.requests[0].think)
+        self.assertTrue(client.requests[0].capture_reasoning)
+        self.assertNotIn("synthetic", repr(sink.events))
+
+    def test_missing_usage_is_unavailable_and_capture_is_disabled_by_default(self) -> None:
+        client = successful_client()
+        assert client.response is not None
+        client.response = replace(client.response, input_tokens=None, output_tokens=None)
+        runtime, _ = create_runtime(client)
+        context, _ = create_context()
+        result = asyncio.run(runtime.execute(create_request(), context))
+        self.assertFalse(result.usage.is_reported)
+        self.assertIsNone(result.usage.total_tokens)
+        self.assertFalse(client.requests[0].capture_reasoning)
+
+    def test_json_whitespace_is_valid_and_empty_text_is_a_structured_output_failure(self) -> None:
+        for text, success in ((" \n{\"result\":\"complete\"}\n", True), ("", False)):
+            runtime, _ = create_runtime(successful_client(text))
+            context, _ = create_context()
+            result = asyncio.run(runtime.execute(create_request(), context))
+            self.assertEqual(result.result.is_success, success)
+            if not success:
+                self.assertEqual(result.result.failure.code, "ollama.invalid_output")  # type: ignore[union-attr]
+
+    def test_hanging_close_is_bounded_and_keeps_usage_or_primary_cancellation(self) -> None:
+        class HangingCloseClient(FakeClient):
+            close_cancelled = False
+
+            async def close(self) -> None:
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    self.close_cancelled = True
+
+        for primary in (None, AgentRigError(Failure(kind=FailureKind.CANCELLED, message="caller stopped"))):
+            client = HangingCloseClient(response=successful_client().response, error=primary)
+            runtime, _ = create_runtime(client)
+            context, sink = create_context()
+            with patch('agentrig.integrations.ollama.runtime._CLIENT_CLOSE_GRACE_SECONDS', 0.001):
+                result = asyncio.run(runtime.execute(create_request(), context))
+            self.assertTrue(client.close_cancelled)
+            self.assertEqual(result.provider_metadata['cleanup_status'], 'timeout')
+            self.assertEqual(sink.events[-1].attributes['cleanup_status'], 'timeout')
+            if primary is None:
+                self.assertEqual(result.result.failure.code, 'ollama.client_close_timeout')  # type: ignore[union-attr]
+                self.assertEqual(result.usage.total_tokens, 16)
+            else:
+                self.assertEqual(result.result.failure.kind, FailureKind.CANCELLED)  # type: ignore[union-attr]
 
     def test_invalid_output_and_transport_errors_are_sanitized(self) -> None:
         invalid_runtime, _ = create_runtime(successful_client("private prose"))

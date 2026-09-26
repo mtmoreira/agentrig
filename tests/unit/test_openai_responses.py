@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import unittest
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
+from unittest.mock import patch
 
 from agentrig.capabilities import (
     DataRetention,
@@ -14,12 +16,17 @@ from agentrig.capabilities import (
 )
 from agentrig.core import (
     ArtifactId,
+    AgentRigError,
     ArtifactRef,
     CancellationSource,
     JsonValue,
     ResolvedArtifact,
     RunContext,
     RunId,
+    PrivateTraceCapture,
+    PrivateTraceRecord,
+    FailureKind,
+    InMemoryEventSink,
 )
 from agentrig.integrations.openai import (
     OPENAI_RESPONSES_STRUCTURED_CAPABILITY,
@@ -124,6 +131,67 @@ class Factory:
 
 
 class OpenAIResponsesGeneratorTest(unittest.TestCase):
+    def test_hanging_close_is_bounded_and_available_response_is_already_captured(self) -> None:
+        records: list[PrivateTraceRecord] = []
+
+        class Recorder:
+            def record(self, record: PrivateTraceRecord) -> None:
+                records.append(record)
+
+        class HangingCloseClient(Client):
+            close_cancelled = False
+
+            async def close(self) -> None:
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    self.close_cancelled = True
+
+        client = HangingCloseClient(OpenAIResponsesResult(
+            output_text='{"description":"fixture"}', model='vision-model',
+            status=OpenAIResponsesStatus.COMPLETED, input_tokens=20, output_tokens=5))
+        generator = OpenAIResponsesStructuredGenerator[str](
+            client_factory=Factory(client), artifact_resolver=Resolver(image()), model='vision-model')
+        request = StructuredGenerationRequest(input=TextGenerationRequest(prompt='synthetic input'), output_schema=schema())
+        sink = InMemoryEventSink()
+        run = replace(context(), event_sink=sink,
+            private_trace_capture=PrivateTraceCapture(recorder=Recorder()))
+        with patch('agentrig.integrations.openai.responses._CLIENT_CLOSE_GRACE_SECONDS', 0.001):
+            with self.assertRaises(AgentRigError) as raised:
+                asyncio.run(generator.generate(request, run))
+        self.assertEqual(raised.exception.failure.code, 'openai.responses.client_close_timeout')
+        self.assertEqual(raised.exception.failure.kind, FailureKind.DEADLINE_EXCEEDED)
+        self.assertTrue(client.close_cancelled)
+        self.assertEqual(json.loads(records[-1].content)['output_text'], '{"description":"fixture"}')
+        self.assertEqual(sink.events[-1].attributes['input_tokens'], 20)
+        self.assertEqual(sink.events[-1].attributes['cleanup_status'], 'timeout')
+
+    def test_private_capture_survives_structured_output_rejection_without_image_bytes(self) -> None:
+        records: list[PrivateTraceRecord] = []
+
+        class Recorder:
+            def record(self, record: PrivateTraceRecord) -> None:
+                records.append(record)
+
+        client = Client(OpenAIResponsesResult(
+            output_text="synthetic invalid JSON", model="vision-model",
+            status=OpenAIResponsesStatus.COMPLETED, input_tokens=20, output_tokens=5,
+            cached_input_tokens=2, reasoning_tokens=1, reasoning_summary="synthetic summary"))
+        generator = OpenAIResponsesStructuredGenerator[str](
+            client_factory=Factory(client), artifact_resolver=Resolver(image()), model="vision-model")
+        request = StructuredGenerationRequest(input=TextGenerationRequest(
+            prompt="synthetic input", input_artifacts=(image(),)), output_schema=schema())
+        run = replace(context(), private_trace_capture=PrivateTraceCapture(
+            recorder=Recorder(), include_reasoning=True))
+        with self.assertRaises(AgentRigError) as raised:
+            asyncio.run(generator.generate(request, run))
+        self.assertEqual(raised.exception.failure.code, "openai.responses.invalid_output")
+        self.assertEqual([record.kind for record in records], ["provider.request", "provider.response"])
+        self.assertEqual(json.loads(records[1].content)["output_text"], "synthetic invalid JSON")
+        self.assertEqual(json.loads(records[1].content)["reasoning_summary"], "synthetic summary")
+        self.assertNotIn("private-image", records[0].content)
+        self.assertTrue(client.requests[0].capture_reasoning)
+
     def test_declares_conservative_multimodal_contract(self) -> None:
         descriptor = OPENAI_RESPONSES_STRUCTURED_CAPABILITY
         self.assertEqual(descriptor.data_retention, DataRetention.PROVIDER_MANAGED)

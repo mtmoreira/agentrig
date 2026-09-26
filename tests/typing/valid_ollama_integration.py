@@ -9,8 +9,13 @@ from agentrig.capabilities import (
     CapabilityFeature,
     CapabilityKind,
     CapabilityRequirements,
+    TextGenerationRequest,
+    TextGenerator,
+    TextMessage,
+    TextMessageRole,
 )
-from agentrig.core import EffectProfile
+from agentrig.core import EffectProfile, PrivateTraceCapture, PrivateTraceRecord, PrivateTraceRecorder, RunContext
+from agentrig.integrations import PersistentProcessSession, ProcessSpec
 from agentrig.integrations.ollama import (
     OLLAMA_AGENT_RUNTIME_CAPABILITY,
     OllamaAgentRuntime,
@@ -21,6 +26,7 @@ from agentrig.integrations.ollama import (
     OllamaClientFactory,
     OllamaFinishReason,
     OllamaRuntimeOptions,
+    OllamaTextGenerator,
 )
 from agentrig.integrations.ollama.sdk import OllamaSdkClientFactory
 
@@ -47,6 +53,16 @@ class FakeFactory:
 class ExampleAuthenticationSource:
     def resolve_headers(self) -> dict[str, str]:
         return {"X-Application-Auth": "resolved-at-runtime"}
+
+
+class ExamplePrivateRecorder:
+    def record(self, record: PrivateTraceRecord) -> None:
+        # Application-owned private storage is deliberately outside this fixture.
+        del record
+
+
+private_recorder: PrivateTraceRecorder = ExamplePrivateRecorder()
+private_capture = PrivateTraceCapture(recorder=private_recorder, include_reasoning=True)
 
 
 factory: OllamaClientFactory = FakeFactory()
@@ -85,3 +101,35 @@ requirements = CapabilityRequirements(
     features=frozenset({CapabilityFeature.USAGE_REPORTING}),
 )
 requirements.require(OLLAMA_AGENT_RUNTIME_CAPABILITY)
+
+text_generator: TextGenerator = OllamaTextGenerator(
+    client_factory=factory,
+    model="gemma-test",
+    options=OllamaRuntimeOptions(temperature=0, think=False),
+)
+raw_schema_request = TextGenerationRequest(
+    messages=(
+        TextMessage(role=TextMessageRole.USER, text="Return JSON."),
+        TextMessage(role=TextMessageRole.ASSISTANT, text="{broken"),
+        TextMessage(role=TextMessageRole.USER, text="Repair it."),
+    ),
+    output_schema={"type": "object"},
+    max_output_tokens=1536,
+)
+
+
+async def generate_raw(context: RunContext) -> str:
+    return (await text_generator.generate(raw_schema_request, context)).text
+
+
+session = PersistentProcessSession(ProcessSpec(
+    argv=("/usr/bin/python3", "-I", "-S", "worker.py"),
+    cwd="/private/tmp/agentrig-example",
+))
+
+
+async def use_session(context: RunContext) -> object:
+    await session.start(context)
+    result = await session.request({"value": 1}, context)
+    await session.shutdown(context)
+    return result

@@ -1,0 +1,136 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-rootless-install",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "d1d5c660d79a123da01a4e985b9f551841884099",
+  "qualification_lane": "owner-reviewed-installation-plus-managed-receipt-review",
+  "review_state": "exact-runtime-installed-disabled-daemon-live-qualification-pending",
+  "qualification_scope": "Install the exact audited Ubuntu Noble rootless prerequisites and ten hash-bound Docker 29.8.0 arm64 runtime files in the task-owned Lima guest, install a disabled user unit, and independently verify the receipt and clean stop without executing the downloaded runtime.",
+  "source_implementation_commits": {
+    "agentrig": "d1d5c660d79a123da01a4e985b9f551841884099",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "runtime_identity": {
+    "runtime_id": "docker-29.8.0-arm64",
+    "architecture": "aarch64",
+    "configuration_sha256": "115e2b541f43c2aabf9ef16f58d9db939fd6d131c546370e8974b2f51e655ce4",
+    "guest_uid": 1000,
+    "instance": "managed-42b20000000000000000000000000005",
+    "state_root": "/private/tmp/or42b5",
+    "vm_type": "vz"
+  },
+  "installed_closure": {
+    "runtime_root": "/home/agentrig/.local/lib/openrtl/docker-29.8.0",
+    "runtime_manifest_sha256": "6f338011f1551461d8f2779dd92804ab4b8c90402a66fe33624127d540a1fa91",
+    "runtime_file_count": 10,
+    "packages": [
+      "fuse-overlayfs=1.13-1",
+      "libslirp0=4.7.0-1ubuntu3.1",
+      "libsubid4=1:4.13+dfsg1-4ubuntu3.2",
+      "slirp4netns=1.2.1-1build2",
+      "uidmap=1:4.13+dfsg1-4ubuntu3.2"
+    ],
+    "privileged_files": [
+      {
+        "path": "/usr/bin/newgidmap",
+        "mode": "4755",
+        "sha256": "2a14299af81868cb93f646ed490a7ded72b8289ee5bbed4b9f5767471880c89a"
+      },
+      {
+        "path": "/usr/bin/newuidmap",
+        "mode": "4755",
+        "sha256": "b666fae0b2cf79b1db18db8f75f856c66271426900705df110fce053f6288631"
+      }
+    ],
+    "service_unit": "/home/agentrig/.config/systemd/user/openrtl-docker.service",
+    "service_unit_sha256": "9f312bdd4f1f8858889755ddcb98426f9608bf5844d543548e4fa8aa36d325e1",
+    "service_active": false,
+    "service_enabled": false,
+    "guest_docker_socket_present": false
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-rootless-install.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-reviewed-installation",
+      "locator": "build/retained-evidence/m42b-rootless-install-v1/report.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-final-status-and-checkpoints-verified",
+      "sha256": "bb91b19fdfb06cf0ae3f99882cddc55005288972654b70401cbdbfccb03b24e2",
+      "size_bytes": 6653
+    },
+    {
+      "artifact_id": "m42b-rootless-install.2",
+      "availability": "local-retained",
+      "evidence_lane": "owner-reviewed-installation",
+      "locator": "build/retained-evidence/m42b-rootless-install-v1/receipt.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-matched-to-reviewed-package-runtime-and-unit-manifests",
+      "sha256": "bf59bbcd3a53f96cc5b8ad367a2193a860f26c3d542112de0cfd47c56db85070",
+      "size_bytes": 2732
+    },
+    {
+      "artifact_id": "m42b-rootless-install.3",
+      "availability": "local-retained",
+      "evidence_lane": "managed-receipt-review",
+      "locator": "build/retained-evidence/m42b-rootless-install-v1/managed-review.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "managed-session",
+      "retention_class": "session-local",
+      "review_state": "receipt-report-manifest-unit-and-stopped-state-independently-verified",
+      "sha256": "adb70a750f4af452434a24eda09eb6fc2df91d15b9ab639d78cf4734982db217",
+      "size_bytes": 1638
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored installation collateral retained in the existing M42b milestone worktree."
+    }
+  },
+  "validation": {
+    "receipt": "parsed and matched exactly to the reviewed runtime manifest, package identities, privileged-file hashes and service-unit hash",
+    "package_state": "all five exact arm64 packages are installed and dpkg audit and verify completed successfully",
+    "runtime_files": "all ten exact versioned runtime files have the reviewed hashes and mode 0755",
+    "setuid_scope": "newuidmap and newgidmap are the reviewed root-owned mode-4755 payloads",
+    "service_state": "openrtl-docker.service is installed, disabled and inactive; the guest Docker endpoint is absent",
+    "runtime_stop": "exact instance independently observed Stopped after installation",
+    "forward_teardown": "both exact host socket paths independently observed absent after stop",
+    "downloaded_execution": "no downloaded Docker binary or runtime script was executed"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": true,
+    "local_source_implementation": false,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "Installation does not qualify or start the rootless Docker daemon.",
+    "The upstream dockerd-rootless-setuptool.sh was not installed or executed.",
+    "No simulator image has been acquired or observed.",
+    "Production control and retirement behavior remain unqualified against the real daemon.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "rootless daemon live qualification",
+    "simulator image acquisition and visibility",
+    "production control channel and retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}

@@ -315,6 +315,26 @@ class CapabilityDescriptorTest(unittest.TestCase):
 
 
 class TextGenerationRequestTest(unittest.TestCase):
+    def test_raw_assistant_repair_and_schema_are_preserved_privately(self) -> None:
+        schema: dict[str, object] = {"type": "object"}
+        request = TextGenerationRequest(
+            messages=(
+                TextMessage(role=TextMessageRole.USER, text="Return JSON."),
+                TextMessage(role=TextMessageRole.ASSISTANT, text="  {bad\n"),
+                TextMessage(role=TextMessageRole.USER, text="Repair it."),
+            ),
+            output_schema=schema,  # type: ignore[arg-type]
+        )
+        schema["type"] = "string"
+
+        self.assertEqual(request.messages[1].text, "  {bad\n")
+        self.assertEqual(request.output_schema, {"type": "object"})
+        self.assertIn(CapabilityFeature.STRUCTURED_OUTPUT, request.requirements.features)
+        self.assertNotIn("{bad", repr(request))
+        self.assertNotIn("object", repr(request))
+        with self.assertRaises(ValueError):
+            TextGenerationRequest(prompt="hello", output_schema={})
+
     def test_message_and_finish_vocabularies_have_stable_wire_values(self) -> None:
         self.assertEqual(
             tuple(item.value for item in TextMessageRole),

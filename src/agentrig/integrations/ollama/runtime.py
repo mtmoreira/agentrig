@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Mapping
+from dataclasses import replace
 
 from agentrig.agents import (
     AgentExecutionRequest,
@@ -33,6 +34,7 @@ from agentrig.integrations.ollama.ollama import (
 )
 
 _PROVIDER = "ollama"
+_CLIENT_CLOSE_GRACE_SECONDS = 1.0
 
 
 class OllamaAgentRuntime:
@@ -88,14 +90,48 @@ class OllamaAgentRuntime:
             return AgentExecutionResult.from_failure(failure)
 
         _emit(context, EventKind.PROVIDER_CALL_STARTED, _base_attributes(request))
+        started_at = context.clock.monotonic()
         client: OllamaClient | None = None
+        cleanup_failure: Failure | None = None
         try:
+            capture = context.private_trace_capture
+            chat_request = self._chat_request(request, capture_reasoning=(
+                capture is not None and capture.include_reasoning))
+            if capture is not None:
+                capture.record(context, kind="provider.request", metadata={
+                    "provider": _PROVIDER, "model": self._model,
+                    "output_schema": request.contract.output_schema,
+                    "prompt_version": request.contract.prompt_version,
+                    "agent_id": request.contract.agent_id,
+                }, content={
+                    "messages": [{"role": message.role, "content": message.content}
+                                 for message in chat_request.messages],
+                    "output_schema": dict(chat_request.output_schema),
+                    "options": dict(chat_request.options), "think": chat_request.think,
+                    "keep_alive": chat_request.keep_alive, "stream": False,
+                })
             client = self._client_factory.create()
             response = await _chat_with_constraints(
                 client,
-                self._chat_request(request),
+                chat_request,
                 context,
             )
+            if capture is not None:
+                capture.record(context, kind="provider.response", metadata={
+                    "provider": _PROVIDER, "model": self._model,
+                }, content={
+                    "content": response.content,
+                    "reported_model": response.model,
+                    "created_at": response.created_at,
+                    "thinking": response.thinking if capture.include_reasoning else None,
+                    "reasoning_capture": "requested" if capture.include_reasoning else "disabled",
+                    "finish_reason": response.finish_reason.value,
+                    "input_tokens": response.input_tokens, "output_tokens": response.output_tokens,
+                    "total_duration_ns": response.total_duration_ns,
+                    "load_duration_ns": response.load_duration_ns,
+                    "prompt_eval_duration_ns": response.prompt_eval_duration_ns,
+                    "eval_duration_ns": response.eval_duration_ns,
+                })
             result = _decode_response(response, expected_model=self._model)
             _emit_usage(context, request, result.usage)
         except AgentRigError as error:
@@ -114,9 +150,31 @@ class OllamaAgentRuntime:
         finally:
             if client is not None:
                 try:
-                    await client.close()
+                    await asyncio.wait_for(client.close(), timeout=_CLIENT_CLOSE_GRACE_SECONDS)
+                except asyncio.TimeoutError:
+                    cleanup_failure = Failure(
+                        kind=FailureKind.DEADLINE_EXCEEDED, code="ollama.client_close_timeout",
+                        message="Ollama client cleanup did not finish within its bound",
+                    )
                 except Exception:
-                    pass
+                    cleanup_failure = Failure(
+                        kind=FailureKind.TRANSIENT_PROVIDER, code="ollama.client_close_failed",
+                        message="Ollama client cleanup did not complete",
+                    )
+        if cleanup_failure is not None:
+            metadata = {**result.provider_metadata, "cleanup_status": (
+                "timeout" if cleanup_failure.kind is FailureKind.DEADLINE_EXCEEDED else "failed")}
+            if result.result.is_success:
+                result = AgentExecutionResult.from_failure(
+                    cleanup_failure, usage=result.usage, artifacts=result.result.artifacts,
+                    provider_metadata=metadata)
+            else:
+                result = replace(result, provider_metadata=metadata)
+        result = replace(result, provider_metadata={
+            "provider": _PROVIDER, "model": self._model,
+            **result.provider_metadata,
+            "elapsed_ms": str(max(0, int((context.clock.monotonic() - started_at) * 1000))),
+        })
         _emit_completed(context, request, result)
         return result
 
@@ -136,7 +194,8 @@ class OllamaAgentRuntime:
             return _invalid("Ollama runtime requires network authority", "ollama.network_permission_mismatch")
         return None
 
-    def _chat_request(self, request: AgentExecutionRequest) -> OllamaChatRequest:
+    def _chat_request(self, request: AgentExecutionRequest, *,
+                      capture_reasoning: bool = False) -> OllamaChatRequest:
         return OllamaChatRequest(
             model=self._model,
             messages=(
@@ -147,6 +206,7 @@ class OllamaAgentRuntime:
             options=self._options.to_provider_options(),
             think=self._options.think,
             keep_alive=self._options.keep_alive,
+            capture_reasoning=capture_reasoning,
         )
 
 
@@ -219,6 +279,12 @@ def _decode_response(
         "model": expected_model,
         "finish_reason": response.finish_reason.value,
     }
+    for name in ("total_duration_ns", "load_duration_ns", "prompt_eval_duration_ns", "eval_duration_ns"):
+        value = getattr(response, name)
+        if value is not None:
+            metadata[name] = str(value)
+    if response.created_at is not None:
+        metadata["created_at"] = response.created_at
     usage = AgentRuntimeUsage(
         input_tokens=response.input_tokens,
         output_tokens=response.output_tokens,
@@ -284,6 +350,8 @@ def _emit_usage(
         attributes["cached_input_tokens"] = usage.cached_input_tokens
     if usage.output_tokens is not None:
         attributes["output_tokens"] = usage.output_tokens
+    if usage.reasoning_tokens is not None:
+        attributes["reasoning_tokens"] = usage.reasoning_tokens
     _emit(context, EventKind.USAGE_REPORTED, attributes)
 
 
@@ -301,6 +369,13 @@ def _emit_completed(
         attributes["failure_kind"] = failure.kind.value
         if failure.code is not None:
             attributes["failure_code"] = failure.code
+    for name in ("elapsed_ms", "total_duration_ns", "load_duration_ns", "prompt_eval_duration_ns", "eval_duration_ns"):
+        if name in result.provider_metadata:
+            attributes[name] = int(result.provider_metadata[name])
+    if "cleanup_status" in result.provider_metadata:
+        attributes["cleanup_status"] = result.provider_metadata["cleanup_status"]
+    if "created_at" in result.provider_metadata:
+        attributes["created_at"] = result.provider_metadata["created_at"]
     _emit(context, EventKind.PROVIDER_CALL_COMPLETED, attributes)
 
 

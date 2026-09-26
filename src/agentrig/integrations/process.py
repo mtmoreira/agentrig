@@ -17,7 +17,8 @@ from agentrig.capabilities import (
     ToolResult,
     ToolSchema,
 )
-from agentrig.core import EffectProfile, Failure, FailureKind, JsonValue, RunContext
+from agentrig.core import DeadlineExceeded, EffectProfile, Failure, FailureKind, JsonValue, RunCancelled, RunContext
+from agentrig.integrations.bounded_process import ProcessFailure, ProcessSpec, run_bounded_process
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -144,7 +145,7 @@ class CommandTool:
     ) -> ToolResult[CommandOutput]:
         if invocation.contract != self._contract:
             raise ValueError("command invocation contract does not match tool")
-        process: asyncio.subprocess.Process | None = None
+        execution_started = False
         try:
             context.cancellation.raise_if_cancelled()
             if context.deadline is not None:
@@ -163,74 +164,39 @@ class CommandTool:
                 name: supplied_environment[name]
                 for name in sorted(supplied_environment)
             }
-            process = await asyncio.create_subprocess_exec(
-                self._executable,
-                *self._base_arguments,
-                *arguments,
-                cwd=self._working_directory,
-                env=environment,
-                stdin=asyncio.subprocess.DEVNULL,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                start_new_session=True,
-            )
-            timeout = self._timeout_seconds
-            if context.deadline is not None:
-                timeout = min(
-                    timeout,
-                    context.deadline.remaining_seconds(context.clock),
-                )
-            communicate = asyncio.create_task(process.communicate())
-            cancelled = asyncio.create_task(context.cancellation.wait_cancelled())
-            try:
-                done, _ = await asyncio.wait(
-                    {communicate, cancelled},
-                    timeout=timeout,
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-                if communicate not in done:
-                    await _terminate(process)
-                    code = (
-                        "command.cancelled"
-                        if cancelled in done
-                        else "command.deadline_exceeded"
-                    )
-                    kind = (
-                        FailureKind.CANCELLED
-                        if cancelled in done
-                        else FailureKind.DEADLINE_EXCEEDED
-                    )
-                    return ToolResult.from_failure(
-                        invocation=invocation,
-                        failure=Failure(
-                            kind=kind,
-                            message="command execution did not complete",
-                            code=code,
-                        ),
-                    )
-                stdout, stderr = communicate.result()
-            finally:
-                communicate.cancel()
-                cancelled.cancel()
-                await asyncio.gather(
-                    communicate,
-                    cancelled,
-                    return_exceptions=True,
-                )
-            output = _bounded_output(
-                process.returncode,
-                stdout,
-                stderr,
-                self._max_output_bytes,
-            )
+            spec = ProcessSpec(
+                argv=(self._executable, *self._base_arguments, *arguments),
+                cwd=self._working_directory, environment=environment,
+                timeout_seconds=self._timeout_seconds, max_output_bytes=self._max_output_bytes,
+                reject_overflow=False)
+            execution_started = True
+            captured = await run_bounded_process(spec, context)
+            output = CommandOutput(exit_code=captured.exit_code,
+                stdout=captured.stdout.decode('utf-8', errors='replace'),
+                stderr=captured.stderr.decode('utf-8', errors='replace'),
+                truncated=captured.truncated)
             return ToolResult.succeeded(
                 invocation=invocation,
                 encoded_output=self._contract.output_schema.encode(output),
             )
+        except (RunCancelled, DeadlineExceeded) as error:
+            if not execution_started:
+                raise
+            # Preserve CommandTool's existing late cooperative cancellation and
+            # deadline result contract. The low-level runner uses native signals.
+            cancelled = isinstance(error, RunCancelled)
+            return ToolResult.from_failure(invocation=invocation, failure=Failure(
+                kind=FailureKind.CANCELLED if cancelled else FailureKind.DEADLINE_EXCEEDED,
+                message='command execution did not complete',
+                code='command.cancelled' if cancelled else 'command.deadline_exceeded'))
         except asyncio.CancelledError:
-            if process is not None:
-                await _terminate(process)
             raise
+        except ProcessFailure as error:
+            if error.code == 'process_timeout':
+                return ToolResult.from_failure(invocation=invocation, failure=Failure(
+                    kind=FailureKind.DEADLINE_EXCEEDED, message='command execution did not complete',
+                    code='command.deadline_exceeded'))
+            return _failure(invocation, 'command execution failed', 'command.execution_failed')
         except (OSError, ValueError):
             return _failure(
                 invocation,
@@ -341,38 +307,6 @@ class DetachedCommandTool:
                 "command execution failed",
                 "command.execution_failed",
             )
-
-
-async def _terminate(process: asyncio.subprocess.Process) -> None:
-    if process.returncode is not None:
-        return
-    try:
-        process.terminate()
-        await asyncio.wait_for(process.wait(), timeout=1.0)
-    except (ProcessLookupError, TimeoutError):
-        if process.returncode is None:
-            process.kill()
-            await process.wait()
-
-
-def _bounded_output(
-    exit_code: int | None,
-    stdout: bytes,
-    stderr: bytes,
-    bound: int,
-) -> CommandOutput:
-    combined = stdout + stderr
-    truncated = len(combined) > bound
-    remaining = bound
-    bounded_stdout = stdout[:remaining]
-    remaining -= len(bounded_stdout)
-    bounded_stderr = stderr[:remaining]
-    return CommandOutput(
-        exit_code=exit_code if exit_code is not None else -1,
-        stdout=bounded_stdout.decode("utf-8", errors="replace"),
-        stderr=bounded_stderr.decode("utf-8", errors="replace"),
-        truncated=truncated,
-    )
 
 
 def _input_schema(tool_id: str) -> ToolSchema[CommandInput]:

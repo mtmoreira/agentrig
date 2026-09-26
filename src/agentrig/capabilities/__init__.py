@@ -35,6 +35,15 @@ from agentrig.capabilities.image_generation import (
     ImageUsage,
 )
 from agentrig.capabilities.mcp import McpServerBinding, McpTransport, mcp_tool_id
+from agentrig.capabilities.backend_artifacts import BackendArtifact, BackendArtifactAudit, BackendArtifactManifest
+from agentrig.capabilities.backend_operations import (
+    BackendOperation, BackendOperationJournal, BackendOperationWriter, JournaledLocalBackends,
+)
+from agentrig.capabilities.local_backend import (
+    BackendAction, BackendAuthority, BackendDescriptor, BackendEffect,
+    BackendFailure, BackendPlan, BackendRequest, BackendResult,
+    LocalBackend, LocalBackendCatalog, backend_digest, check_backend_call,
+)
 from agentrig.capabilities.retrieval import (
     RetrievalFilter,
     RetrievalMatch,
@@ -78,6 +87,25 @@ from agentrig.capabilities.tool import (
 )
 
 __all__ = (
+    "BackendArtifact",
+    "BackendArtifactAudit",
+    "BackendArtifactManifest",
+    "BackendOperation",
+    "BackendOperationJournal",
+    "BackendOperationWriter",
+    "JournaledLocalBackends",
+    "BackendAction",
+    "BackendAuthority",
+    "BackendDescriptor",
+    "BackendEffect",
+    "BackendFailure",
+    "BackendPlan",
+    "BackendRequest",
+    "BackendResult",
+    "LocalBackend",
+    "LocalBackendCatalog",
+    "backend_digest",
+    "check_backend_call",
     "CapabilityDescriptor",
     "CapabilityFeature",
     "CapabilityKind",

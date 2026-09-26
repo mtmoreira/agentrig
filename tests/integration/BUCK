@@ -1,6 +1,94 @@
 load("//build_defs:python_test.bzl", "agentrig_python_test")
 
 agentrig_python_test(
+    name = "guest_retirement",
+    scope = "integration",
+    srcs = ["__init__.py", "test_guest_retirement.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations", "//src/agentrig/core:core"],
+)
+
+agentrig_python_test(
+    name = "service_lifecycle",
+    scope = "integration",
+    srcs = ["__init__.py", "test_service_lifecycle.py", "test_guest_workspace.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "guest_service",
+    scope = "integration",
+    srcs = ["__init__.py", "test_guest_service.py", "test_guest_workspace.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "guest_operations",
+    scope = "integration",
+    srcs = ["__init__.py", "test_guest_operations.py", "test_guest_workspace.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "lima_configuration",
+    scope = "integration",
+    srcs = ["__init__.py", "test_lima_configuration.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "guest_workspace",
+    scope = "integration",
+    srcs = ["__init__.py", "test_guest_workspace.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "backend_artifacts",
+    scope = "integration",
+    srcs = ["__init__.py", "test_backend_artifacts.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "backend_staging",
+    scope = "integration",
+    srcs = ["__init__.py", "test_backend_staging.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "backend_journal",
+    scope = "integration",
+    srcs = ["__init__.py", "test_backend_journal.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations", "//src/agentrig/testing:testing"],
+)
+
+agentrig_python_test(
+    name = "bounded_process",
+    scope = "integration",
+    srcs = ["__init__.py", "test_bounded_process.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
+    name = "persistent_session",
+    scope = "integration",
+    srcs = ["__init__.py", "test_persistent_session.py"],
+    base_module = "tests.integration",
+    deps = ["//src/agentrig/integrations:integrations"],
+)
+
+agentrig_python_test(
     name = "codex_dependency",
     scope = "integration",
     srcs = [

@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import StrEnum
 from typing import Literal, Protocol, runtime_checkable
 
@@ -51,9 +52,12 @@ class OllamaChatMessage:
     content: str = field(repr=False)
 
     def __post_init__(self) -> None:
-        if self.role not in {"system", "user"}:
-            raise ValueError("Ollama message role must be system or user")
-        require_trimmed_string("Ollama message content", self.content)
+        if self.role not in {"system", "user", "assistant"}:
+            raise ValueError("Ollama message role must be system, user, or assistant")
+        if not isinstance(self.content, str) or (
+            self.role != "assistant" and not self.content.strip()
+        ):
+            raise ValueError("Ollama message content is invalid")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -135,8 +139,11 @@ class OllamaChatRequest:
     options: Mapping[str, JsonValue] = field(default_factory=dict)
     think: bool | Literal["low", "medium", "high"] | None = False
     keep_alive: float | str | None = None
+    capture_reasoning: bool = False
 
     def __post_init__(self) -> None:
+        if type(self.capture_reasoning) is not bool:
+            raise TypeError("Ollama capture reasoning choice must be boolean")
         require_trimmed_string("Ollama model", self.model)
         messages = tuple(self.messages)
         if not messages:
@@ -174,11 +181,18 @@ class OllamaChatResponse:
     content: str = field(repr=False)
     model: str
     finish_reason: OllamaFinishReason = OllamaFinishReason.OTHER
-    input_tokens: int = 0
-    output_tokens: int = 0
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_duration_ns: int | None = None
+    load_duration_ns: int | None = None
+    prompt_eval_duration_ns: int | None = None
+    eval_duration_ns: int | None = None
+    thinking: str | None = field(default=None, repr=False)
+    created_at: str | None = None
 
     def __post_init__(self) -> None:
-        require_trimmed_string("Ollama response content", self.content)
+        if not isinstance(self.content, str):
+            raise TypeError("Ollama response content must be text")
         require_trimmed_string("Ollama response model", self.model)
         if not isinstance(self.finish_reason, OllamaFinishReason):
             raise TypeError(
@@ -187,9 +201,19 @@ class OllamaChatResponse:
         for name, value in (
             ("input tokens", self.input_tokens),
             ("output tokens", self.output_tokens),
+            ("total duration", self.total_duration_ns),
+            ("load duration", self.load_duration_ns),
+            ("prompt evaluation duration", self.prompt_eval_duration_ns),
+            ("evaluation duration", self.eval_duration_ns),
         ):
-            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-                raise ValueError(f"Ollama {name} must be a non-negative integer")
+            if value is not None and (type(value) is not int or value < 0):
+                raise ValueError(f"Ollama {name} must be a non-negative integer or unavailable")
+        if self.thinking is not None and not isinstance(self.thinking, str):
+            raise TypeError("Ollama thinking must be text or unavailable")
+        if self.created_at is not None:
+            if (not isinstance(self.created_at, str) or len(self.created_at) > 64 or
+                datetime.fromisoformat(self.created_at).utcoffset() is None):
+                raise ValueError("Ollama creation timestamp must be a timezone-aware ISO timestamp")
 
 
 @runtime_checkable

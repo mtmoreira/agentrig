@@ -25,6 +25,11 @@ The central design statement is:
 
 ## 2. Scope and non-goals
 
+The optional [local backend boundary](local-backends.md) separates host execution
+setup from model-facing `AgentRuntime`. Its explicit catalog uses portable
+capabilities and digest-bound, invocation-local authority. The first Lima adapter
+is a blocked preparation review, not a qualified VM lifecycle implementation.
+
 AgentRig should provide:
 
 - Typed inputs and outputs at orchestration boundaries.
@@ -475,11 +480,37 @@ class Retriever(Protocol):
     ) -> RetrievalResult: ...
 ```
 
+`TextGenerationRequest.output_schema` is an optional structural constraint for
+callers that must retain the provider's raw text and perform their own decode,
+validation, or repair loop. It requires the `structured_output` feature but
+does not turn `TextGenerator` into `StructuredGenerator`: the result remains
+verbatim text, including malformed or empty assistant repair content. The
+Ollama text adapter makes one non-streaming call, returns that content without
+parsing or retrying, and keeps application semantics outside AgentRig.
+
+### 7.1 Persistent local process sessions
+
+`PersistentProcessSession` extends the trusted, no-shell `ProcessSpec` boundary
+when process startup cost must be amortized across serial requests. Its JSONL
+wire envelope is versioned and generic: readiness, health, request/response,
+shutdown, and correlation are AgentRig-owned; every payload is opaque JSON.
+The session applies one whole-operation bound from `RunContext` and
+`ProcessSpec`, bounds stdin/stdout/stderr, treats banners or malformed output as
+protocol failures, and reaps the owned process group before returning from any
+terminal path. It never retries or replays a request. A failed session requires
+an explicit `recover`, which always creates a fresh process.
+
+This is lifecycle containment for trusted adapters, not a sandbox. Application
+protocol meanings, business transactions, model schemas, scheduling, and
+prepare/activate/restore semantics remain outside AgentRig. Private process
+capture reuses `PrivateTraceCapture(include_process=True)`; ordinary events and
+exceptions remain content-free.
+
 These contracts intentionally differ. A coding result may contain a worktree
 change and validations; an image result contains image artifacts and generation
 metadata; a search result contains citations and retrieval metadata.
 
-### 7.1 Capability descriptors
+### 7.2 Capability descriptors
 
 Portable APIs must not imply that all implementations support every feature.
 Each implementation exposes a descriptor covering relevant facts such as:
@@ -901,6 +932,35 @@ Every supported integration requires:
 - Graders measure output; they do not grant permissions.
 - Human approval is explicit and scoped to a proposed action.
 - AgentRig does not weaken provider or operating-system sandboxing.
+
+Explicit private execution capture is a separate boundary from ordinary events.
+An application can attach `PrivateTraceCapture` to `RunContext`; the default is
+`None`, and children inherit the same application-owned recorder. Each immutable
+`PrivateTraceRecord` has lineage, a timestamp, a version, and bounded JSON text
+excluded from its representation. Credential-key and credential-shaped content
+redaction remains mandatory. Applications own private storage permissions,
+retention, deletion, and access control; capture must not be sent to public logs.
+
+The Ollama and OpenAI Responses adapters capture submitted text, schema and model
+settings, then returned output before application schema validation. Image bytes,
+authentication headers, credentials and raw transport exceptions are excluded.
+`include_reasoning=True` permits only reasoning text actually returned by Ollama
+or a returned OpenAI reasoning summary; it does not enable model thinking, request
+hidden reasoning, or fabricate unavailable content. Optional token details and
+Ollama native nanosecond durations remain unavailable when the provider does not
+report them. Cached and reasoning token counts are subsets of input and output
+totals and must not be added a second time.
+
+`include_process=True` additionally records actual bounded-process argv, working
+directory, output, exit status and elapsed time. Environment values are excluded;
+recognized credential flags and credential-shaped output are redacted. Capture
+does not grant tool or process authority. Detached processes and arbitrary tool
+implementations are not automatically instrumented. Timeout/cancellation output
+is unavailable when the underlying runner did not return a captured result.
+Content exceeding `max_content_bytes` is explicitly marked truncated; a truncated
+UTF-8 JSON prefix is display text, not a parseable or replayable request. Capture
+does not automatically retry any operation and recorder errors are normalized
+without their private exception text.
 
 ## 15. Build and packaging strategy
 

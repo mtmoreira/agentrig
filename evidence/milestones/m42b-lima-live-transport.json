@@ -1,0 +1,141 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-lima-live-transport",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "93c5fbbc36dd5cbda0601ca1535d2067f5508106",
+  "base_commit": "25513b24f8ed1c9b6bebe3ec512e693a495241e9",
+  "qualification_lane": "managed-offline-source-plus-owner-live-runtime",
+  "review_state": "dynamic-unix-forward-and-two-generation-lifecycle-qualified",
+  "qualification_scope": "Qualify Lima 2.2.0 VZ/aarch64 dynamic Unix-socket forwarding, authenticated Linux peer identity, and clean teardown across two starts of the exact task-owned guest.",
+  "source_implementation_commits": {
+    "agentrig": "5568e2085baae9a09ff0cb51752d877f1a50f5c5",
+    "agentrig_attestation": "93c5fbbc36dd5cbda0601ca1535d2067f5508106",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "source_hashes": {
+    "pyproject.toml": "ee7e5247c3b64841e36184130fbca79f8479996a82a0f4a7cc09ca96be9b2de6",
+    "src/agentrig/integrations/lima_configuration.py": "3dcdf6bdaad0f421ef819e98391b7b870d52d6342363be3dec4c5f7111fb2f18",
+    "tests/unit/test_lima_configuration.py": "665b283d37dc85e83f78e9cb1e30c5f6812ea22ce758e805c397c2c70ae54d37",
+    "uv.lock": "5d790ca75f9094a66ed906b156275f6f3c6566196d58e21ce1de72c8fb46e1cd"
+  },
+  "runtime_identity": {
+    "architecture": "aarch64",
+    "configuration_sha256": "115e2b541f43c2aabf9ef16f58d9db939fd6d131c546370e8974b2f51e655ce4",
+    "guest_uid": 1000,
+    "instance": "managed-42b20000000000000000000000000005",
+    "state_root": "/private/tmp/or42b5",
+    "vm_type": "vz"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-lima-live-transport.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-runtime",
+      "locator": "build/retained-evidence/m42b-lima-live-transport/report.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-source-binding-and-final-status-verified",
+      "sha256": "22d3f67e3dcad3beac51a19e98cdf187f3dece843273ad0e6805b6a816af6ab5",
+      "size_bytes": 19504
+    },
+    {
+      "artifact_id": "m42b-lima-live-transport.2",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-runtime-generation-1",
+      "locator": "build/retained-evidence/m42b-lima-live-transport/forward-response-1.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-hash-size-verified",
+      "sha256": "9e7192b9e8ab7baab0c1623df21171c600c00135eae56efd68ee475c32b446d9",
+      "size_bytes": 104
+    },
+    {
+      "artifact_id": "m42b-lima-live-transport.3",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-runtime-generation-2",
+      "locator": "build/retained-evidence/m42b-lima-live-transport/forward-response-2.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-hash-size-verified",
+      "sha256": "9e7192b9e8ab7baab0c1623df21171c600c00135eae56efd68ee475c32b446d9",
+      "size_bytes": 104
+    },
+    {
+      "artifact_id": "m42b-lima-live-transport.4",
+      "availability": "local-retained",
+      "evidence_lane": "owner-live-runtime-service",
+      "locator": "build/retained-evidence/m42b-lima-live-transport/guest-service-v2.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-hash-size-verified",
+      "sha256": "6a5cb729b7f7a2e4ae467a742e772e816eeb5ac14d3385c89626572205216fc1",
+      "size_bytes": 214
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored owner-runtime collateral retained in the existing M42b milestone worktree."
+    }
+  },
+  "validation": {
+    "agentrig_lima_configuration": {
+      "exit_code": 0,
+      "tests": 13
+    },
+    "agentrig_unit": {
+      "exit_code": 0,
+      "tests": 525
+    },
+    "sdk_typing": {
+      "exit_code": 0,
+      "negative_fixture_passed": true,
+      "source_files": 134
+    },
+    "openrtl_private_configuration": {
+      "exit_code": 0,
+      "tests": 4
+    },
+    "dynamic_unix_forwards": "both configured guest sockets appeared at their exact host paths in both generations",
+    "authenticated_peer": "both responses reported peer_uid=1000 and guest_uid=1000 under schema openrtl.m42b-forward.v3",
+    "guest_service": "systemd socket activation passed in both generations and its marker matched the exact configuration digest",
+    "lifecycle": "two start-use-stop generations passed; both host sockets were absent after each stop",
+    "final_instance_state": "independently observed Stopped with exact instance name, directory, VZ driver and aarch64 architecture"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": true,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "The owner run qualifies dynamic Unix forwarding, the qualification-only guest service, Linux peer UID authentication and two-generation teardown for the exact task-owned Lima guest.",
+    "The run did not install or qualify rootless Docker, immutable guest dependencies, a simulator container, the production control channel or retirement recovery.",
+    "The qualification-only Python socket helper is not the production AgentRig service.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "rootless Docker and immutable guest dependencies",
+    "simulator container visibility",
+    "production control channel",
+    "retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}

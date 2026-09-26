@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
+from datetime import datetime
 from typing import Any, Protocol, cast
 from urllib.parse import urlsplit
 
@@ -166,7 +167,7 @@ class _SdkClient:
                 options=_thaw_object(request.options),
                 keep_alive=request.keep_alive,
             )
-            return _normalize_response(raw_response)
+            return _normalize_response(raw_response, capture_reasoning=request.capture_reasoning)
         except AgentRigError:
             raise
         except Exception as error:
@@ -194,24 +195,26 @@ def _thaw_object(value: Mapping[str, JsonValue]) -> dict[str, Any]:
     }
 
 
-def _normalize_response(raw_response: Any) -> OllamaChatResponse:
+def _normalize_response(raw_response: Any, *, capture_reasoning: bool = False) -> OllamaChatResponse:
     try:
         message = raw_response.message
         content = message.content
         model = raw_response.model
         done_reason = raw_response.done_reason
-        input_tokens = raw_response.prompt_eval_count
-        output_tokens = raw_response.eval_count
-        if input_tokens is None:
-            input_tokens = 0
-        if output_tokens is None:
-            output_tokens = 0
+        input_tokens = getattr(raw_response, "prompt_eval_count", None)
+        output_tokens = getattr(raw_response, "eval_count", None)
         return OllamaChatResponse(
             content=content,
             model=model,
             finish_reason=_finish_reason(done_reason),
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            total_duration_ns=getattr(raw_response, "total_duration", None),
+            load_duration_ns=getattr(raw_response, "load_duration", None),
+            prompt_eval_duration_ns=getattr(raw_response, "prompt_eval_duration", None),
+            eval_duration_ns=getattr(raw_response, "eval_duration", None),
+            thinking=getattr(message, "thinking", None) if capture_reasoning else None,
+            created_at=_created_at(getattr(raw_response, "created_at", None)),
         )
     except Exception:
         raise AgentRigError(
@@ -221,6 +224,14 @@ def _normalize_response(raw_response: Any) -> OllamaChatResponse:
                 code="ollama.invalid_response",
             )
         ) from None
+
+
+def _created_at(value: object) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    if isinstance(value, datetime):
+        return value.isoformat()
+    raise ValueError("Ollama creation timestamp is invalid")
 
 
 def _finish_reason(value: object) -> OllamaFinishReason:

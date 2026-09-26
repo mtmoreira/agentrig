@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "milestone": "a2-persistent-execution",
+  "qualified_parent": "7bdffca277e805a999908778506d39df6756235e",
+  "producer": {
+    "id": "agentrig-a2-validation-v4",
+    "script_sha256": "ddbd2eac5eae847e2318b1b9114fa1ec433a3a03406d5f087efbd179d7263eb5",
+    "run_started_utc": "2026-09-24T06:48:38Z"
+  },
+  "source": {
+    "base_commit": "f1200ad4d9e1cf6626b84acc9756643be75e56a3",
+    "framework_commit": "b8300a1fd74c1b9ed1ae0c7e5ed328240e3b8952",
+    "example_commit": "7bdffca277e805a999908778506d39df6756235e",
+    "validated_candidate_sha256": "ba6828daacacfb1c5582fd255275c8378dd9fac4d3ebd18be00c6861cc063b16",
+    "package_version": "0.3.1.dev14"
+  },
+  "artifacts": [
+    {
+      "id": "a2-owner-run-report",
+      "locator": "/private/tmp/agentrig-a2-validation-v4.report.txt",
+      "media_type": "text/plain",
+      "schema": "checkpoint-report-v1",
+      "sha256": "f1191c2d1e9891a9804d79840cc618b4a08beab43dd0ef2d093e540e159661d2",
+      "bytes": 199776,
+      "lane": "owner-shell-validation",
+      "outcome": "passed",
+      "retention": "owner-local-temporary",
+      "review_state": "reviewed"
+    },
+    {
+      "id": "a2-developer-example-report",
+      "locator": "/private/tmp/agentrig-a2-validation-v4-artifacts/example-report.json",
+      "media_type": "application/json",
+      "schema": "persistent-session-example-v1",
+      "sha256": "dcc32439c14c2517f59684587016ee9c2b8938b2d7e74fd11c7c4f529e649e7d",
+      "bytes": 139,
+      "lane": "developer-example",
+      "outcome": "passed",
+      "retention": "owner-local-temporary",
+      "review_state": "reviewed"
+    },
+    {
+      "id": "agentrig-wheel",
+      "locator": "/private/tmp/agentrig-a2-validation-v4-artifacts/wheel/agentrig-0.3.1.dev14-py3-none-any.whl",
+      "media_type": "application/zip",
+      "schema": "python-wheel",
+      "sha256": "8661faba8c2621dec79c04dd7b792b01c30919a4e99e33d6fce0cb4e1c18e2ec",
+      "bytes": 233085,
+      "lane": "reproducible-local-wheel",
+      "outcome": "built-and-inspected",
+      "retention": "owner-local-temporary",
+      "review_state": "reviewed"
+    },
+    {
+      "id": "agentrig-wheel-inventory",
+      "locator": "/private/tmp/agentrig-a2-validation-v4-artifacts/wheel-inventory.txt",
+      "media_type": "text/plain",
+      "schema": "wheel-inventory-v1",
+      "sha256": "497e9acc4c470f99d34f290f5a17c04832a6aa47fd4643d55a7ee2d11475493f",
+      "bytes": 3978,
+      "lane": "wheel-inspection",
+      "outcome": "package-sources-present-repository-content-absent",
+      "retention": "owner-local-temporary",
+      "review_state": "reviewed"
+    },
+    {
+      "id": "agentrig-wheel-metadata",
+      "locator": "/private/tmp/agentrig-a2-validation-v4-artifacts/wheel-metadata.txt",
+      "media_type": "text/plain",
+      "schema": "core-metadata-2.4",
+      "sha256": "4b5212c03b500fdf89f81fa283ca4be2a1c978631d2df686e3650bb9d5b46741",
+      "bytes": 8183,
+      "lane": "wheel-inspection",
+      "outcome": "version-0.3.1.dev14-confirmed",
+      "retention": "owner-local-temporary",
+      "review_state": "reviewed"
+    }
+  ],
+  "validation": {
+    "focused_persistent_session_tests_passed": true,
+    "strict_typecheck_passed": true,
+    "developer_example_passed": true,
+    "full_unit_tests_passed": true,
+    "buck_non_live_targets_passed": 51,
+    "buck_network_bytes": 0,
+    "live_provider_lane_run": false
+  },
+  "claims": {
+    "raw_ollama_text_generation_validated": true,
+    "persistent_process_protocol_validated": true,
+    "wheel_built_from_exact_validated_candidate": true,
+    "production_authorized": false,
+    "remote_delivery_authorized": false
+  }
+}

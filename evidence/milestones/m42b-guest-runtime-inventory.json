@@ -1,0 +1,142 @@
+{
+  "schema": "agentrig.milestone-evidence.v1",
+  "milestone_id": "m42b-guest-runtime-inventory",
+  "milestone_complete": false,
+  "implementation_slice_complete": true,
+  "qualified_commit": "08deec214ecda7977431067651e65a4def5c6a12",
+  "qualification_lane": "owner-read-only-exact-guest-inventory",
+  "review_state": "guest-prerequisites-present-runtime-dependencies-absent",
+  "qualification_scope": "Inventory the exact task-owned Lima guest without installation, acquisition, registry access, provider contact, credential access or unrelated runtime contact.",
+  "source_implementation_commits": {
+    "agentrig": "08deec214ecda7977431067651e65a4def5c6a12",
+    "openrtl": "8b1f64bb65151098cda3f110eb42ee98263a43f1"
+  },
+  "runtime_identity": {
+    "architecture": "aarch64",
+    "configuration_sha256": "115e2b541f43c2aabf9ef16f58d9db939fd6d131c546370e8974b2f51e655ce4",
+    "guest_uid": 1000,
+    "instance": "managed-42b20000000000000000000000000005",
+    "state_root": "/private/tmp/or42b5",
+    "vm_type": "vz"
+  },
+  "artifacts": [
+    {
+      "artifact_id": "m42b-guest-runtime-inventory.1",
+      "availability": "local-retained",
+      "evidence_lane": "owner-read-only-runtime",
+      "locator": "build/retained-evidence/m42b-guest-runtime-inventory-v1/report.txt",
+      "locator_base": "milestone-worktree",
+      "media_type": "text/plain",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "hash-size-final-status-and-checkpoints-verified",
+      "sha256": "1f0ee28d17e7f72340cdfb56d89754f7c07be69feddd130771664fe77f5a6f93",
+      "size_bytes": 9048
+    },
+    {
+      "artifact_id": "m42b-guest-runtime-inventory.2",
+      "availability": "local-retained",
+      "evidence_lane": "owner-read-only-runtime",
+      "locator": "build/retained-evidence/m42b-guest-runtime-inventory-v1/guest-runtime-inventory-v1.json",
+      "locator_base": "milestone-worktree",
+      "media_type": "application/json",
+      "producer": "owner-shell",
+      "retention_class": "session-local",
+      "review_state": "parsed-and-hash-size-verified",
+      "sha256": "11733ad4a5f769caff4e11e1be76cbb21829067bc29ff38f82325b1477c5f16a",
+      "size_bytes": 1690
+    }
+  ],
+  "locator_roots": {
+    "milestone-worktree": {
+      "kind": "repository-relative",
+      "path": ".",
+      "resolution": "Ignored owner-runtime collateral retained in the existing M42b milestone worktree."
+    }
+  },
+  "observed_prerequisites": {
+    "cgroup_v2_controllers": [
+      "cpu",
+      "cpuset",
+      "hugetlb",
+      "io",
+      "memory",
+      "misc",
+      "pids",
+      "rdma"
+    ],
+    "dbus_user_session": "ii |1.14.10-4ubuntu4.1|arm64",
+    "iptables": "ii |1.8.10-3ubuntu2|arm64",
+    "subgid_count": 65536,
+    "subgid_start": 100000,
+    "subuid_count": 65536,
+    "subuid_start": 100000,
+    "systemd_user_delegate": true,
+    "systemd_user_linger": true
+  },
+  "observed_absent": {
+    "docker_daemon_reachable": false,
+    "docker_images": [],
+    "docker_socket": false,
+    "packages": [
+      "containerd",
+      "containerd.io",
+      "docker-ce",
+      "docker-ce-cli",
+      "docker-ce-rootless-extras",
+      "docker.io",
+      "fuse-overlayfs",
+      "runc",
+      "slirp4netns",
+      "uidmap"
+    ],
+    "tools": [
+      "containerd",
+      "containerd-rootless-setuptool.sh",
+      "docker",
+      "dockerd",
+      "dockerd-rootless-setuptool.sh",
+      "fuse-overlayfs",
+      "nerdctl",
+      "newgidmap",
+      "newuidmap",
+      "rootlesskit",
+      "runc",
+      "slirp4netns"
+    ],
+    "user_units": [
+      "docker.service",
+      "docker.socket"
+    ]
+  },
+  "validation": {
+    "inventory_contract": "parsed with exact schema, aarch64 architecture, guest UID 1000 and bounded image list",
+    "runtime_stop": "exact instance independently observed Stopped after the owner run",
+    "forward_teardown": "both exact host socket paths independently observed absent after stop"
+  },
+  "authorization_boundary": {
+    "agents_runner_contact": false,
+    "credential_values_handled": false,
+    "downloads": false,
+    "git_mutations": true,
+    "installation": false,
+    "local_source_implementation": false,
+    "production_authorized": false,
+    "provider_calls": false,
+    "publication": false,
+    "runtime_contact": true
+  },
+  "qualification_limits": [
+    "The inventory proves that the exact guest lacks a container engine and simulator images; it does not authorize or perform installation.",
+    "Prerequisite presence and cgroup delegation do not qualify a rootless daemon or container isolation.",
+    "No image was pulled, loaded or executed.",
+    "Fixtures, mocked providers and existing canaries do not prove that a real agent designed new RTL."
+  ],
+  "pending": [
+    "reviewed immutable rootless runtime dependency acquisition and installation",
+    "simulator image acquisition and visibility",
+    "production control channel and retirement recovery",
+    "M46 real new RTL qualification",
+    "M47 release"
+  ]
+}

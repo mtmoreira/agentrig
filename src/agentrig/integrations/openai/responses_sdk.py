@@ -110,7 +110,7 @@ class _SdkClient:
                 tools=[],
                 truncation="disabled",
             )
-            return _normalize_response(response)
+            return _normalize_response(response, capture_reasoning=request.capture_reasoning)
         except AgentRigError:
             raise
         except Exception as error:
@@ -150,7 +150,7 @@ def _input(request: OpenAIResponsesRequest) -> list[dict[str, Any]]:
     return result
 
 
-def _normalize_response(response: Any) -> OpenAIResponsesResult:
+def _normalize_response(response: Any, *, capture_reasoning: bool = False) -> OpenAIResponsesResult:
     try:
         status_value = response.status
         if status_value == "completed":
@@ -168,6 +168,11 @@ def _normalize_response(response: Any) -> OpenAIResponsesResult:
             status=status,
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
+            cached_input_tokens=getattr(getattr(usage, "input_tokens_details", None), "cached_tokens", None),
+            reasoning_tokens=getattr(getattr(usage, "output_tokens_details", None), "reasoning_tokens", None),
+            reasoning_summary=_reasoning_summary(response) if capture_reasoning else None,
+            response_id=getattr(response, "id", None), created_at=getattr(response, "created_at", None),
+            service_tier=getattr(response, "service_tier", None),
         )
     except Exception:
         raise AgentRigError(
@@ -177,6 +182,20 @@ def _normalize_response(response: Any) -> OpenAIResponsesResult:
                 code="openai.responses.invalid_response",
             )
         ) from None
+
+
+def _reasoning_summary(response: Any) -> str | None:
+    """Retain only provider-returned summary text; hidden reasoning is unavailable."""
+    parts: list[str] = []
+    for item in getattr(response, "output", None) or ():
+        if getattr(item, "type", None) != "reasoning":
+            continue
+        for summary in getattr(item, "summary", None) or ():
+            if getattr(summary, "type", None) == "summary_text":
+                value = getattr(summary, "text", None)
+                if isinstance(value, str):
+                    parts.append(value)
+    return "\n".join(parts) if parts else None
 
 
 def _thaw_object(value: Mapping[str, JsonValue]) -> dict[str, Any]:
