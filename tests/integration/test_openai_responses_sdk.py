@@ -203,6 +203,70 @@ class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
         )
         self.assertNotIn(private_value, repr(transport.exception.failure))
 
+    def test_incomplete_status_and_aggregate_usage_reach_the_typed_seam(self) -> None:
+        raw = RawClient(
+            response=SimpleNamespace(
+                status="incomplete",
+                output_text='{"description":"unfinished',
+                model="vision-model",
+                usage=SimpleNamespace(input_tokens=20, output_tokens=100),
+                incomplete_details=SimpleNamespace(reason="private-provider-detail"),
+            )
+        )
+        client = OpenAIResponsesSdkClientFactory(
+            authentication_source=_Source(),
+            raw_client_builder=lambda key: raw,
+        ).create()
+        try:
+            result = asyncio.run(client.create(request()))
+        finally:
+            asyncio.run(client.close())
+
+        self.assertEqual(result.status, OpenAIResponsesStatus.INCOMPLETE)
+        self.assertEqual(result.input_tokens, 20)
+        self.assertEqual(result.output_tokens, 100)
+        self.assertNotIn("unfinished", repr(result))
+        self.assertNotIn("private-provider-detail", repr(result))
+        self.assertEqual(len(raw.calls), 1)
+        self.assertTrue(raw.closed)
+
+    def test_invalid_response_envelopes_do_not_become_invalid_output_retries(
+        self,
+    ) -> None:
+        for name, overrides in (
+            ("unknown status", {"status": "private-provider-status"}),
+            ("missing usage", {"usage": None}),
+            ("invalid tokens", {"usage": SimpleNamespace(input_tokens=True, output_tokens=5)}),
+            ("missing output", {"output_text": None}),
+            ("empty output", {"output_text": ""}),
+        ):
+            with self.subTest(name=name):
+                fields: dict[str, Any] = {
+                    "status": "completed",
+                    "output_text": "private-provider-output",
+                    "model": "vision-model",
+                    "usage": SimpleNamespace(input_tokens=20, output_tokens=5),
+                }
+                fields.update(overrides)
+                raw = RawClient(response=SimpleNamespace(**fields))
+                client = OpenAIResponsesSdkClientFactory(
+                    authentication_source=_Source(),
+                    raw_client_builder=lambda key: raw,
+                ).create()
+                try:
+                    with self.assertRaises(AgentRigError) as raised:
+                        asyncio.run(client.create(request()))
+                finally:
+                    asyncio.run(client.close())
+
+                failure = raised.exception.failure
+                self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+                self.assertEqual(failure.code, "openai.responses.invalid_response")
+                self.assertEqual(dict(failure.metadata), {})
+                self.assertNotIn("private-provider", repr(failure))
+                self.assertEqual(len(raw.calls), 1)
+                self.assertTrue(raw.closed)
+
 
 class _Source:
     def resolve_api_key(self) -> str:

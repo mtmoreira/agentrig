@@ -8,7 +8,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic, Literal, Protocol, TypeVar, runtime_checkable
 
 from agentrig.capabilities import (
     CapabilityDescriptor,
@@ -250,6 +250,15 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                 pass
         try:
             encoded = json.loads(response.output_text)
+        except (TypeError, ValueError):
+            raise AgentRigError(
+                _invalid_output_failure(
+                    response,
+                    stage="json_parse",
+                    max_output_tokens=request.input.max_output_tokens,
+                )
+            ) from None
+        try:
             return StructuredGenerationResult(
                 encoded_output=encoded,
                 output_schema=request.output_schema,
@@ -264,12 +273,12 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                     else TextGenerationFinishReason.LENGTH
                 ),
             )
-        except (json.JSONDecodeError, TypeError, ValueError):
+        except (TypeError, ValueError):
             raise AgentRigError(
-                Failure(
-                    kind=FailureKind.PERMANENT_PROVIDER,
-                    message="OpenAI Responses returned invalid structured output",
-                    code="openai.responses.invalid_output",
+                _invalid_output_failure(
+                    response,
+                    stage="schema_decode",
+                    max_output_tokens=request.input.max_output_tokens,
                 )
             ) from None
 
@@ -339,6 +348,29 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                 )
             )
         return tuple(images)
+
+
+def _invalid_output_failure(
+    response: OpenAIResponsesResult,
+    *,
+    stage: Literal["json_parse", "schema_decode"],
+    max_output_tokens: int | None,
+) -> Failure:
+    """Retain only normalized status and aggregate usage, never output content."""
+    metadata = {
+        "output_stage": stage,
+        "response_status": response.status.value,
+        "input_tokens": str(response.input_tokens),
+        "output_tokens": str(response.output_tokens),
+    }
+    if max_output_tokens is not None:
+        metadata["max_output_tokens"] = str(max_output_tokens)
+    return Failure(
+        kind=FailureKind.PERMANENT_PROVIDER,
+        message="OpenAI Responses returned invalid structured output",
+        code="openai.responses.invalid_output",
+        metadata=metadata,
+    )
 
 
 def _schema_name(schema_id: str) -> str:
