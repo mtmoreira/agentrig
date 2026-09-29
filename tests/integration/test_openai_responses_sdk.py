@@ -3,18 +3,36 @@ from __future__ import annotations
 import asyncio
 import unittest
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import Mock, patch
 
-from agentrig.core import AgentRigError, FailureKind
+from agentrig.capabilities import (
+    StructuredDecodeDiagnostic,
+    StructuredGenerationRequest,
+    StructuredOutputDecodeError,
+    StructuredOutputSchema,
+    TextGenerationRequest,
+    TextMessageRole,
+)
+from agentrig.core import (
+    AgentRigError,
+    ArtifactRef,
+    CancellationSource,
+    FailureKind,
+    JsonValue,
+    ResolvedArtifact,
+    RunContext,
+    RunId,
+)
 from agentrig.integrations.openai import (
     OpenAIResponsesImage,
     OpenAIResponsesMessage,
     OpenAIResponsesRequest,
     OpenAIResponsesStatus,
+    OpenAIResponsesStructuredGenerator,
 )
-from agentrig.capabilities import TextMessageRole
 from agentrig.integrations.openai.responses_sdk import OpenAIResponsesSdkClientFactory
 
 
@@ -75,6 +93,80 @@ def request() -> OpenAIResponsesRequest:
 
 
 class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
+    def test_registered_decoder_diagnostic_crosses_the_offline_sdk_seam(self) -> None:
+        raw = RawClient(
+            response=SimpleNamespace(
+                status="completed",
+                output_text='{"description":"synthetic scene"}',
+                model="vision-model",
+                usage=SimpleNamespace(input_tokens=20, output_tokens=5),
+            )
+        )
+        built: list[RawClient] = []
+        decoded: list[JsonValue] = []
+
+        def build(key: str) -> RawClient:
+            built.append(raw)
+            return raw
+
+        def reject(value: JsonValue) -> str:
+            decoded.append(value)
+            raise StructuredOutputDecodeError("invalid_region")
+
+        factory = OpenAIResponsesSdkClientFactory(
+            authentication_source=_Source(), raw_client_builder=build,
+        )
+        output_schema = StructuredOutputSchema(
+            schema_id="synthetic.diagnostic.v1",
+            json_schema=request().output_schema,
+            decoder=reject,
+            decode_diagnostics={
+                "invalid_region": StructuredDecodeDiagnostic(
+                    code="region.invalid_bounds", location="/findings/*/region",
+                ),
+            },
+        )
+        generator = OpenAIResponsesStructuredGenerator[str](
+            client_factory=factory,
+            artifact_resolver=_UnusedResolver(),
+            model="vision-model",
+        )
+        generation_request = StructuredGenerationRequest(
+            input=TextGenerationRequest(prompt="synthetic prompt", max_output_tokens=100),
+            output_schema=output_schema,
+        )
+        run_context = RunContext.create_root(
+            clock=_Clock(), id_generator=_Ids(),
+            cancellation=CancellationSource().token,
+        )
+
+        with self.assertRaises(AgentRigError) as raised:
+            asyncio.run(generator.generate(generation_request, run_context))
+
+        failure = raised.exception.failure
+        self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+        self.assertEqual(failure.code, "openai.responses.invalid_output")
+        self.assertFalse(failure.is_retryable)
+        self.assertEqual(dict(failure.metadata), {
+            "output_stage": "schema_decode",
+            "response_status": "completed",
+            "input_tokens": "20",
+            "output_tokens": "5",
+            "max_output_tokens": "100",
+            "decoder_code": "region.invalid_bounds",
+            "decoder_location": "/findings/*/region",
+        })
+        self.assertEqual(built, [raw])
+        self.assertEqual(len(decoded), 1)
+        self.assertEqual(len(raw.calls), 1)
+        self.assertEqual(raw.calls[0]["model"], "vision-model")
+        self.assertEqual(raw.calls[0]["max_output_tokens"], 100)
+        self.assertIs(raw.calls[0]["store"], False)
+        self.assertEqual(raw.calls[0]["tools"], [])
+        self.assertTrue(raw.closed)
+        self.assertNotIn("synthetic scene", repr(failure))
+        self.assertNotIn("synthetic prompt", repr(failure))
+
     def test_default_sdk_client_has_one_bounded_attempt_and_late_authentication(
         self,
     ) -> None:
@@ -271,6 +363,24 @@ class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
 class _Source:
     def resolve_api_key(self) -> str:
         return "test-key"
+
+
+class _UnusedResolver:
+    async def resolve(self, artifact: ArtifactRef) -> ResolvedArtifact:
+        raise AssertionError("text-only generation must not resolve an artifact")
+
+
+class _Clock:
+    def now(self) -> datetime:
+        return datetime(2026, 8, 20, tzinfo=UTC)
+
+    def monotonic(self) -> float:
+        return 100.0
+
+
+class _Ids:
+    def generate(self) -> RunId:
+        return RunId("run-1")
 
 
 if __name__ == "__main__":

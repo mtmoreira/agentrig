@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import traceback
 import unittest
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -8,7 +10,9 @@ from datetime import UTC, datetime
 
 from agentrig.capabilities import (
     DataRetention,
+    StructuredDecodeDiagnostic,
     StructuredGenerationRequest,
+    StructuredOutputDecodeError,
     StructuredOutputSchema,
     TextGenerationFinishReason,
     TextGenerationRequest,
@@ -320,6 +324,169 @@ class OpenAIResponsesGeneratorTest(unittest.TestCase):
         self.assertNotIn("private-implementation-error", repr(failure))
         self.assertEqual(len(client.requests), 1)
         self.assertEqual(client.closed, 1)
+
+    def test_registered_decoder_diagnostic_retains_only_trusted_pair(self) -> None:
+        sentinels = tuple(
+            "-".join(("private", part, "sentinel"))
+            for part in ("decoder", "note", "cause", "output", "input", "forged")
+        )
+        error = StructuredOutputDecodeError("invalid_region")
+        error.args = (sentinels[0],)
+        error.add_note(sentinels[1])
+        error.__cause__ = RuntimeError(sentinels[2])
+        error.decoder_code = sentinels[5]  # type: ignore[attr-defined]
+        error.decoder_location = sentinels[5]  # type: ignore[attr-defined]
+        decoded: list[JsonValue] = []
+
+        def reject(value: JsonValue) -> str:
+            decoded.append(value)
+            raise error
+
+        output_schema = StructuredOutputSchema(
+            schema_id="synthetic.diagnostic.v1",
+            json_schema=schema().json_schema,
+            decoder=reject,
+            decode_diagnostics={
+                "invalid_region": StructuredDecodeDiagnostic(
+                    code="region.invalid_bounds", location="/findings/*/region",
+                ),
+            },
+        )
+        generator, client, _ = self._setup_generation(
+            json.dumps({"description": sentinels[3]}),
+            output_schema=output_schema,
+        )
+        request = StructuredGenerationRequest(
+            input=TextGenerationRequest(prompt=sentinels[4], max_output_tokens=100),
+            output_schema=output_schema,
+        )
+        try:
+            asyncio.run(generator.generate(request, context()))
+        except AgentRigError as raised:
+            failure = raised.failure
+            printed_traceback = "".join(traceback.format_exception(raised))
+            self.assertIs(normalize_exception(raised), failure)
+            self.assertIsNone(raised.__cause__)
+            self.assertTrue(raised.__suppress_context__)
+            for sentinel in sentinels:
+                self.assertNotIn(sentinel, repr(failure))
+                self.assertNotIn(sentinel, str(raised))
+                self.assertNotIn(sentinel, printed_traceback)
+        else:
+            self.fail("registered decoder rejection must fail generation")
+
+        self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+        self.assertEqual(failure.code, "openai.responses.invalid_output")
+        self.assertFalse(failure.is_retryable)
+        self.assertEqual(dict(failure.metadata), {
+            "output_stage": "schema_decode",
+            "response_status": "completed",
+            "input_tokens": "20",
+            "output_tokens": "30",
+            "max_output_tokens": "100",
+            "decoder_code": "region.invalid_bounds",
+            "decoder_location": "/findings/*/region",
+        })
+        self.assertEqual(len(decoded), 1)
+        self.assertEqual(len(client.requests), 1)
+        self.assertEqual(client.closed, 1)
+
+    def test_unknown_or_unregistered_decoder_keys_preserve_legacy_metadata(
+        self,
+    ) -> None:
+        diagnostic = StructuredDecodeDiagnostic(
+            code="region.invalid_bounds", location="/findings/*/region",
+        )
+        for name, key, registry in (
+            ("unknown key", "unknown_region", {"invalid_region": diagnostic}),
+            ("no registry", "invalid_region", {}),
+        ):
+            with self.subTest(name=name):
+                decoded: list[JsonValue] = []
+
+                def reject(value: JsonValue) -> str:
+                    decoded.append(value)
+                    raise StructuredOutputDecodeError(key)
+
+                output_schema = StructuredOutputSchema(
+                    schema_id="synthetic.unregistered.v1",
+                    json_schema=schema().json_schema,
+                    decoder=reject,
+                    decode_diagnostics=registry,
+                )
+                generator, client, request = self._setup_generation(
+                    '{"description":"synthetic"}', output_schema=output_schema,
+                )
+                with self.assertRaises(AgentRigError) as raised:
+                    asyncio.run(generator.generate(request, context()))
+                failure = raised.exception.failure
+                self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+                self.assertEqual(failure.code, "openai.responses.invalid_output")
+                self.assertFalse(failure.is_retryable)
+                self.assertEqual(dict(failure.metadata), {
+                    "output_stage": "schema_decode",
+                    "response_status": "completed",
+                    "input_tokens": "20",
+                    "output_tokens": "30",
+                    "max_output_tokens": "100",
+                })
+                self.assertEqual(len(decoded), 1)
+                self.assertEqual(len(client.requests), 1)
+                self.assertEqual(client.closed, 1)
+
+    def test_untrusted_exception_attributes_are_never_promoted(self) -> None:
+        class ForgedDiagnostic(ValueError):
+            diagnostic_key = "invalid_region"
+            code = "forged.code"
+            location = "/forged/location"
+            decoder_code = "forged.decoder_code"
+            decoder_location = "/forged/decoder_location"
+
+        class MaliciousDecodeError(StructuredOutputDecodeError):
+            def __getattribute__(self, name: str) -> object:
+                if name == "diagnostic_key":
+                    raise AssertionError("subclass diagnostic must not be read")
+                return super().__getattribute__(name)
+
+        for error in (ForgedDiagnostic(), MaliciousDecodeError("invalid_region")):
+            with self.subTest(error_type=type(error).__name__):
+                decoded: list[JsonValue] = []
+
+                def reject(value: JsonValue) -> str:
+                    decoded.append(value)
+                    raise error
+
+                output_schema = StructuredOutputSchema(
+                    schema_id="synthetic.untrusted.v1",
+                    json_schema=schema().json_schema,
+                    decoder=reject,
+                    decode_diagnostics={
+                        "invalid_region": StructuredDecodeDiagnostic(
+                            code="region.invalid_bounds",
+                            location="/findings/*/region",
+                        ),
+                    },
+                )
+                generator, client, request = self._setup_generation(
+                    '{"description":"synthetic"}', output_schema=output_schema,
+                )
+                with self.assertRaises(AgentRigError) as raised:
+                    asyncio.run(generator.generate(request, context()))
+                failure = raised.exception.failure
+                self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+                self.assertEqual(failure.code, "openai.responses.invalid_output")
+                self.assertFalse(failure.is_retryable)
+                self.assertEqual(dict(failure.metadata), {
+                    "output_stage": "schema_decode",
+                    "response_status": "completed",
+                    "input_tokens": "20",
+                    "output_tokens": "30",
+                    "max_output_tokens": "100",
+                })
+                self.assertNotIn("forged", repr(failure))
+                self.assertEqual(len(decoded), 1)
+                self.assertEqual(len(client.requests), 1)
+                self.assertEqual(client.closed, 1)
 
     def test_valid_incomplete_output_retains_length_finish_reason(self) -> None:
         decoded: list[JsonValue] = []

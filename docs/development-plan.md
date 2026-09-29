@@ -428,6 +428,13 @@ inspection schema and ordered image references. Scene, identity, eye-style and
 acceptance rules remain application-owned, and offline transport tests do not
 establish visual quality.
 
+StoryWorld M50 additionally uses an opt-in generic structured-decoder diagnostic
+registry. AgentRig transports only a schema-owned fixed code/location pair after
+a registered typed decoder rejection; it preserves the existing generic failure
+when no diagnostic is registered. The diagnostic vocabulary, wire/domain
+validation and bounded correction policy remain StoryWorld-owned. This adds no
+SDK retry, provider call or live visual-quality claim.
+
 ### Milestone 9A — Application-scoped runtime catalog
 
 StoryWorld now provides concrete evidence for explicit per-agent runtime

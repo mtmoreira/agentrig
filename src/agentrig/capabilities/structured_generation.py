@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+import re
+from types import MappingProxyType
 from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 from agentrig.capabilities.base import (
@@ -27,6 +29,46 @@ from agentrig.core._validation import require_trimmed_string
 from agentrig.core.context import RunContext
 
 OutputT = TypeVar("OutputT")
+_DIAGNOSTIC_TOKEN = re.compile(r"[a-z][a-z0-9_.-]{0,95}")
+_DIAGNOSTIC_LOCATION = re.compile(
+    r"/(?:[A-Za-z0-9_.~-]+|\*)(?:/(?:[A-Za-z0-9_.~-]+|\*))*|/"
+)
+
+
+def _require_diagnostic_token(value: object) -> None:
+    if type(value) is not str or _DIAGNOSTIC_TOKEN.fullmatch(value) is None:
+        raise ValueError("structured decode diagnostic token is invalid")
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StructuredDecodeDiagnostic:
+    """One code-owned, content-free decoder code and location pair.
+
+    Locations are fixed slash-delimited schema paths; ``*`` denotes any array
+    member and ``/`` the root. Bounds and syntax do not establish privacy:
+    callers must never construct this registry from provider content or IDs.
+    """
+
+    code: str
+    location: str
+
+    def __post_init__(self) -> None:
+        _require_diagnostic_token(self.code)
+        if (
+            type(self.location) is not str
+            or len(self.location) > 256
+            or _DIAGNOSTIC_LOCATION.fullmatch(self.location) is None
+        ):
+            raise ValueError("structured decode diagnostic location is invalid")
+
+
+class StructuredOutputDecodeError(ValueError):
+    """Request an optional schema-owned diagnostic without exception text."""
+
+    def __init__(self, diagnostic_key: str) -> None:
+        _require_diagnostic_token(diagnostic_key)
+        self.diagnostic_key = diagnostic_key
+        super().__init__("structured output decoder rejected value")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -36,6 +78,9 @@ class StructuredOutputSchema(Generic[OutputT]):
     schema_id: str
     json_schema: Mapping[str, JsonValue]
     decoder: Callable[[JsonValue], OutputT] = field(repr=False, compare=False)
+    decode_diagnostics: Mapping[str, StructuredDecodeDiagnostic] = field(
+        default_factory=dict, repr=False
+    )
 
     def __post_init__(self) -> None:
         require_trimmed_string("structured output schema ID", self.schema_id)
@@ -48,12 +93,40 @@ class StructuredOutputSchema(Generic[OutputT]):
         object.__setattr__(self, "json_schema", frozen_schema)
         if not callable(self.decoder):
             raise TypeError("structured output schema decoder must be callable")
+        if not isinstance(self.decode_diagnostics, Mapping):
+            raise TypeError("structured decode diagnostics must be a mapping")
+        if len(self.decode_diagnostics) > 256:
+            raise ValueError("structured decode diagnostic registry is too large")
+        copied: dict[str, StructuredDecodeDiagnostic] = {}
+        for key, diagnostic in self.decode_diagnostics.items():
+            _require_diagnostic_token(key)
+            if type(diagnostic) is not StructuredDecodeDiagnostic:
+                raise TypeError("structured decode diagnostic entry is invalid")
+            copied[key] = diagnostic
+        object.__setattr__(
+            self, "decode_diagnostics", MappingProxyType(dict(sorted(copied.items())))
+        )
 
     def decode(self, value: JsonValue) -> OutputT:
         """Freeze provider JSON before decoding it into the declared type."""
         return self.decoder(
             freeze_json_value("structured generation output", value)
         )
+
+    def resolve_decode_diagnostic(
+        self, error: BaseException
+    ) -> StructuredDecodeDiagnostic | None:
+        """Return only the trusted registered pair; ignore arbitrary errors.
+
+        Exact-type checks avoid reading attributes on unexpected exceptions or
+        subclasses. The exception key is never itself retained as metadata.
+        """
+        if type(error) is not StructuredOutputDecodeError:
+            return None
+        key = vars(error).get("diagnostic_key")
+        if type(key) is not str or len(key) > 96:
+            return None
+        return self.decode_diagnostics.get(key)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

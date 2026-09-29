@@ -18,6 +18,7 @@ from agentrig.capabilities import (
     DataRetention,
     GenerationUsage,
     ModelMetadata,
+    StructuredDecodeDiagnostic,
     StructuredGenerationRequest,
     StructuredGenerationResult,
     TextGenerationFinishReason,
@@ -273,12 +274,13 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                     else TextGenerationFinishReason.LENGTH
                 ),
             )
-        except (TypeError, ValueError):
+        except (TypeError, ValueError) as error:
             raise AgentRigError(
                 _invalid_output_failure(
                     response,
                     stage="schema_decode",
                     max_output_tokens=request.input.max_output_tokens,
+                    diagnostic=request.output_schema.resolve_decode_diagnostic(error),
                 )
             ) from None
 
@@ -355,8 +357,9 @@ def _invalid_output_failure(
     *,
     stage: Literal["json_parse", "schema_decode"],
     max_output_tokens: int | None,
+    diagnostic: StructuredDecodeDiagnostic | None = None,
 ) -> Failure:
-    """Retain only normalized status and aggregate usage, never output content."""
+    """Retain fixed diagnostics and aggregate metadata, never output content."""
     metadata = {
         "output_stage": stage,
         "response_status": response.status.value,
@@ -365,6 +368,9 @@ def _invalid_output_failure(
     }
     if max_output_tokens is not None:
         metadata["max_output_tokens"] = str(max_output_tokens)
+    if diagnostic is not None:
+        metadata["decoder_code"] = diagnostic.code
+        metadata["decoder_location"] = diagnostic.location
     return Failure(
         kind=FailureKind.PERMANENT_PROVIDER,
         message="OpenAI Responses returned invalid structured output",

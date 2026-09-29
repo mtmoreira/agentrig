@@ -383,6 +383,23 @@ AgentRig should distinguish:
 Provider adapters normalize external failures into these categories while
 preserving sanitized provider codes in metadata.
 
+Structured output schemas may opt into a bounded, immutable
+`decode_diagnostics` registry of `StructuredDecodeDiagnostic(code, location)`
+pairs. A decoder raises `StructuredOutputDecodeError(diagnostic_key)` with fixed
+exception text; `resolve_decode_diagnostic` returns a pair only for that exact
+exception type and a registered key. Applications must define the registry from
+code-owned constants before execution. Syntax and length bounds do not establish
+privacy: never derive registry values from provider content, user text, entity
+IDs or rejected object keys. Locations are fixed slash-delimited schema paths
+such as `/items/*/title`, with `*` for array members and `/` for the root.
+
+The OpenAI Responses adapter retains a resolved pair as `decoder_code` and
+`decoder_location` alongside existing structured-output stage, status and usage
+metadata. Unregistered keys, subclasses and ordinary decoder exceptions keep
+the previous generic metadata. It never retains exception text, notes, causes
+or arbitrary attributes, never reruns a decoder for diagnosis and does not add a
+retry. Application schemas and repair policy remain outside AgentRig.
+
 Workflow boundaries return an explicit execution outcome containing status,
 typed output when available, artifacts, grades, and sanitized failure details.
 Ergonomic helpers may unwrap successful outcomes or raise typed exceptions, but

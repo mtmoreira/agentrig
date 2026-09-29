@@ -10,9 +10,11 @@ from agentrig.capabilities import (
     DataRetention,
     GenerationUsage,
     ModelMetadata,
+    StructuredDecodeDiagnostic,
     StructuredGenerationRequest,
     StructuredGenerationResult,
     StructuredGenerator,
+    StructuredOutputDecodeError,
     StructuredOutputSchema,
     TextGenerationFinishReason,
 )
@@ -26,10 +28,10 @@ class Answer:
 
 def decode_answer(value: JsonValue) -> Answer:
     if not isinstance(value, Mapping):
-        raise ValueError("answer must contain text")
+        raise StructuredOutputDecodeError("answer_object")
     text = value.get("text")
     if not isinstance(text, str):
-        raise ValueError("answer text must be a string")
+        raise StructuredOutputDecodeError("answer_text")
     return Answer(text=text)
 
 
@@ -42,6 +44,14 @@ schema = StructuredOutputSchema(
         "additionalProperties": False,
     },
     decoder=decode_answer,
+    decode_diagnostics={
+        "answer_object": StructuredDecodeDiagnostic(code="object_required", location="/"),
+        "answer_text": StructuredDecodeDiagnostic(code="text_required", location="/text"),
+    },
+)
+
+diagnostic: StructuredDecodeDiagnostic | None = schema.resolve_decode_diagnostic(
+    StructuredOutputDecodeError("answer_text")
 )
 
 
