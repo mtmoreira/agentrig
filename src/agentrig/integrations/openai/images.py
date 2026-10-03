@@ -371,7 +371,15 @@ def _validate_settings(request: ImageGenerationRequest) -> None:
         return
     if (
         settings.input_fidelity is not None
-        and settings.model not in {"gpt-image-1", "gpt-image-1.5", "gpt-image-2"}
+        and settings.model not in {
+            "gpt-image-1",
+            "gpt-image-1.5",
+            "gpt-image-2",
+            "gpt-image-2.5-flare",
+            "gpt-image-2.5-flare-2026-09-08",
+            "gpt-image-2.5-sunburst",
+            "gpt-image-2.5-sunburst-2026-09-08",
+        }
     ):
         raise AgentRigError(
             Failure(
@@ -387,11 +395,17 @@ def _provider_input_fidelity(
 ) -> ImageInputFidelity | None:
     """Translate portable fidelity without sending unsupported provider flags.
 
-    GPT Image 2 applies high-fidelity reference handling automatically and rejects
-    the legacy ``input_fidelity`` request parameter. Retain the portable intent at
-    the AgentRig boundary while omitting only that provider-specific field.
+    GPT Image 2 and 2.5 apply high-fidelity reference handling without the
+    legacy ``input_fidelity`` request parameter. Retain the portable intent at the
+    AgentRig boundary while omitting only that provider-specific field.
     """
-    if settings is None or settings.model == "gpt-image-2":
+    if settings is None or settings.model in {
+        "gpt-image-2",
+        "gpt-image-2.5-flare",
+        "gpt-image-2.5-flare-2026-09-08",
+        "gpt-image-2.5-sunburst",
+        "gpt-image-2.5-sunburst-2026-09-08",
+    }:
         return None
     return settings.input_fidelity
 
