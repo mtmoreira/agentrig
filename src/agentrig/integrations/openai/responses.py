@@ -8,7 +8,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Generic, Protocol, TypeVar, runtime_checkable
+from typing import Generic, Literal, Protocol, TypeVar, runtime_checkable
 
 from agentrig.capabilities import (
     CapabilityDescriptor,
@@ -18,6 +18,7 @@ from agentrig.capabilities import (
     DataRetention,
     GenerationUsage,
     ModelMetadata,
+    StructuredDecodeDiagnostic,
     StructuredGenerationRequest,
     StructuredGenerationResult,
     TextGenerationFinishReason,
@@ -173,6 +174,8 @@ class OpenAIResponsesResult:
         require_trimmed_string("OpenAI Responses response model", self.model)
         if not isinstance(self.status, OpenAIResponsesStatus):
             raise TypeError("OpenAI Responses status is invalid")
+        if self.status is OpenAIResponsesStatus.COMPLETED:
+            require_trimmed_string("OpenAI Responses output", self.output_text)
         for name, value in (
             ("input", self.input_tokens),
             ("output", self.output_tokens),
@@ -341,14 +344,30 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                 "elapsed_ms": max(0, int((context.clock.monotonic() - started_at) * 1000)),
             })
             raise AgentRigError(cleanup_failure)
+        elapsed_ms = max(0, int((context.clock.monotonic() - started_at) * 1000))
+        provider_metadata = {"elapsed_ms": str(elapsed_ms)}
+        for name in ("response_id", "created_at", "service_tier"):
+            value = getattr(response, name)
+            if value is not None:
+                provider_metadata[name] = str(value)
         try:
-            elapsed_ms = max(0, int((context.clock.monotonic() - started_at) * 1000))
-            provider_metadata = {"elapsed_ms": str(elapsed_ms)}
-            for name in ("response_id", "created_at", "service_tier"):
-                value = getattr(response, name)
-                if value is not None:
-                    provider_metadata[name] = str(value)
             encoded = json.loads(response.output_text)
+        except (TypeError, ValueError):
+            failure = _invalid_output_failure(
+                response,
+                stage="json_parse",
+                max_output_tokens=request.input.max_output_tokens,
+            )
+            _emit_provider(context, EventKind.PROVIDER_CALL_COMPLETED, {
+                "model": self._model, "status": "failed",
+                "failure_kind": failure.kind.value, "failure_code": failure.code,
+                "elapsed_ms": elapsed_ms, "input_tokens": response.input_tokens,
+                "output_tokens": response.output_tokens,
+                "cached_input_tokens": response.cached_input_tokens,
+                "reasoning_tokens": response.reasoning_tokens,
+            })
+            raise AgentRigError(failure) from None
+        try:
             result = StructuredGenerationResult(
                 encoded_output=encoded,
                 output_schema=request.output_schema,
@@ -366,21 +385,22 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                 ),
                 provider_metadata=provider_metadata,
             )
-        except (json.JSONDecodeError, TypeError, ValueError):
+        except (TypeError, ValueError) as error:
+            failure = _invalid_output_failure(
+                response,
+                stage="schema_decode",
+                max_output_tokens=request.input.max_output_tokens,
+                diagnostic=request.output_schema.resolve_decode_diagnostic(error),
+            )
             _emit_provider(context, EventKind.PROVIDER_CALL_COMPLETED, {
                 "model": self._model, "status": "failed",
-                "failure_kind": FailureKind.PERMANENT_PROVIDER.value,
-                "failure_code": "openai.responses.invalid_output", "elapsed_ms": elapsed_ms,
-                "input_tokens": response.input_tokens, "output_tokens": response.output_tokens,
-                "cached_input_tokens": response.cached_input_tokens, "reasoning_tokens": response.reasoning_tokens,
+                "failure_kind": failure.kind.value, "failure_code": failure.code,
+                "elapsed_ms": elapsed_ms, "input_tokens": response.input_tokens,
+                "output_tokens": response.output_tokens,
+                "cached_input_tokens": response.cached_input_tokens,
+                "reasoning_tokens": response.reasoning_tokens,
             })
-            raise AgentRigError(
-                Failure(
-                    kind=FailureKind.PERMANENT_PROVIDER,
-                    message="OpenAI Responses returned invalid structured output",
-                    code="openai.responses.invalid_output",
-                )
-            ) from None
+            raise AgentRigError(failure) from None
         _emit_provider(context, EventKind.USAGE_REPORTED, {
             "model": self._model, "input_tokens": response.input_tokens,
             "output_tokens": response.output_tokens, "cached_input_tokens": response.cached_input_tokens,
@@ -467,6 +487,33 @@ def _emit_provider(context: RunContext, kind: EventKind,
         event_id=context.event_id_generator.generate(), kind=kind, context=context,
         attributes={"provider": "openai", **attributes},
     ))
+
+
+def _invalid_output_failure(
+    response: OpenAIResponsesResult,
+    *,
+    stage: Literal["json_parse", "schema_decode"],
+    max_output_tokens: int | None,
+    diagnostic: StructuredDecodeDiagnostic | None = None,
+) -> Failure:
+    """Retain fixed diagnostics and aggregate metadata, never output content."""
+    metadata = {
+        "output_stage": stage,
+        "response_status": response.status.value,
+        "input_tokens": str(response.input_tokens),
+        "output_tokens": str(response.output_tokens),
+    }
+    if max_output_tokens is not None:
+        metadata["max_output_tokens"] = str(max_output_tokens)
+    if diagnostic is not None:
+        metadata["decoder_code"] = diagnostic.code
+        metadata["decoder_location"] = diagnostic.location
+    return Failure(
+        kind=FailureKind.PERMANENT_PROVIDER,
+        message="OpenAI Responses returned invalid structured output",
+        code="openai.responses.invalid_output",
+        metadata=metadata,
+    )
 
 
 def _schema_name(schema_id: str) -> str:

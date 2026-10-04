@@ -1,0 +1,280 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "retained-synthetic-bundle",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "synthetic-offline",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/retention-manifest.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "storyworld.synthetic-qualification-retention.v1",
+      "sha256": "3111e96c152442d03eb6206ae2cbe27fe3c410555262a86076bc5caf0382b6a5",
+      "size_bytes": 292189,
+      "validation_outcome": "all-501-retained-payloads-hash-verified"
+    },
+    {
+      "artifact_id": "post-review-source-validation",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "synthetic-offline",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/post-review/manifest.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "storyworld.m27-post-review-validation.v1",
+      "sha256": "a16d4fa80ee943930c868765b4d4a4fe132d2aefeba137bf43bc141bba48f302",
+      "size_bytes": 5748,
+      "validation_outcome": "passed"
+    },
+    {
+      "artifact_id": "final-source-candidate",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "source-binding",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/post-review/final-source-candidate.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "cupidoodle.m27-source-candidate.v3",
+      "sha256": "d0c5d6f591642cb6fdf8c4f2dcce8f1bfac97fe5343fb8aa6c550c5568338e94",
+      "size_bytes": 10608,
+      "validation_outcome": "bytes-bound-to-implementation-commits"
+    },
+    {
+      "artifact_id": "agentrig-lane-reconciliation",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "synthetic-offline",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/qualification/cupidoodle-m27-agentrig-gate-reconciliation-v1.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "cupidoodle.agentrig-gate-reconciliation.v1",
+      "sha256": "92b362284a62a7276db73af9a10bd675890e9b8b428af4bbba82902b6b645b10",
+      "size_bytes": 7442,
+      "validation_outcome": "source-equivalence-verified"
+    },
+    {
+      "artifact_id": "controller-report-v2",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "controller-history",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/validation/v2/cupidoodle-m27-validation-v2.owner.report.txt",
+      "media_type": "text/plain",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": null,
+      "sha256": "713844de27f44340b175989a43f6a08e71f723b755a65a00a57f2c6f6a4c33e1",
+      "size_bytes": 2527259,
+      "validation_outcome": "failed-retained-unmodified"
+    },
+    {
+      "artifact_id": "controller-report-v4",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "controller-history",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/validation/v4/cupidoodle-m27-validation-v4.owner.report.txt",
+      "media_type": "text/plain",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": null,
+      "sha256": "c0b4186d854dd48bd292b1569dcaadcfa909c82e68ee899e5edc89212d18bd06",
+      "size_bytes": 2341413,
+      "validation_outcome": "failed-retained-unmodified"
+    },
+    {
+      "artifact_id": "review-342682bdc1d34388",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "cupidoodle-owner-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/cupidoodle-owner/teaching-report.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "cupidoodle.owner-book-cli-example.v2",
+      "sha256": "ab7c45fcf7cc48d18ef22b8938d96f4b2f17e75c18f5a7a3bbd3c5fa3f00f572",
+      "size_bytes": 1017523,
+      "validation_outcome": "synthetic-example-passed"
+    },
+    {
+      "artifact_id": "review-f050f1c3b3adf787",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "cupidoodle-parity-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/cupidoodle-parity/batch/teaching-report.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "cupidoodle.owner-book-cli-example.v2",
+      "sha256": "edb46b90177ee2d4c01a389e855db280fa393d0e8d38cfcbfcb763a464dcf5d2",
+      "size_bytes": 1018279,
+      "validation_outcome": "synthetic-example-passed"
+    },
+    {
+      "artifact_id": "review-f97438e4e28e18e8",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "cupidoodle-parity-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/cupidoodle-parity/interactive/teaching-report.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "cupidoodle.owner-book-cli-example.v2",
+      "sha256": "456a3ce1521d340e70476fc390c1f7a698e0bb6f1b7a98dcb544f67e7f387837",
+      "size_bytes": 1021152,
+      "validation_outcome": "synthetic-example-passed"
+    },
+    {
+      "artifact_id": "review-2bd67088c1f4cf46",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "cupidoodle-parity-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/cupidoodle-parity/reproducibility-report.json",
+      "media_type": "application/json",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": "cupidoodle.owner-book-reproducibility-example.v1",
+      "sha256": "95b24a73666f83ed45066fe26471873920d81db98bee7cf4dd2c529c25be93df",
+      "size_bytes": 13565,
+      "validation_outcome": "synthetic-example-passed"
+    },
+    {
+      "artifact_id": "review-7e7a9e57e04ad8c3",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "storyworld-scene-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/storyworld-scene/artifacts/component-staging.svg",
+      "media_type": "image/svg+xml",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": null,
+      "sha256": "572844391354580d896484c63a23cd9956c3733e0e0578b9b9764a3307193d6b",
+      "size_bytes": 2052,
+      "validation_outcome": "synthetic-example-passed"
+    },
+    {
+      "artifact_id": "review-84371c538ac1fa2f",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "storyworld-visual-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/storyworld-visual/synthetic-candidate.png",
+      "media_type": "image/png",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": null,
+      "sha256": "d98b2f1c8445294f3f5d7085bee78fe330411d9d95811ee8efad01f11c22bb3d",
+      "size_bytes": 18817,
+      "validation_outcome": "synthetic-example-passed"
+    },
+    {
+      "artifact_id": "review-b6bcc3ec2f800ecc",
+      "availability": "present-and-hash-verified",
+      "evidence_lane": "storyworld-visual-example",
+      "location_kind": "declared-external",
+      "locator": "/Users/matheustrev/work/storyworld/build/evidence/cupidoodle-m27-visual-acceptance/examples/storyworld-visual/synthetic-detail-collage.png",
+      "media_type": "image/png",
+      "producer": "m27-owner-and-managed-validation",
+      "retention_class": "owner-local-unpublished",
+      "review_state": "synthetic-structural-only",
+      "schema_id": null,
+      "sha256": "3aa3002fe4196ca734af33e55350c7173dc8f3570234d2d5c004a00382530a0e",
+      "size_bytes": 8986,
+      "validation_outcome": "synthetic-example-passed"
+    }
+  ],
+  "authorization_boundary": {
+    "credential_reads_authorized": false,
+    "live_provider_calls_authorized": false,
+    "local_source_changes_commits_and_integration": true,
+    "private_book_runs_accessed": false,
+    "production_authorized": false,
+    "publication_or_deployment_authorized": false,
+    "remote_mutations_authorized": false,
+    "validation_dependency_downloads": "Existing pinned public Buck toolchain only; V4 logged146MiB, V2 logged246MiB."
+  },
+  "dependency_implementation_commits": {
+    "agentrig": "4304f0b2d341171a7698b9ba8f5f975043670217",
+    "cupidoodle": "34604701b1fd6328cca3e6fdc90ea2bbc2eabb8a",
+    "storyworld": "012087a9f626153aee698f530073a193284f2621"
+  },
+  "limitations": [
+    "Synthetic execution establishes structural and control-flow behavior, not pixel accuracy, likeness or human visual acceptance.",
+    "PostgreSQL integration is an expected opt-in skip.",
+    "The V4 no-config controller disabled the tracked uv cutoff; unchanged-source V2 lock/setup/typecheck passes are retained, not a claim that V4 passed.",
+    "M28-M32 remain separate milestones; design/style successor invalidation and public conversational APIs are not complete in M27."
+  ],
+  "milestone": "M27-scene-semantics-visual-acceptance",
+  "provenance_runs": [
+    "20260917T045031Z-5883",
+    "20260917T052740Z-21785",
+    "managed-m27-sw-final-97abcqyb-full-gate-v2"
+  ],
+  "qualification_basis": "Exact source manifests, passing lane evidence, explicit failed-controller reconciliation and post-review StoryWorld full gate. No failed controller run is relabeled as passed.",
+  "qualification_lane": "synthetic-offline",
+  "qualification_status": "passed",
+  "qualified_parent": "4304f0b2d341171a7698b9ba8f5f975043670217",
+  "qualified_tree": "aa654b1d0855b7811635b78a757e0ea39e7e243d",
+  "repository": "agentrig",
+  "schema_id": "storyworld.local-milestone-evidence.v1",
+  "source_base": "84337b7c5fcaba3631f168b5512c9f2fb8df38c3",
+  "source_files": [
+    {
+      "path": "docs/development-plan.md",
+      "repo": "agentrig",
+      "sha256": "83cb95d60f4c25103c7d998d072dffd4b8db9d2d3e8b14631f9a71e853c9f706",
+      "size_bytes": 25018
+    },
+    {
+      "path": "src/agentrig/integrations/openai/responses_sdk.py",
+      "repo": "agentrig",
+      "sha256": "c751d0f22a0d6db1361658f048b3cbb3bbdbe5634eb480b71919b9b825106137",
+      "size_bytes": 7061
+    },
+    {
+      "path": "tests/integration/test_openai_responses_sdk.py",
+      "repo": "agentrig",
+      "sha256": "f4859f4b40f75de5ff66e6b4b6ccfa869dbe924816322b1a6b4856787e16697c",
+      "size_bytes": 7242
+    }
+  ],
+  "validation": {
+    "buck_test_targets": 39,
+    "configuration_and_index_equivalence": "retained-reconciliation-document",
+    "isolated_wheel_variants": [
+      "base",
+      "codex",
+      "ollama",
+      "openai"
+    ],
+    "qualification_mode": "combined-identical-source-runs",
+    "sdk_regressions": 4,
+    "unit_tests": 450,
+    "v2_passed": [
+      "locked-environment",
+      "lock",
+      "typecheck"
+    ],
+    "v4_passed": [
+      "focused",
+      "bridge",
+      "context",
+      "unit",
+      "full-buck",
+      "package"
+    ]
+  }
+}

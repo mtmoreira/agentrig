@@ -73,9 +73,11 @@ from agentrig.capabilities.text_generation import (
     TextMessageRole,
 )
 from agentrig.capabilities.structured_generation import (
+    StructuredDecodeDiagnostic,
     StructuredGenerationRequest,
     StructuredGenerationResult,
     StructuredGenerator,
+    StructuredOutputDecodeError,
     StructuredOutputSchema,
 )
 from agentrig.capabilities.tool import (
@@ -150,9 +152,11 @@ __all__ = (
     "SearchRequest",
     "SearchResult",
     "SearchRetrievalMetadata",
+    "StructuredDecodeDiagnostic",
     "StructuredGenerationRequest",
     "StructuredGenerationResult",
     "StructuredGenerator",
+    "StructuredOutputDecodeError",
     "StructuredOutputSchema",
     "TextGenerationFinishReason",
     "TextGenerationRequest",

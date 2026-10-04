@@ -3,17 +3,36 @@ from __future__ import annotations
 import asyncio
 import unittest
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import Mock, patch
 
-from agentrig.core import AgentRigError, FailureKind
+from agentrig.capabilities import (
+    StructuredDecodeDiagnostic,
+    StructuredGenerationRequest,
+    StructuredOutputDecodeError,
+    StructuredOutputSchema,
+    TextGenerationRequest,
+    TextMessageRole,
+)
+from agentrig.core import (
+    AgentRigError,
+    ArtifactRef,
+    CancellationSource,
+    FailureKind,
+    JsonValue,
+    ResolvedArtifact,
+    RunContext,
+    RunId,
+)
 from agentrig.integrations.openai import (
     OpenAIResponsesImage,
     OpenAIResponsesMessage,
     OpenAIResponsesRequest,
     OpenAIResponsesStatus,
+    OpenAIResponsesStructuredGenerator,
 )
-from agentrig.capabilities import TextMessageRole
 from agentrig.integrations.openai.responses_sdk import OpenAIResponsesSdkClientFactory
 
 
@@ -98,6 +117,126 @@ class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
         self.assertNotIn("synthetic returned summary", repr(captured))
         self.assertEqual(raw.calls[0], raw.calls[1])
 
+    def test_registered_decoder_diagnostic_crosses_the_offline_sdk_seam(self) -> None:
+        raw = RawClient(
+            response=SimpleNamespace(
+                status="completed",
+                output_text='{"description":"synthetic scene"}',
+                model="vision-model",
+                usage=SimpleNamespace(input_tokens=20, output_tokens=5),
+            )
+        )
+        built: list[RawClient] = []
+        decoded: list[JsonValue] = []
+
+        def build(key: str) -> RawClient:
+            built.append(raw)
+            return raw
+
+        def reject(value: JsonValue) -> str:
+            decoded.append(value)
+            raise StructuredOutputDecodeError("invalid_region")
+
+        factory = OpenAIResponsesSdkClientFactory(
+            authentication_source=_Source(), raw_client_builder=build,
+        )
+        output_schema = StructuredOutputSchema(
+            schema_id="synthetic.diagnostic.v1",
+            json_schema=request().output_schema,
+            decoder=reject,
+            decode_diagnostics={
+                "invalid_region": StructuredDecodeDiagnostic(
+                    code="region.invalid_bounds", location="/findings/*/region",
+                ),
+            },
+        )
+        generator = OpenAIResponsesStructuredGenerator[str](
+            client_factory=factory,
+            artifact_resolver=_UnusedResolver(),
+            model="vision-model",
+        )
+        generation_request = StructuredGenerationRequest(
+            input=TextGenerationRequest(prompt="synthetic prompt", max_output_tokens=100),
+            output_schema=output_schema,
+        )
+        run_context = RunContext.create_root(
+            clock=_Clock(), id_generator=_Ids(),
+            cancellation=CancellationSource().token,
+        )
+
+        with self.assertRaises(AgentRigError) as raised:
+            asyncio.run(generator.generate(generation_request, run_context))
+
+        failure = raised.exception.failure
+        self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+        self.assertEqual(failure.code, "openai.responses.invalid_output")
+        self.assertFalse(failure.is_retryable)
+        self.assertEqual(dict(failure.metadata), {
+            "output_stage": "schema_decode",
+            "response_status": "completed",
+            "input_tokens": "20",
+            "output_tokens": "5",
+            "max_output_tokens": "100",
+            "decoder_code": "region.invalid_bounds",
+            "decoder_location": "/findings/*/region",
+        })
+        self.assertEqual(built, [raw])
+        self.assertEqual(len(decoded), 1)
+        self.assertEqual(len(raw.calls), 1)
+        self.assertEqual(raw.calls[0]["model"], "vision-model")
+        self.assertEqual(raw.calls[0]["max_output_tokens"], 100)
+        self.assertIs(raw.calls[0]["store"], False)
+        self.assertEqual(raw.calls[0]["tools"], [])
+        self.assertTrue(raw.closed)
+        self.assertNotIn("synthetic scene", repr(failure))
+        self.assertNotIn("synthetic prompt", repr(failure))
+
+    def test_default_sdk_client_has_one_bounded_attempt_and_late_authentication(
+        self,
+    ) -> None:
+        raw = RawClient(
+            response=SimpleNamespace(
+                status="completed",
+                output_text='{"description":"synthetic scene"}',
+                model="vision-model",
+                usage=SimpleNamespace(input_tokens=20, output_tokens=5),
+            )
+        )
+        sdk = Mock()
+        sdk.AsyncOpenAI.return_value = raw
+
+        class Source:
+            calls = 0
+
+            def resolve_api_key(self) -> str:
+                self.calls += 1
+                return "test-only-key"
+
+        source = Source()
+        with patch.dict("sys.modules", {"openai": sdk}):
+            factory = OpenAIResponsesSdkClientFactory(authentication_source=source)
+            self.assertEqual(source.calls, 0)
+            sdk.AsyncOpenAI.assert_not_called()
+            client = factory.create()
+            sdk.AsyncOpenAI.assert_called_once_with(
+                api_key="test-only-key", max_retries=0, timeout=300.0
+            )
+            self.assertEqual(source.calls, 1)
+            self.assertEqual(raw.calls, [])
+            self.assertFalse(raw.closed)
+            try:
+                result = asyncio.run(client.create(request()))
+            finally:
+                asyncio.run(client.close())
+
+        self.assertEqual(result.status, OpenAIResponsesStatus.COMPLETED)
+        self.assertEqual(len(raw.calls), 1)
+        self.assertEqual(raw.calls[0]["model"], "vision-model")
+        self.assertEqual(raw.calls[0]["max_output_tokens"], 100)
+        self.assertTrue(raw.closed)
+        self.assertNotIn("test-only-key", repr(factory))
+        self.assertNotIn("test-only-key", repr(client))
+
     def test_resolves_authentication_only_at_creation(self) -> None:
         private_key = "private-api-key"
         captured: list[str] = []
@@ -180,10 +319,92 @@ class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
         )
         self.assertNotIn(private_value, repr(transport.exception.failure))
 
+    def test_incomplete_status_and_aggregate_usage_reach_the_typed_seam(self) -> None:
+        raw = RawClient(
+            response=SimpleNamespace(
+                status="incomplete",
+                output_text='{"description":"unfinished',
+                model="vision-model",
+                usage=SimpleNamespace(input_tokens=20, output_tokens=100),
+                incomplete_details=SimpleNamespace(reason="private-provider-detail"),
+            )
+        )
+        client = OpenAIResponsesSdkClientFactory(
+            authentication_source=_Source(),
+            raw_client_builder=lambda key: raw,
+        ).create()
+        try:
+            result = asyncio.run(client.create(request()))
+        finally:
+            asyncio.run(client.close())
+
+        self.assertEqual(result.status, OpenAIResponsesStatus.INCOMPLETE)
+        self.assertEqual(result.input_tokens, 20)
+        self.assertEqual(result.output_tokens, 100)
+        self.assertNotIn("unfinished", repr(result))
+        self.assertNotIn("private-provider-detail", repr(result))
+        self.assertEqual(len(raw.calls), 1)
+        self.assertTrue(raw.closed)
+
+    def test_invalid_response_envelopes_do_not_become_invalid_output_retries(
+        self,
+    ) -> None:
+        for name, overrides in (
+            ("unknown status", {"status": "private-provider-status"}),
+            ("missing usage", {"usage": None}),
+            ("invalid tokens", {"usage": SimpleNamespace(input_tokens=True, output_tokens=5)}),
+            ("missing output", {"output_text": None}),
+            ("empty output", {"output_text": ""}),
+        ):
+            with self.subTest(name=name):
+                fields: dict[str, Any] = {
+                    "status": "completed",
+                    "output_text": "private-provider-output",
+                    "model": "vision-model",
+                    "usage": SimpleNamespace(input_tokens=20, output_tokens=5),
+                }
+                fields.update(overrides)
+                raw = RawClient(response=SimpleNamespace(**fields))
+                client = OpenAIResponsesSdkClientFactory(
+                    authentication_source=_Source(),
+                    raw_client_builder=lambda key: raw,
+                ).create()
+                try:
+                    with self.assertRaises(AgentRigError) as raised:
+                        asyncio.run(client.create(request()))
+                finally:
+                    asyncio.run(client.close())
+
+                failure = raised.exception.failure
+                self.assertEqual(failure.kind, FailureKind.PERMANENT_PROVIDER)
+                self.assertEqual(failure.code, "openai.responses.invalid_response")
+                self.assertEqual(dict(failure.metadata), {})
+                self.assertNotIn("private-provider", repr(failure))
+                self.assertEqual(len(raw.calls), 1)
+                self.assertTrue(raw.closed)
+
 
 class _Source:
     def resolve_api_key(self) -> str:
         return "test-key"
+
+
+class _UnusedResolver:
+    async def resolve(self, artifact: ArtifactRef) -> ResolvedArtifact:
+        raise AssertionError("text-only generation must not resolve an artifact")
+
+
+class _Clock:
+    def now(self) -> datetime:
+        return datetime(2026, 8, 20, tzinfo=UTC)
+
+    def monotonic(self) -> float:
+        return 100.0
+
+
+class _Ids:
+    def generate(self) -> RunId:
+        return RunId("run-1")
 
 
 if __name__ == "__main__":
