@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -165,7 +166,7 @@ class OpenAIResponsesResult:
     reasoning_tokens: int | None = None
     reasoning_summary: str | None = field(default=None, repr=False)
     response_id: str | None = None
-    created_at: int | None = None
+    created_at: int | float | None = None
     service_tier: str | None = None
 
     def __post_init__(self) -> None:
@@ -190,7 +191,12 @@ class OpenAIResponsesResult:
         if self.response_id is not None and (not isinstance(self.response_id, str) or
             re.fullmatch(r"[A-Za-z0-9_-]{1,256}", self.response_id) is None):
             raise ValueError("OpenAI Responses response identity is invalid")
-        if self.created_at is not None and (type(self.created_at) is not int or self.created_at < 0):
+        if self.created_at is not None and (
+            isinstance(self.created_at, bool)
+            or not isinstance(self.created_at, (int, float))
+            or not math.isfinite(self.created_at)
+            or self.created_at < 0
+        ):
             raise ValueError("OpenAI Responses creation timestamp is invalid")
         if self.service_tier is not None and (not isinstance(self.service_tier, str) or
             re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,63}", self.service_tier) is None):
