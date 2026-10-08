@@ -1,0 +1,7 @@
+python_library(
+    name = "selection",
+    srcs = glob(["*.py"]),
+    base_module = "agentrig.selection",
+    deps = ["//src/agentrig/core:core"],
+    visibility = ["PUBLIC"],
+)

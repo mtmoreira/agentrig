@@ -1,0 +1,11 @@
+python_library(
+    name = "eval_review",
+    srcs = glob(["*.py"]),
+    resources = glob(["static/*"]),
+    base_module = "agentrig.eval_review",
+    deps = [
+        "//src/agentrig/evals:evals",
+        "//src/agentrig/selection:selection",
+    ],
+    visibility = ["PUBLIC"],
+)

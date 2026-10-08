@@ -844,6 +844,18 @@ Minimum concepts:
 - `Baseline`: approved report or metric thresholds for comparison.
 - `PromotionPolicy`: deterministic release decision over report evidence.
 
+Human comparison adds an immutable case-by-candidate `ComparisonManifest`,
+application-exported review projections, manifest-bound private ranking ballots,
+and deterministic pairwise scores with case-level ties. Only a fully successful,
+completely ranked matrix with a unique winner can publish a preference. Normal
+`EvalRunner` and `EvalReport` contracts remain the execution and report boundary.
+
+Runtime preference values and the explicit JSON file adapter live in
+`agentrig.selection`, which depends only on `core`, never on `evals`. Consumers
+own application/workflow scope, per-user storage, provider availability,
+per-field overrides, and persisted resume configuration. See
+[`comparison.md`](comparison.md) for schema and selection precedence.
+
 Evals must support deterministic fakes and explicitly marked live runs. Missing
 credentials or unavailable providers are inconclusive/blocked, never passing.
 Reports must redact secrets and private input by default.

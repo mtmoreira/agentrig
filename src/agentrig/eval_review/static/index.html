@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AgentRig · Compare results</title>
+  <link rel="stylesheet" href="/static/review.css">
+  <script type="module" src="/static/review.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="/">AgentRig <span>Review studio</span></a>
+    <span class="local-badge">Local review · no generation calls</span>
+  </header>
+  <main class="workspace">
+    <aside class="sidebar">
+      <p class="eyebrow">Comparison</p>
+      <h1 id="experiment-title">Compare results</h1>
+      <p class="muted">Same inputs. Different configurations. Your preference.</p>
+      <nav id="cases" aria-label="Evaluation scenarios"></nav>
+      <div class="sidebar-note"><strong>How to rank</strong><p>Give your favorite result rank 1. Use the same rank for a tie. Review every scenario before submitting.</p></div>
+      <p id="progress" class="progress" aria-live="polite"></p>
+    </aside>
+    <section class="main-panel">
+      <div class="section-heading"><div><p class="eyebrow">Original input</p><h2 id="case-title">Loading comparison…</h2></div><span id="case-counter" class="pill"></span></div>
+      <details class="input-card" open><summary>Reference pictures and prompts</summary><div id="inputs" class="input-content"></div></details>
+      <div class="result-heading"><div><p class="eyebrow">Results</p><h2>See them side by side</h2></div><div id="gallery-controls" class="gallery-controls"><button id="previous-asset" type="button" aria-label="Previous result">←</button><span id="asset-label"></span><button id="next-asset" type="button" aria-label="Next result">→</button></div></div>
+      <div id="candidates" class="candidate-grid"></div>
+      <section id="scores" class="scores" hidden aria-live="polite"></section>
+      <p id="message" class="message" role="status"></p>
+    </section>
+  </main>
+  <footer class="review-footer">
+    <div><label class="activate"><input id="activate-preference" type="checkbox"> Use the winner for future runs</label><span id="preference-help" class="muted"></span></div>
+    <button id="submit" type="button" disabled>Submit rankings</button>
+  </footer>
+  <dialog id="zoom"><button id="close-zoom" type="button">Close ×</button><img id="zoom-image" alt="Expanded result"></dialog>
+</body>
+</html>

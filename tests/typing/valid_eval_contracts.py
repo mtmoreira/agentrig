@@ -14,9 +14,13 @@ from agentrig.core import (
 )
 from agentrig.evals import (
     AgentEvalTarget,
+    ComparisonCase,
+    ComparisonCell,
+    ComparisonManifest,
     DeterministicPromotionPolicy,
     EvalBaseline,
     EvalCase,
+    EvalCaseResult,
     EvalDataset,
     EvalComparison,
     EvalRunner,
@@ -30,8 +34,12 @@ from agentrig.evals import (
     PromotionDecision,
     PromotionPolicy,
     PromotionPolicyDescriptor,
+    RankingLedger,
+    ReviewProjection,
+    aggregate_rankings,
     compare_to_baseline,
 )
+from agentrig.selection import ModelSet, PreferredModelSet, select_model_set
 
 
 @dataclass(frozen=True)
@@ -128,3 +136,22 @@ def decide_promotion(
 ) -> PromotionDecision:
     comparison: EvalComparison = compare_to_baseline(baseline, report)
     return promotion_policy.decide(comparison)
+
+
+def project_comparison_case(source: EvalCase[str]) -> ComparisonCase:
+    return ComparisonCase.from_eval_case(source, review=ReviewProjection())
+
+
+def project_comparison_cell(result: EvalCaseResult[int]) -> ComparisonCell:
+    return ComparisonCell.from_eval_result(
+        result, candidate_id="candidate", review=ReviewProjection()
+    )
+
+
+def choose_reviewed_set(
+    manifest: ComparisonManifest, ledger: RankingLedger, default: ModelSet,
+) -> ModelSet:
+    preference: PreferredModelSet = aggregate_rankings(manifest, ledger).to_preference(manifest)
+    return select_model_set(
+        application_id=manifest.application_id, default=default, preference=preference
+    )

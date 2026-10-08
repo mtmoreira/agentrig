@@ -17,6 +17,22 @@ from agentrig.evals.baseline import (
     compare_to_baseline,
 )
 from agentrig.evals.case import EvalCase
+from agentrig.evals.comparison import (
+    COMPARISON_SCHEMA_VERSION,
+    RANKING_SCHEMA_VERSION,
+    RANKING_SCORING_VERSION,
+    ComparisonCandidate,
+    ComparisonCase,
+    ComparisonCell,
+    ComparisonCost,
+    ComparisonManifest,
+    HumanRankingBallot,
+    RankingLedger,
+    RankingSummary,
+    ReviewAsset,
+    ReviewProjection,
+    aggregate_rankings,
+)
 from agentrig.evals.dataset import EvalDataset
 from agentrig.evals.report import (
     EVAL_REPORT_SCHEMA_VERSION,
@@ -43,6 +59,20 @@ from agentrig.evals.target import (
 )
 
 __all__ = (
+    "COMPARISON_SCHEMA_VERSION",
+    "RANKING_SCHEMA_VERSION",
+    "RANKING_SCORING_VERSION",
+    "ComparisonCandidate",
+    "ComparisonCase",
+    "ComparisonCell",
+    "ComparisonCost",
+    "ComparisonManifest",
+    "HumanRankingBallot",
+    "RankingLedger",
+    "RankingSummary",
+    "ReviewAsset",
+    "ReviewProjection",
+    "aggregate_rankings",
     "AgentEvalTarget",
     "DeterministicPromotionPolicy",
     "EVAL_BASELINE_SCHEMA_VERSION",
