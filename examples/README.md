@@ -40,6 +40,9 @@ live entry points and test targets instead of changing the deterministic path.
 - [`evals/regression_gate`](evals/regression_gate/README.md)
   runs a versioned dataset, creates a default-private durable report, compares
   it with an approved baseline, and produces a release decision.
+- [`evals/model_comparison`](evals/model_comparison/README.md)
+  compares complete candidate sets over the same cases, retains explicit review
+  artifacts, aggregates private rankings with ties, and persists a runtime preference.
 - [`fundamentals/typed_sequence`](fundamentals/typed_sequence/README.md)
   composes typed function and injected steps, retries only a repeatable
   transient failure, and exposes child-run lifecycle events.

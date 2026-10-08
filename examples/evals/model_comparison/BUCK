@@ -1,0 +1,24 @@
+load("//build_defs:python_test.bzl", "agentrig_python_test")
+
+python_library(
+    name = "model_comparison",
+    srcs = ["__init__.py", "scripted.py"],
+    base_module = "examples.evals.model_comparison",
+    deps = ["//examples:package", "//src:agentrig"],
+    visibility = ["PUBLIC"],
+)
+
+python_binary(
+    name = "scripted",
+    main_module = "examples.evals.model_comparison.scripted",
+    deps = [":model_comparison"],
+)
+
+agentrig_python_test(
+    name = "test",
+    scope = "integration",
+    srcs = ["test_scripted.py"],
+    base_module = "examples.evals.model_comparison",
+    deps = [":model_comparison", "//src:agentrig"],
+    labels = ["deterministic"],
+)
