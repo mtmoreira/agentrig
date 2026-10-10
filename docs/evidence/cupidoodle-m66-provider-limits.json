@@ -1,0 +1,186 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "agentrig-lock",
+      "byte_size": 50,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/050-agentrig-lock.log",
+      "sha256": "0510fb6b571eba922d77e38c6a21f60253769bac0d4aee362b3bb56d21938c1b"
+    },
+    {
+      "artifact_id": "agentrig-locked-runtime",
+      "byte_size": 771,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/051-agentrig-locked-runtime.log",
+      "sha256": "bea18dc7fe5974830267ca4d12804296e69c35daf3ae887b84e31ca77f4dfb38"
+    },
+    {
+      "artifact_id": "agentrig-runtime-probe",
+      "byte_size": 18,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/052-agentrig-runtime-probe.log",
+      "sha256": "4559d60b21493f272d8952ee0435866c3ac4ea3388787051530a3177f3a7a563"
+    },
+    {
+      "artifact_id": "storyworld-lock",
+      "byte_size": 50,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/053-storyworld-lock.log",
+      "sha256": "d4042bf268dc8e1b49e4c30039fb114969354c079cdda2588beb7179a1fce5c6"
+    },
+    {
+      "artifact_id": "storyworld-locked-runtime",
+      "byte_size": 1024,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/054-storyworld-locked-runtime.log",
+      "sha256": "f0d48ef76521a90ae50d0b1912573139b038be1b9883df9da646bd434a7c0c51"
+    },
+    {
+      "artifact_id": "storyworld-runtime-probe",
+      "byte_size": 18,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/055-storyworld-runtime-probe.log",
+      "sha256": "4559d60b21493f272d8952ee0435866c3ac4ea3388787051530a3177f3a7a563"
+    },
+    {
+      "artifact_id": "storyworld-types-first",
+      "byte_size": 45,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/056-storyworld-types-first.log",
+      "sha256": "d6a2686628870cfbf8584fa0e94cc1cc4360db21dd478b0f5ca41b996b297f2e"
+    },
+    {
+      "artifact_id": "agentrig-focused",
+      "byte_size": 118,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/057-agentrig-focused.log",
+      "sha256": "333b745abe5766af6ada6ba14af07ddb09205e462185c8416b8df6a2a978639f"
+    },
+    {
+      "artifact_id": "storyworld-focused",
+      "byte_size": 865,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/058-storyworld-focused.log",
+      "sha256": "6ee533696e10919dc9f356b9ec054a29e4333d21ffe292592cff447f4c100375"
+    },
+    {
+      "artifact_id": "cupidoodle-focused",
+      "byte_size": 14785,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/059-cupidoodle-focused.log",
+      "sha256": "b90cf4f075866d651e220d99be25a2a07c3ee844386e0a170ce4e90d7a24763f"
+    },
+    {
+      "artifact_id": "agentrig-context",
+      "byte_size": 66,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/060-agentrig-context.log",
+      "sha256": "1a075a2fd2e67b3a09df29dd2acb5679d3bd88a672a4370cc2254bb4e18fdbb8"
+    },
+    {
+      "artifact_id": "agentrig-buck-dependencies",
+      "byte_size": 46,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/061-agentrig-buck-dependencies.log",
+      "sha256": "b09825fc7fc2ae567f83f4c269241ecd3644b0e1722ee8a943c9231c5ed244d4"
+    },
+    {
+      "artifact_id": "agentrig-types",
+      "byte_size": 418,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/062-agentrig-types.log",
+      "sha256": "d89392982c8fadbb498adf448986cc818ad4f9e10b49c95ce2c4bc8cc60c8cc7"
+    },
+    {
+      "artifact_id": "agentrig-unit",
+      "byte_size": 699,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/063-agentrig-unit.log",
+      "sha256": "c03f4f1f2e23070c97f5f08059c3a4c56046168e505e8afbdbd6eb71cd3b69b7"
+    },
+    {
+      "artifact_id": "agentrig-buck-no-live",
+      "byte_size": 214301,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/064-agentrig-buck-no-live.log",
+      "sha256": "a3d7f09328c436c5e78490fbf11447e3d8d33c54f5b7ce4a15e37702c6fffc2f"
+    },
+    {
+      "artifact_id": "agentrig-build",
+      "byte_size": 325,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/065-agentrig-build.log",
+      "sha256": "7a767eac7777c0c13d9ad5bd99f73e40fe3abbbb1095b277462f64d0cacd4824"
+    },
+    {
+      "artifact_id": "storyworld-all",
+      "byte_size": 646952,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/066-storyworld-all.log",
+      "sha256": "315d8d9785685d37d8e89e97da79ea84fbe039175e69094391d5e2781ba2c830"
+    },
+    {
+      "artifact_id": "cupidoodle-all",
+      "byte_size": 359762,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/067-cupidoodle-all.log",
+      "sha256": "fd25b2127b766a6da007a8157632faab571de8905d9d1b26ee499e10ebffc3cf"
+    },
+    {
+      "artifact_id": "storyworld-draft-walkthrough",
+      "byte_size": 3698,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/068-storyworld-draft-walkthrough.log",
+      "sha256": "bded109613c3e37360dd9afbdcb94ca3c8377dac7ef122f117140234dcf27f38"
+    },
+    {
+      "artifact_id": "storyworld-provider-limits-walkthrough",
+      "byte_size": 1365,
+      "exit_status": 0,
+      "media_type": "text/plain",
+      "path": "/private/tmp/cupidoodle-m66-delivery-20261010T164953Z-1809/069-storyworld-provider-limits-walkthrough.log",
+      "sha256": "db8b4443e146e2928a4d7d45bc825c69bd7b0512ef32277810b39638f74153b6"
+    }
+  ],
+  "authorization": {
+    "live_provider_calls": 0,
+    "production_authorized": false,
+    "remote_mutations": 0
+  },
+  "lane": "offline-synthetic",
+  "limits": [
+    "No live provider calls in offline qualification",
+    "Optional one-image probe is separate from qualification evidence"
+  ],
+  "producer_id": "20261010T164953Z-1809",
+  "qualified_parent": "7aad6cf4f7f0f773a3c9c6de919e37abc3b9cd7a",
+  "repository": "agentrig",
+  "retention": "owner-private-external",
+  "review_state": "automated-offline-validation",
+  "schema_id": "cupidoodle.m66-provider-limits-qualification.v1",
+  "source_commits": {
+    "agentrig": "7aad6cf4f7f0f773a3c9c6de919e37abc3b9cd7a",
+    "cupidoodle": "bfa6c01f7eedaaf96e8a664cd55425fdb547fb08",
+    "storyworld": "d81364ce9b52090e5d2641df375f235d72fa0c20"
+  },
+  "source_manifest_sha256": "ada2d5cc50b010b1460bfe441a0da52e28b065714edc6eae61046a96b612e6fa"
+}
