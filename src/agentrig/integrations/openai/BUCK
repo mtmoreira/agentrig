@@ -2,6 +2,7 @@ python_library(
     name = "openai",
     srcs = [
         "__init__.py",
+        "_sdk_failures.py",
         "codex.py",
         "images.py",
         "responses.py",

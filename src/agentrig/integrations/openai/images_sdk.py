@@ -9,6 +9,7 @@ from typing import Any, Protocol, cast
 
 from agentrig.capabilities import ImageInputRole, ImageUsage
 from agentrig.core.errors import AgentRigError, Failure, FailureKind
+from agentrig.integrations.openai._sdk_failures import request_failure
 from agentrig.integrations.openai.images import (
     OpenAIImageClient,
     OpenAIImageOperation,
@@ -219,23 +220,8 @@ def _usage(response: Any) -> ImageUsage:
 
 
 def _request_failure(error: Exception) -> Failure:
-    try:
-        status_code = getattr(error, "status_code", None)
-    except Exception:
-        status_code = None
-    if isinstance(status_code, bool) or not isinstance(status_code, int):
-        kind = FailureKind.TRANSIENT_PROVIDER
-        metadata: dict[str, str] = {}
-    else:
-        kind = (
-            FailureKind.TRANSIENT_PROVIDER
-            if status_code == 429 or status_code >= 500
-            else FailureKind.PERMANENT_PROVIDER
-        )
-        metadata = {"status_code": str(status_code)}
-    return Failure(
-        kind=kind,
+    return request_failure(
+        error,
         message="OpenAI image request failed",
         code="openai.image.request_failed",
-        metadata=metadata,
     )

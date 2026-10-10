@@ -8,6 +8,7 @@ from typing import Any, Protocol, cast
 
 from agentrig.core._json import JsonValue, thaw_json_value
 from agentrig.core.errors import AgentRigError, Failure, FailureKind
+from agentrig.integrations.openai._sdk_failures import request_failure
 from agentrig.integrations.openai.responses import (
     OpenAIResponsesAuthenticationSource,
     OpenAIResponsesClient,
@@ -208,24 +209,8 @@ def _thaw_object(value: Mapping[str, JsonValue]) -> dict[str, Any]:
 
 
 def _request_failure(error: Exception) -> Failure:
-    try:
-        status_code = getattr(error, "status_code", None)
-    except Exception:
-        status_code = None
-    if isinstance(status_code, bool) or not isinstance(status_code, int):
-        return Failure(
-            kind=FailureKind.TRANSIENT_PROVIDER,
-            message="OpenAI Responses request failed",
-            code="openai.responses.request_failed",
-        )
-    kind = (
-        FailureKind.TRANSIENT_PROVIDER
-        if status_code == 429 or status_code >= 500
-        else FailureKind.PERMANENT_PROVIDER
-    )
-    return Failure(
-        kind=kind,
+    return request_failure(
+        error,
         message="OpenAI Responses request failed",
         code="openai.responses.request_failed",
-        metadata={"status_code": str(status_code)},
     )

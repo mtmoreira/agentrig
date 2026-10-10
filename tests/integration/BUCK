@@ -144,6 +144,20 @@ agentrig_python_test(
 )
 
 agentrig_python_test(
+    name = "openai_sdk_failures",
+    scope = "integration",
+    srcs = [
+        "__init__.py",
+        "test_openai_sdk_failures.py",
+    ],
+    base_module = "tests.integration",
+    deps = [
+        "//src/agentrig/integrations/openai:images_sdk",
+        "//src/agentrig/integrations/openai:responses_sdk",
+    ],
+)
+
+agentrig_python_test(
     name = "ollama_dependency",
     scope = "integration",
     srcs = [
