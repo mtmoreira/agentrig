@@ -34,6 +34,32 @@ def ballot(manifest: ComparisonManifest, case: int, ranks: tuple[tuple[str, ...]
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_nine_effort_candidates_roundtrip_rank_and_bind_settings_to_ballots(self) -> None:
+        candidates = tuple(ComparisonCandidate(
+            candidate_id=f"model-{model}-{effort}", version="1",
+            model_set=ModelSet(
+                application_id="sample.books", model_set_id=f"model-{model}-{effort}", version="1",
+                models={"text": f"scripted-{model}"}, settings={"reasoning_effort": effort}),
+        ) for model in range(3) for effort in ("low", "medium", "high"))
+        manifest = replace(matrix(case_count=1), candidates=candidates,
+            cells=tuple(ComparisonCell(case_id="case-0", candidate_id=item.candidate_id,
+                                      status="succeeded") for item in candidates))
+        restored = ComparisonManifest.from_data(json.loads(json.dumps(manifest.to_data())))
+        self.assertEqual(restored, manifest)
+        self.assertTrue(restored.complete)
+        ranking = ballot(manifest, 0, tuple((candidate,) for candidate in manifest.candidate_ids))
+        ledger = RankingLedger(manifest_digest=manifest.digest).record(manifest, ranking)
+        summary = aggregate_rankings(manifest, ledger)
+        self.assertEqual(summary.winner_candidate_id, candidates[0].candidate_id)
+        self.assertEqual(tuple(summary.scores.values()),
+                         (1.0, 0.875, 0.75, 0.625, 0.5, 0.375, 0.25, 0.125, 0.0))
+        changed = replace(candidates[0], model_set=replace(candidates[0].model_set,
+                                                          settings={"reasoning_effort": "high"}))
+        different = replace(manifest, candidates=(changed, *candidates[1:]))
+        self.assertNotEqual(different.digest, manifest.digest)
+        with self.assertRaises(ValueError):
+            ranking.validate_for(different)
+
     def test_roundtrip_identity_detached_and_ordered_matrix(self) -> None:
         original = matrix()
         restored = ComparisonManifest.from_data(json.loads(json.dumps(original.to_data())))

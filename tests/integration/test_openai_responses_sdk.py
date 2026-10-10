@@ -94,6 +94,24 @@ def request() -> OpenAIResponsesRequest:
 
 
 class OpenAIResponsesSdkBridgeTest(unittest.TestCase):
+    def test_explicit_effort_reaches_sdk_and_unspecified_effort_preserves_omission(self) -> None:
+        raw = RawClient(response=SimpleNamespace(
+            status="completed", output_text='{"description":"fixture"}', model="vision-model",
+            usage=SimpleNamespace(input_tokens=20, output_tokens=5)))
+        client = OpenAIResponsesSdkClientFactory(
+            authentication_source=_Source(), raw_client_builder=lambda key: raw).create()
+        try:
+            asyncio.run(client.create(request()))
+            baseline = raw.calls[0]
+            self.assertNotIn("reasoning", baseline)
+            for effort in ("none", "low", "medium", "high", "xhigh", "max"):
+                with self.subTest(effort=effort):
+                    asyncio.run(client.create(replace(request(), reasoning_effort=effort)))
+                    self.assertEqual(raw.calls[-1], {**baseline, "reasoning": {"effort": effort}})
+        finally:
+            asyncio.run(client.close())
+        self.assertTrue(raw.closed)
+
     def test_usage_details_and_only_returned_reasoning_summary_are_retained(self) -> None:
         raw = RawClient(response=SimpleNamespace(
             status="completed", output_text='{"description":"fixture"}', model="vision-model",

@@ -17,6 +17,7 @@ from agentrig.capabilities import (
     StructuredOutputSchema,
     TextGenerationFinishReason,
     TextGenerationRequest,
+    TextMessageRole,
 )
 from agentrig.core import (
     AgentRigError,
@@ -37,6 +38,7 @@ from agentrig.core.errors import normalize_exception
 from agentrig.integrations.openai import (
     OPENAI_RESPONSES_STRUCTURED_CAPABILITY,
     OpenAIResponsesClient,
+    OpenAIResponsesMessage,
     OpenAIResponsesRequest,
     OpenAIResponsesResult,
     OpenAIResponsesStatus,
@@ -137,6 +139,61 @@ class Factory:
 
 
 class OpenAIResponsesGeneratorTest(unittest.TestCase):
+    def test_effort_is_forwarded_and_recorded_without_enabling_reasoning_capture(self) -> None:
+        for effort in (None, "none", "low", "medium", "high", "xhigh", "max"):
+            with self.subTest(effort=effort):
+                records: list[PrivateTraceRecord] = []
+
+                class Recorder:
+                    def record(self, record: PrivateTraceRecord) -> None:
+                        records.append(record)
+
+                client = Client(OpenAIResponsesResult(
+                    output_text='{"description":"fixture"}', model="vision-model",
+                    status=OpenAIResponsesStatus.COMPLETED, input_tokens=20, output_tokens=5))
+                generator = OpenAIResponsesStructuredGenerator[str](
+                    client_factory=Factory(client), artifact_resolver=Resolver(image()),
+                    model="vision-model", reasoning_effort=effort)
+                request = StructuredGenerationRequest(
+                    input=TextGenerationRequest(prompt="synthetic input"), output_schema=schema())
+                run = replace(context(), private_trace_capture=PrivateTraceCapture(recorder=Recorder()))
+
+                result = asyncio.run(generator.generate(request, run))
+
+                self.assertEqual(client.requests[0].reasoning_effort, effort)
+                self.assertFalse(client.requests[0].capture_reasoning)
+                self.assertEqual(client.closed, 1)
+                content = json.loads(records[0].content)
+                if effort is None:
+                    self.assertNotIn("reasoning", content)
+                    self.assertNotIn("requested_reasoning_effort", result.provider_metadata)
+                else:
+                    self.assertEqual(content["reasoning"], {"effort": effort})
+                    self.assertEqual(result.provider_metadata["requested_reasoning_effort"], effort)
+
+    def test_invalid_effort_rejects_request_and_generator_before_provider_creation(self) -> None:
+        client = Client(OpenAIResponsesResult(
+            output_text='{"description":"fixture"}', model="vision-model",
+            status=OpenAIResponsesStatus.COMPLETED, input_tokens=20, output_tokens=5))
+        factory = Factory(client)
+        resolver = Resolver(image())
+        request = OpenAIResponsesRequest(
+            model="vision-model",
+            messages=(OpenAIResponsesMessage(role=TextMessageRole.USER, text="synthetic input"),),
+            schema_name="synthetic", output_schema=schema().json_schema)
+        self.assertIsNone(request.reasoning_effort)
+        for effort in ("minimal", "", " medium ", "HIGH", "ultra", True, 1, [], {}):
+            with self.subTest(effort=effort):
+                with self.assertRaisesRegex(ValueError, "reasoning effort is unsupported"):
+                    replace(request, reasoning_effort=effort)
+                with self.assertRaisesRegex(ValueError, "reasoning effort is unsupported"):
+                    OpenAIResponsesStructuredGenerator[str](
+                        client_factory=factory, artifact_resolver=resolver, model="vision-model",
+                        reasoning_effort=effort)  # type: ignore[arg-type]
+        self.assertEqual(factory.calls, 0)
+        self.assertEqual(resolver.calls, 0)
+        self.assertEqual(client.requests, [])
+
     def test_hanging_close_is_bounded_and_available_response_is_already_captured(self) -> None:
         records: list[PrivateTraceRecord] = []
 

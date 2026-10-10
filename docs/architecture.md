@@ -980,6 +980,15 @@ Ollama native nanosecond durations remain unavailable when the provider does not
 report them. Cached and reasoning token counts are subsets of input and output
 totals and must not be added a second time.
 
+`OpenAIResponsesStructuredGenerator` and its provider request accept an optional
+`reasoning_effort` setting: `none`, `low`, `medium`, `high`, `xhigh`, or `max`.
+An unspecified setting omits the SDK reasoning parameter and preserves provider
+defaults. An explicit setting sends `reasoning={"effort": ...}` and is retained
+in private request content and result metadata as `requested_reasoning_effort`;
+this records requested configuration, not provider-confirmed execution. Model
+support remains the provider's responsibility. This setting is independent of
+`include_reasoning`, which controls retention of returned summaries only.
+
 `include_process=True` additionally records actual bounded-process argv, working
 directory, output, exit status and elapsed time. Environment values are excluded;
 recognized credential flags and credential-shaped output are redacted. Capture

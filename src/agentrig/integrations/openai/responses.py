@@ -66,7 +66,15 @@ OPENAI_RESPONSES_STRUCTURED_CAPABILITY = CapabilityDescriptor(
 OutputT = TypeVar("OutputT")
 _SCHEMA_NAME_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")
 _IMAGE_MEDIA_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})
+_REASONING_EFFORTS = frozenset({"none", "low", "medium", "high", "xhigh", "max"})
 _CLIENT_CLOSE_GRACE_SECONDS = 1.0
+
+
+def _require_reasoning_effort(value: str | None) -> None:
+    if value is not None and (
+        not isinstance(value, str) or value not in _REASONING_EFFORTS
+    ):
+        raise ValueError("OpenAI Responses reasoning effort is unsupported")
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -118,8 +126,10 @@ class OpenAIResponsesRequest:
     output_schema: Mapping[str, JsonValue] = field(repr=False)
     max_output_tokens: int | None = None
     capture_reasoning: bool = False
+    reasoning_effort: str | None = None
 
     def __post_init__(self) -> None:
+        _require_reasoning_effort(self.reasoning_effort)
         if type(self.capture_reasoning) is not bool:
             raise TypeError("OpenAI Responses capture reasoning choice must be boolean")
         require_trimmed_string("OpenAI Responses model", self.model)
@@ -238,15 +248,18 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
         client_factory: OpenAIResponsesClientFactory,
         artifact_resolver: ArtifactResolver,
         model: str,
+        reasoning_effort: str | None = None,
     ) -> None:
         if not isinstance(client_factory, OpenAIResponsesClientFactory):
             raise TypeError("OpenAI Responses factory is invalid")
         if not isinstance(artifact_resolver, ArtifactResolver):
             raise TypeError("OpenAI Responses artifact resolver is invalid")
         require_trimmed_string("OpenAI Responses model", model)
+        _require_reasoning_effort(reasoning_effort)
         self._client_factory = client_factory
         self._artifact_resolver = artifact_resolver
         self._model = model
+        self._reasoning_effort = reasoning_effort
 
     @property
     def descriptor(self) -> CapabilityDescriptor:
@@ -278,6 +291,8 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                              for message in messages],
                 "output_schema": dict(request.output_schema.json_schema),
                 "max_output_tokens": request.input.max_output_tokens,
+                **({"reasoning": {"effort": self._reasoning_effort}}
+                   if self._reasoning_effort is not None else {}),
                 "store": False, "stream": False, "tools": [], "truncation": "disabled",
             })
         started_at = context.clock.monotonic()
@@ -295,6 +310,7 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
                     output_schema=dict(request.output_schema.json_schema),
                     max_output_tokens=request.input.max_output_tokens,
                     capture_reasoning=capture is not None and capture.include_reasoning,
+                    reasoning_effort=self._reasoning_effort,
                 ),
                 context,
             )
@@ -352,6 +368,8 @@ class OpenAIResponsesStructuredGenerator(Generic[OutputT]):
             raise AgentRigError(cleanup_failure)
         elapsed_ms = max(0, int((context.clock.monotonic() - started_at) * 1000))
         provider_metadata = {"elapsed_ms": str(elapsed_ms)}
+        if self._reasoning_effort is not None:
+            provider_metadata["requested_reasoning_effort"] = self._reasoning_effort
         for name in ("response_id", "created_at", "service_tier"):
             value = getattr(response, name)
             if value is not None:

@@ -108,6 +108,8 @@ class _SdkClient:
                     }
                 },
                 max_output_tokens=request.max_output_tokens,
+                **({"reasoning": {"effort": request.reasoning_effort}}
+                   if request.reasoning_effort is not None else {}),
                 store=False,
                 stream=False,
                 tools=[],

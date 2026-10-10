@@ -49,4 +49,5 @@ generator: StructuredGenerator[str] = OpenAIResponsesStructuredGenerator(
     client_factory=factory,
     artifact_resolver=resolver,
     model="vision-model",
+    reasoning_effort="medium",
 )
