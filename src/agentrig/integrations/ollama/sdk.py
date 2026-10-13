@@ -158,7 +158,11 @@ class _SdkClient:
             raw_response = await self._raw_client.chat(
                 model=request.model,
                 messages=[
-                    {"role": message.role, "content": message.content}
+                    {
+                        "role": message.role,
+                        "content": message.content,
+                        **({"images": list(message.images)} if message.images else {}),
+                    }
                     for message in request.messages
                 ],
                 stream=False,

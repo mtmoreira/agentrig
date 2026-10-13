@@ -1,0 +1,14 @@
+python_library(
+    name = "comfyui",
+    srcs = [
+        "__init__.py",
+        "http.py",
+        "images.py",
+    ],
+    base_module = "agentrig.integrations.comfyui",
+    deps = [
+        "//src/agentrig/capabilities:capabilities",
+        "//src/agentrig/core:core",
+    ],
+    visibility = ["PUBLIC"],
+)

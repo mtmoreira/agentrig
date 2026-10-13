@@ -22,6 +22,7 @@ from agentrig.capabilities import (
     ImageQuality,
     ImageUsage,
     ModelMetadata,
+    ImageArtifactPublisher,
 )
 from agentrig.core._validation import require_trimmed_string
 from agentrig.core.artifacts import ArtifactRef, ArtifactResolver
@@ -146,18 +147,6 @@ class OpenAIImageClient(Protocol):
 @runtime_checkable
 class OpenAIImageClientFactory(Protocol):
     def create(self) -> OpenAIImageClient: ...
-
-
-@runtime_checkable
-class ImageArtifactPublisher(Protocol):
-    async def publish(
-        self,
-        *,
-        request: ImageGenerationRequest,
-        content: bytes,
-        media_type: str,
-        context: RunContext,
-    ) -> ArtifactRef: ...
 
 
 OPENAI_IMAGE_CAPABILITY = CapabilityDescriptor(

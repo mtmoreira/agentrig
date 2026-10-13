@@ -46,7 +46,8 @@ def request() -> OllamaChatRequest:
         model="qwen3:8b",
         messages=(
             OllamaChatMessage(role="system", content="private instructions"),
-            OllamaChatMessage(role="user", content="private input"),
+            OllamaChatMessage(role="user", content="private input",
+                              images=(b"synthetic-image",)),
         ),
         output_schema={
             "type": "object",
@@ -206,7 +207,8 @@ class OllamaSdkBridgeTest(unittest.TestCase):
                     "model": "qwen3:8b",
                     "messages": [
                         {"role": "system", "content": "private instructions"},
-                        {"role": "user", "content": "private input"},
+                        {"role": "user", "content": "private input",
+                         "images": [b"synthetic-image"]},
                     ],
                     "stream": False,
                     "think": False,

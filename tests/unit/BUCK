@@ -7,6 +7,8 @@ agentrig_python_test(
     base_module = "tests.unit",
     deps = [
         "//src:agentrig",
+        "//src/agentrig/integrations/comfyui:comfyui",
+        "//src/agentrig/integrations/ollama:ollama",
         "//tools:agent_context_validation",
         "//tools:python_dependency_bridge",
         "//tools:release_validation",

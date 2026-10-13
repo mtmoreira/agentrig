@@ -28,8 +28,8 @@ from agentrig.integrations.openai.codex import (
     CodexUsageReported,
 )
 from agentrig.integrations.openai.runtime import CodexAgentRuntime
+from agentrig.capabilities import ImageArtifactPublisher
 from agentrig.integrations.openai.images import (
-    ImageArtifactPublisher,
     OPENAI_IMAGE_CAPABILITY,
     OPENAI_IMAGE_MAX_INPUTS,
     OPENAI_IMAGE_SIZES,

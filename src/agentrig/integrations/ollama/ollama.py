@@ -50,14 +50,23 @@ class OllamaChatMessage:
 
     role: str
     content: str = field(repr=False)
+    images: tuple[bytes, ...] = field(default=(), repr=False)
 
     def __post_init__(self) -> None:
         if self.role not in {"system", "user", "assistant"}:
             raise ValueError("Ollama message role must be system, user, or assistant")
         if not isinstance(self.content, str) or (
-            self.role != "assistant" and not self.content.strip()
+            self.role != "assistant" and not self.content.strip() and not self.images
         ):
             raise ValueError("Ollama message content is invalid")
+        images = tuple(self.images)
+        if any(not isinstance(item, bytes) or not item for item in images):
+            raise ValueError("Ollama message images must be nonempty bytes")
+        if len(images) > 10 or any(len(item) > 20 * 1024 * 1024 for item in images):
+            raise ValueError("Ollama message images exceed the transport bound")
+        if images and self.role != "user":
+            raise ValueError("Ollama images require a user message")
+        object.__setattr__(self, "images", images)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

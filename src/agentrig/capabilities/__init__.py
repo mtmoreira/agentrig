@@ -20,6 +20,7 @@ from agentrig.capabilities.coding import (
     WorkspaceAuthorization,
 )
 from agentrig.capabilities.image_generation import (
+    ImageArtifactPublisher,
     ImageGenerationRequest,
     ImageGenerationResult,
     ImageGenerationSettings,
@@ -123,6 +124,7 @@ __all__ = (
     "DataRetention",
     "GenerationUsage",
     "ImageGenerationRequest",
+    "ImageArtifactPublisher",
     "ImageGenerationResult",
     "ImageGenerationSettings",
     "ImageGenerator",
